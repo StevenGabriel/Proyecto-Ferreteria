@@ -17,6 +17,9 @@ import CategoryView from './pages/Categories/CategoryView';
 import UnitView from './pages/Units/UnitView';
 import LocationView from './pages/Locations/LocationView';
 import WarehouseView from './pages/Warehouses/WarehouseView';
+import UserManagement from './pages/Users/UserManagement';
+import InventoryControl from './pages/Inventory/InventoryControl';
+import POSView from './pages/Sales/POSView';
 
 
 //import Navigation from './components/Navigation'; // Si tienes un componente de navegación
@@ -43,6 +46,20 @@ function App() {
             <Route path="/admin" element={<Home />} />
             <Route path="/home" element={<Home />} />
             <Route path="/about" element={<About />} />
+
+            {/* Gestión de Usuarios y Permisos RBAC (Objetivo 4) */}
+            <Route path="/usuarios" element={<UserManagement />} />
+            <Route path="/empleados" element={<UserManagement />} />
+            <Route path="/personal" element={<UserManagement />} />
+
+            {/* Control de Inventario, Semáforo de Caducidad y Kardex (Objetivo 2) */}
+            <Route path="/inventario" element={<InventoryControl />} />
+            <Route path="/kardex" element={<InventoryControl />} />
+            <Route path="/stock-critico" element={<InventoryControl />} />
+
+            {/* Módulo Punto de Venta POS / Vender (Dedicado Standalone) */}
+            <Route path="/vender" element={<POSView />} />
+            <Route path="/pos" element={<POSView />} />
 
             {/* Login Universal y Flujo de Recuperación con Token de 10 min */}
             <Route path="/login" element={<Login />} />

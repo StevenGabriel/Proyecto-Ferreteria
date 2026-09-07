@@ -12,6 +12,7 @@ function ResetPassword() {
   const [userEmail, setUserEmail] = useState("");
   const [remainingSeconds, setRemainingSeconds] = useState(0);
 
+  const [tokenType, setTokenType] = useState("RESET_PASSWORD");
   const [nuevaContrasena, setNuevaContrasena] = useState("");
   const [confirmContrasena, setConfirmContrasena] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -25,7 +26,7 @@ function ResetPassword() {
       if (!token) {
         setVerifying(false);
         setIsValidToken(false);
-        setErrorMessage("No se proporcionó ningún token de restablecimiento.");
+        setErrorMessage("No se proporcionó ningún token de restablecimiento o activación.");
         return;
       }
 
@@ -36,11 +37,12 @@ function ResetPassword() {
           setIsValidToken(true);
           setUserEmail(res.email);
           setRemainingSeconds(res.remainingSeconds || 600);
+          if (res.type) setTokenType(res.type);
         }
       } catch (err) {
         console.error("Error validando token:", err);
         setIsValidToken(false);
-        const msg = err.response?.data?.message || "El enlace de restablecimiento es inválido o ha expirado.";
+        const msg = err.response?.data?.message || "El enlace de seguridad es inválido o ha expirado.";
         setErrorMessage(msg);
       } finally {
         setVerifying(false);
@@ -50,7 +52,7 @@ function ResetPassword() {
     checkToken();
   }, [token]);
 
-  // 2. Temporizador regresivo de los 10 minutos
+  // 2. Temporizador regresivo
   useEffect(() => {
     if (!isValidToken || remainingSeconds <= 0) return;
 
@@ -59,7 +61,7 @@ function ResetPassword() {
         if (prev <= 1) {
           clearInterval(interval);
           setIsValidToken(false);
-          setErrorMessage("El tiempo de 10 minutos para cambiar la contraseña ha finalizado. Solicita un nuevo enlace.");
+          setErrorMessage("El tiempo de validez del enlace ha finalizado. Solicita un nuevo enlace.");
           return 0;
         }
         return prev - 1;
@@ -69,10 +71,14 @@ function ResetPassword() {
     return () => clearInterval(interval);
   }, [isValidToken, remainingSeconds]);
 
-  // Formatear segundos a MM:SS
+  // Formatear segundos a HH:MM:SS o MM:SS
   const formatTime = (secs) => {
-    const mins = Math.floor(secs / 60);
+    const hours = Math.floor(secs / 3600);
+    const mins = Math.floor((secs % 3600) / 60);
     const s = secs % 60;
+    if (hours > 0) {
+      return `${hours}h ${String(mins).padStart(2, '0')}m`;
+    }
     return `${String(mins).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
@@ -109,6 +115,8 @@ function ResetPassword() {
     }
   };
 
+  const isInvitation = tokenType === "INVITATION";
+
   return (
     <div className="min-h-screen w-full bg-slate-950 text-white flex items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-cyan-500 selection:text-slate-950">
       {/* Resplandor ambiental de fondo */}
@@ -128,10 +136,13 @@ function ResetPassword() {
             C
           </Link>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            Nueva Contraseña
+            {isInvitation ? "Activar Cuenta de Operador" : "Nueva Contraseña"}
           </h1>
           <p className="text-xs text-slate-400 font-medium">
-            Establece tu nueva clave de acceso para <br />
+            {isInvitation
+              ? "¡Bienvenido al equipo! Configura tu contraseña personal para"
+              : "Establece tu nueva clave de acceso para"}{" "}
+            <br />
             <span className="text-cyan-400 font-mono font-bold text-xs">{userEmail || "tu cuenta"}</span>
           </p>
         </div>
@@ -149,9 +160,13 @@ function ResetPassword() {
               ✓
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-white">¡Contraseña Actualizada!</h3>
+              <h3 className="text-base font-bold text-white">
+                {isInvitation ? "¡Cuenta Activada con Éxito!" : "¡Contraseña Actualizada!"}
+              </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Tu clave ha sido cambiada correctamente. Ya puedes ingresar al sistema con tus nuevas credenciales.
+                {isInvitation
+                  ? "Tu cuenta ha sido activada y tu contraseña personalizada ha quedado guardada. Ya puedes ingresar al sistema."
+                  : "Tu clave ha sido cambiada correctamente. Ya puedes ingresar al sistema con tus nuevas credenciales."}
               </p>
             </div>
             <Link
@@ -164,13 +179,13 @@ function ResetPassword() {
         ) : !isValidToken ? (
           /* Estado 3: Enlace Expirado o Inválido */
           <div className="space-y-5 text-center animate-fade-in py-2">
-            <div className="w-16 h-16 bg-rose-500/10 border border-rose-500/30 rounded-3xl flex items-center justify-center text-rose-400 text-3xl mx-auto shadow-xl shadow-rose-500/10">
+            <div className="w-16 h-16 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center justify-center text-rose-400 text-3xl mx-auto shadow-xl shadow-rose-500/10">
               ⚠️
             </div>
             <div className="space-y-2">
               <h3 className="text-base font-bold text-white">Enlace Expirado o Inválido</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                {errorMessage || "Este enlace de recuperación ha caducado (validez de 10 minutos) o ya fue utilizado."}
+                {errorMessage || "Este enlace ha caducado o ya fue utilizado."}
               </p>
             </div>
             <Link
@@ -183,13 +198,13 @@ function ResetPassword() {
         ) : (
           /* Estado 4: Formulario de Nueva Contraseña con Cronómetro */
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Banner del Temporizador de 10 minutos */}
-            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between text-xs text-amber-400 font-bold">
+            {/* Banner del Temporizador */}
+            <div className="p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl flex items-center justify-between text-xs text-cyan-400 font-bold">
               <span className="flex items-center gap-1.5">
                 <span>⏱️</span>
-                <span>Tiempo restante:</span>
+                <span>Vigencia del enlace:</span>
               </span>
-              <span className="font-mono text-sm bg-slate-950/60 px-2.5 py-0.5 rounded-lg border border-amber-500/20">
+              <span className="font-mono text-xs bg-slate-950/60 px-2.5 py-0.5 rounded-lg border border-cyan-500/20 text-white">
                 {formatTime(remainingSeconds)}
               </span>
             </div>

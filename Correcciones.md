@@ -369,4 +369,85 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
     * Si es administrador, incluye acceso directo al **Panel de Administración (`/dashboard`)**.
     * Incluye el botón **Cerrar Sesión** en rojo que limpia el almacenamiento local (`cyc_user_session`) y actualiza la interfaz al instante con un toast de confirmación.
 
+### 57. [OBJETIVO 4 CULMINADO] Módulo Completo de Gestión de Usuarios y Roles RBAC (`UserManagement.jsx`)
+* **Backend de Empleados y Control de Acceso (`employees.js`):**
+  * `GET /employees`: Lista de operadores del sistema con información personal (`Persona`), cargo y credenciales (`CuentaUsuario`).
+  * `POST /employees`: Registro atómico ACID (`Personas` ➡️ `Empleados` ➡️ `CuentasUsuario`) con encriptación `bcrypt` y validación de correo único.
+  * `PUT /employees/:id`: Actualización de datos, cargo, correo y rol asignado.
+  * `PATCH /employees/:id/status`: Alternador de suspensión y reactivación de cuentas de operadores.
+  * `PATCH /employees/:id/reset-password`: Restablecimiento directo de contraseña por el Administrador.
+
+### 58. Pulido Visual, Corrección de Márgenes y Reemplazo de Emojis por Iconos SVG Profesionales
+* **Alineación de Layout y Margen del Sidebar:**
+  * Se integró `useSidebar()` con margen dinámico `ml-64` / `ml-20` para evitar que el contenido se solape o quede oculto detrás de la barra lateral fija.
+* **Eliminación Total de Stickers/Emojis:**
+  * Se reemplazaron todos los emojis de tarjetas, modales y botones por **iconos vectoriales SVG limpios y estilizados** (Usuarios, Seguridad, Carrito, Cajas/Almacén, Lápiz de edición, Llave de clave y Candado).
+* **Badges de Roles Corporativos:**
+  * Diseño minimalista con indicador de punto de color y tipografía limpia para los roles `Administrador`, `Vendedor`, `Almacenero` y `Cajero`.
+
+### 59. Limpieza de Menú Lateral y Protección Anti-Autobloqueo del Administrador
+* **Limpieza de Menú Lateral ([`Sidebar.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/sidebar/sidebar.jsx)):**
+  * Se removió el texto y divisor innecesario de *"OPERACIONES"* para ofrecer una lista de navegación uniforme y limpia.
+* **Protección Anti-Autobloqueo ([`UserManagement.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Users/UserManagement.jsx) y [`employees.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/employees.js)):**
+  * El Administrador actualmente logueado (`sclaros724@gmail.com`) se excluye dinámicamente de la lista de operadores subordinados a gestionar, eliminando cualquier riesgo de auto-suspensión, alteración accidental de su propio rol o auto-bloqueo.
+  * El backend incluye una regla de seguridad estricta que bloquea cualquier intento de suspensión hacia la cuenta maestra del Administrador.
+
+### 60. Normalización de Roles del Sistema (Administrador, Vendedor y Cliente)
+* **Alineación con el Perfil Oficial del Proyecto:**
+  * Se simplificaron los roles de operadores internos a exactamente:
+    * **`Administrador`**: Control total de la plataforma (gestión de personal, inventario, reportes, configuración y ventas).
+    * **`Vendedor` (Vendedor / Cajero)**: Operador de mostrador, punto de venta (POS), emisión de cotizaciones, cobro de transacciones y consulta de existencias.
+  * Para los clientes de la tienda y catálogo online, se mantiene el rol:
+    * **`Cliente`**: Comprador registrado para navegación de catálogo, carrito de compras y pedidos vía WhatsApp/perfil.
+* **Actualización en Modales de Creación y Edición ([`UserManagement.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Users/UserManagement.jsx)):**
+  * Se eliminaron opciones intermedias innecesarias (`Almacenero`, `Cajero`) unificando las funciones de mostrador y caja bajo el rol **`Vendedor`**.
+  * Los selectores de roles en los formularios de registro y edición ahora ofrecen exclusivamente `Administrador` y `Vendedor (Vendedor / Cajero)`.
+
+### 61. Sistema de Invitación y Onboarding por Correo para Operadores (Flujo Corporativo)
+* **Eliminación de Redundancia de "Cargo / Puesto":**
+  * Se removió la columna visible y los inputs manuales de *Cargo / Puesto* tanto en la tabla principal como en los modales de creación y edición ([`UserManagement.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Users/UserManagement.jsx)), asignándose automáticamente en la base de datos según el rol asignado (`Administrador` o `Vendedor`).
+* **Generación Automática de Contraseña Provisional y Token de Seguridad:**
+  * En el endpoint `POST /employees` ([`employees.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/employees.js)), el Administrador ya no tiene que inventar contraseñas ajenas. El servidor genera una contraseña provisional segura (`CC-XXXXXX`) y crea un token criptográfico de activación con validez de 24 horas (`tokenManager.js`).
+* **Despacho Automático de Correo de Invitación (Gmail SMTP / Nodemailer):**
+  * Se envía un correo corporativo formal a la bandeja del nuevo empleado con el membrete de *Ferretería C&C*, indicando su rol, su correo de acceso y un botón interactivo directo: **`Activar Cuenta y Establecer Contraseña`**.
+* **Activación Directa y Configuración de Clave Personal ([`ResetPassword.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Auth/ResetPassword.jsx)):**
+### 62. Implementación de Alertas de Stock en Dashboard de Inicio (`Home.jsx`)
+* **1. Módulo "Alerta de stock del producto" Integrado en Inicio:**
+  * Se integró directamente debajo del gráfico de ventas la tarjeta completa de **Alerta de stock del producto** respetando el diseño y estructura del ERP de referencia:
+    * **Cabecera:** Icono de reloj/alerta, título formal e icono informativo `i`.
+    * **Barra de Herramientas y Exportación:** Botones funcionales `Exportar a CSV`, `Exportar a Excel`, `Impresión`, `Visibilidad de columna` y `Exportar a PDF`.
+    * **Buscador en Tiempo Real:** Filtro rápido por nombre o código de producto.
+### 63. Módulo Punto de Venta (POS / "Vender") Dedicado y Standalone
+* **1. Experiencia Standalone de Alta Productividad ("A Nuestro Modo"):**
+  * Se diseñó la vista `/vender` (y alias `/pos`) como una terminal de ventas dedicada en pantalla completa (sin sidebar ni topbar administrativo) para maximizar el área de trabajo y agilizar la atención rápida en caja.
+  * Botón de navegación rápida **"Salir del POS"** en la esquina superior izquierda con confirmación si hay productos en el carrito, retornando de inmediato al panel administrativo (`/dashboard`).
+* **2. Cabecera Operativa de Caja:**
+  * Identificación de sucursal: `Ubicación: CASA Y CONSTRUCCION (SUCURSAL CENTRAL)`.
+  * Reloj digital en vivo con fecha y hora exacta.
+  * Acceso directo a calculadora auxiliar en modal flotante (`CalculatorModal`).
+  * Botón de registro rápido `+ Agregar gasto` para egresos de caja chica.
+  * Botón para alternar pantalla completa (`Toggle Fullscreen`).
+* **3. Columna Izquierda: Ticket Activo y Carrito:**
+  * Selector de cliente con buscador y botón `+` para creación rápida de clientes sin salir de la venta.
+  * Escáner de código de barras con foco automático, captura por `Enter` y feedback sonoro instantáneo (`beep`).
+  * Tabla interactiva de productos con controles de cantidad `+` / `-`, precio unitario, subtotal y botón de eliminación.
+  * Modificadores de venta en tiempo real: Descuento general (fijo / porcentaje), Impuesto/IVA configurable y Gastos de envío.
+* **4. Columna Derecha: Catálogo Táctil y Filtros de Productos:**
+  * Buscador en tiempo real por nombre, código o SKU.
+  * Botones modales interactivos para filtrado rápido por **Categoría** y **Marca**.
+  * Cuadrícula de tarjetas de productos con imagen, badge de existencias en tiempo real (`X.XX ud` o `Agotado`), precio unitario y efecto sonoro al hacer clic para añadir.
+* **5. Barra de Acciones de Cobro y Facturación:**
+  * Indicador de Total Grande resaltado con tipografía tabular.
+  * Modal de Cobro en Efectivo (`ModalEfectivo`) con cálculo automático de vuelto/cambio según el monto entregado por el cliente y botones de denominación rápida (Bs. 10, 20, 50, 100, 200).
+  * Opciones de pago: *Efectivo*, *Tarjeta*, *Pago Múltiple*, *Venta a Crédito*, *Cotización*, *Borrador* y *Suspender*.
+  * Modal de Historial de Transacciones Recientes y botón de reimpresión de última venta.
+  * Modal de Ticket Térmico de 80mm con diseño profesional listo para impresión física (`window.print()`).
+* **6. Integración en Sidebar y Enrutamiento:**
+  * Conexión directa desde la opción **"Vender"** del menú lateral (`sidebar.jsx`) hacia la ruta `/vender` registrada en `App.jsx`.
+
+
+
+
+
+
 

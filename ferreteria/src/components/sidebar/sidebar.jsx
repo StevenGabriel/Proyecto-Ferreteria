@@ -199,15 +199,6 @@ function Sidebar({ activeItem }) {
             )}
           </div>
 
-          {/* Línea Divisoria de Operaciones */}
-          {isCollapsed ? (
-            <div className="border-t border-slate-800/80 my-3"></div>
-          ) : (
-            <div className="pt-4 pb-2 px-4">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">OPERACIONES</span>
-            </div>
-          )}
-
           {/* Opción: Facturación SIAT */}
           <button
             title="Facturación SIAT"
@@ -222,17 +213,40 @@ function Sidebar({ activeItem }) {
           </button>
 
           {/* Opción: Vender */}
-          <button
-            title="Vender"
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200 ${
+          <Link
+            to="/vender"
+            title="Vender (Punto de Venta POS)"
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
               isCollapsed ? 'justify-center px-0' : ''
+            } ${
+              activeItem === 'vender'
+                ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
             <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
             {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Vender</span>}
-          </button>
+          </Link>
+
+          {/* Opción: Gestión de Usuarios / Empleados (Objetivo 4) */}
+          <Link
+            to="/usuarios"
+            title="Usuarios y Roles"
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+              isCollapsed ? 'justify-center px-0' : ''
+            } ${
+              activeItem === 'usuarios'
+                ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Usuarios y Roles</span>}
+          </Link>
         </nav>
       </div>
 

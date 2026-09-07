@@ -181,4 +181,56 @@ export const confirmPasswordReset = async (payload) => {
   return response.data;
 };
 
+// API de Empleados y Gestión de Usuarios (RBAC)
+export const getEmployees = async () => {
+  const response = await api.get('/employees');
+  return response.data;
+};
+
+export const createEmployee = async (payload) => {
+  const response = await api.post('/employees', payload);
+  return response.data;
+};
+
+export const updateEmployee = async (id, payload) => {
+  const response = await api.put(`/employees/${id}`, payload);
+  return response.data;
+};
+
+export const toggleEmployeeStatus = async (id) => {
+  const response = await api.patch(`/employees/${id}/status`);
+  return response.data;
+};
+
+export const resetEmployeePassword = async (id, nuevaContrasena) => {
+  const response = await api.patch(`/employees/${id}/reset-password`, { nuevaContrasena });
+  return response.data;
+};
+
+// API de Control de Inventario, Semáforo de Stock y Caducidad de Lotes (Objetivo 2)
+export const getInventorySummary = async () => {
+  const response = await api.get('/inventory/summary');
+  return response.data;
+};
+
+export const getCriticalStock = async (filter = 'ALL', search = '') => {
+  const response = await api.get('/inventory/critical-stock', { params: { filter, search } });
+  return response.data;
+};
+
+export const getExpiringLots = async (filter = 'ALL', search = '') => {
+  const response = await api.get('/inventory/expiring-lots', { params: { filter, search } });
+  return response.data;
+};
+
+export const getKardex = async (params = {}) => {
+  const response = await api.get('/inventory/kardex', { params });
+  return response.data;
+};
+
+export const recordInventoryAdjustment = async (payload) => {
+  const response = await api.post('/inventory/adjust', payload);
+  return response.data;
+};
+
 export default api;

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Sidebar from '../../components/sidebar/sidebar';
 import Topbar from '../../components/topbar/topbar';
 import { useSidebar } from '../../context/SidebarContext';
+import { getProducts, getCriticalStock } from '../../services/api';
 
 function Home() {
   const { isCollapsed } = useSidebar();
@@ -84,6 +85,62 @@ function Home() {
   });
 
   const userName = currentUser?.Nombre?.toUpperCase() || 'OSCAR EDGAR';
+
+  // Alertas de stock reales desde la base de datos (Stock <= Stock Mínimo o Agotados)
+  const [criticalProducts, setCriticalProducts] = useState([]);
+  const [loadingAlerts, setLoadingAlerts] = useState(true);
+  const [tableSearch, setTableSearch] = useState('');
+
+  useEffect(() => {
+    setLoadingAlerts(true);
+    getProducts()
+      .then((data) => {
+        const items = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+        // Filtrar productos con stock <= LoteMinimo (o Agotados con Stock = 0)
+        const lowStock = items.filter((p) => {
+          const stock = parseInt(p.Stock || 0);
+          const min = parseInt(p.LoteMinimo || 5);
+          return stock <= min;
+        });
+        setCriticalProducts(lowStock);
+      })
+      .catch((err) => {
+        console.error('Error al consultar productos:', err);
+      })
+      .finally(() => {
+        setLoadingAlerts(false);
+      });
+  }, []);
+
+  const filteredProducts = criticalProducts.filter((p) => {
+    const text = `${p.Nombre} ${p.Codigo || ''} ${p.CodigoBarras || ''} ${p.Marca?.Nombre || ''}`.toLowerCase();
+    return text.includes(tableSearch.toLowerCase());
+  });
+
+  const handleExport = (type) => {
+    if (type === 'impresion') {
+      window.print();
+    } else {
+      const rows = [
+        ['Producto', 'Código', 'Stock Actual', 'Stock Mínimo', 'Estado'],
+        ...filteredProducts.map((p) => [
+          p.Nombre,
+          p.Codigo || p.CodigoBarras || `PRD-${p.ProductoID}`,
+          p.Stock ?? 0,
+          p.LoteMinimo ?? 5,
+          (p.Stock || 0) <= 0 ? 'Agotado' : 'Stock Bajo'
+        ])
+      ];
+      const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(';')).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `Alerta_Stock_Ferreteria_${type}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
 
   return (
     <div className="bg-slate-950 text-white min-h-screen font-sans flex">
@@ -353,6 +410,188 @@ function Home() {
               <span>25 Jul 2026</span>
               <span>02 Ago 2026</span>
               <span>07 Ago 2026</span>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* TABLA: ALERTA DE STOCK DEL PRODUCTO (EXACTO A LA FOTO ERP)               */}
+          {/* ========================================================================= */}
+          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-4">
+            {/* Cabecera con Título e Icono de Información */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                  <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="font-bold text-white text-base flex items-center gap-2">
+                  Alerta de stock del producto
+                  <span
+                    className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-black inline-flex items-center justify-center cursor-help"
+                    title="Listado de productos con existencias por debajo del umbral mínimo configurado"
+                  >
+                    i
+                  </span>
+                </h3>
+              </div>
+
+              {/* Botones de Exportación / Herramientas según foto */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  onClick={() => handleExport('csv')}
+                  className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Exportar a CSV
+                </button>
+                <button
+                  onClick={() => handleExport('excel')}
+                  className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Exportar a Excel
+                </button>
+                <button
+                  onClick={() => handleExport('impresion')}
+                  className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  Impresión
+                </button>
+                <button
+                  className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Visibilidad de columna
+                </button>
+                <button
+                  onClick={() => handleExport('pdf')}
+                  className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  Exportar a PDF
+                </button>
+              </div>
+            </div>
+
+            {/* Tabla con Filas Cebra */}
+            <div className="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-900/30">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="bg-slate-900/90 text-slate-400 border-b border-slate-800 uppercase tracking-wider text-[11px] font-bold">
+                    <th className="py-3 px-4">Producto</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {loadingAlerts ? (
+                    <tr>
+                      <td className="py-8 text-center text-slate-500">
+                        <div className="inline-flex items-center gap-2 text-xs">
+                          <div className="w-4 h-4 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
+                          <span>Consultando existencias de la base de datos...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredProducts.length === 0 ? (
+                    <tr>
+                      <td className="py-8 text-center text-slate-400 text-xs">
+                        <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        {tableSearch ? 'No se encontraron productos coincidentes con la búsqueda.' : 'No se registran productos con stock bajo o agotado actualmente.'}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredProducts.map((item, index) => {
+                      const stockVal = item.Stock ?? item.currentStock ?? 0;
+                      const isOutOfStock = stockVal === 0;
+                      return (
+                        <tr
+                          key={item.ProductoID || index}
+                          className={`group hover:bg-slate-800/50 transition-colors ${
+                            index % 2 === 0 ? 'bg-slate-900/20' : 'bg-transparent'
+                          }`}
+                        >
+                          <td className="py-3 px-4 text-slate-300 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2.5">
+                              <span
+                                className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                  isOutOfStock ? 'bg-rose-500 animate-pulse' : 'bg-amber-400'
+                                }`}
+                                title={isOutOfStock ? 'Producto Agotado' : 'Stock Bajo'}
+                              ></span>
+                              <div>
+                                <span className="font-bold text-slate-200 uppercase tracking-wide">
+                                  {item.Nombre}
+                                </span>
+                                <span className="text-slate-500 text-xs ml-1.5 font-mono">
+                                  ({item.Codigo || item.CodigoBarras || `PRD-${item.ProductoID}`})
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase border ${
+                                  isOutOfStock
+                                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                    : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                }`}
+                              >
+                                {isOutOfStock ? `Agotado (0 ${item.Unidad?.Abreviacion || item.Unidad?.Nombre || 'UNID'})` : `${stockVal} ${item.Unidad?.Abreviacion || item.Unidad?.Nombre || 'UNID'} (Bajo)`}
+                              </span>
+                              <Link
+                                to="/productsView"
+                                className="text-[11px] text-cyan-400 hover:text-cyan-300 opacity-0 group-hover:opacity-100 transition-opacity font-semibold"
+                              >
+                                Ver en productos →
+                              </Link>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pie de Tabla con Contador y Paginación Dinámica */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-slate-400 font-medium">
+              <div>
+                Mostrando {filteredProducts.length > 0 ? 1 : 0} a {filteredProducts.length} de {criticalProducts.length} entrada{criticalProducts.length === 1 ? '' : 's'}
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  disabled
+                  className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg opacity-40 cursor-not-allowed transition-all text-xs"
+                >
+                  Anterior
+                </button>
+                <button className="px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-bold rounded-lg text-xs">
+                  1
+                </button>
+                <button
+                  disabled
+                  className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg opacity-40 cursor-not-allowed transition-all text-xs"
+                >
+                  Siguiente
+                </button>
+              </div>
             </div>
           </div>
         </div>
