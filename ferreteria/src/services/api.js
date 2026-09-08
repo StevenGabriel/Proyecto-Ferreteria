@@ -233,4 +233,20 @@ export const recordInventoryAdjustment = async (payload) => {
   return response.data;
 };
 
+// API de Ventas y Facturación POS
+export const createSale = async (saleData) => {
+  const response = await api.post('/sales', saleData);
+  return response.data;
+};
+
+export const updateSale = async (id, saleData) => {
+  const response = await api.put(`/sales/${id}`, saleData);
+  return response.data;
+};
+
+export const getRecentSales = async () => {
+  const response = await api.get('/sales/recent');
+  return response.data;
+};
+
 export default api;

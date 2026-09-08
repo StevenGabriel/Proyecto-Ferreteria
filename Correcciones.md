@@ -413,10 +413,12 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
 * **Activación Directa y Configuración de Clave Personal ([`ResetPassword.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Auth/ResetPassword.jsx)):**
 ### 62. Implementación de Alertas de Stock en Dashboard de Inicio (`Home.jsx`)
 * **1. Módulo "Alerta de stock del producto" Integrado en Inicio:**
-  * Se integró directamente debajo del gráfico de ventas la tarjeta completa de **Alerta de stock del producto** respetando el diseño y estructura del ERP de referencia:
-    * **Cabecera:** Icono de reloj/alerta, título formal e icono informativo `i`.
-    * **Barra de Herramientas y Exportación:** Botones funcionales `Exportar a CSV`, `Exportar a Excel`, `Impresión`, `Visibilidad de columna` y `Exportar a PDF`.
-    * **Buscador en Tiempo Real:** Filtro rápido por nombre o código de producto.
+  * Se integró directamente debajo del gráfico de ventas la tarjeta completa de **Alerta de stock del producto** con estructura tabular limpia y organizada en 3 columnas maestras:
+    * **Producto:** Nombre comercial, código de barras/SKU y punto indicador de estado (pulso rojo para agotado y ámbar para bajo stock).
+    * **Ubicación:** Identificador del almacén `[Almacén Central]` y ubicación física/estante asignado en el establecimiento.
+    * **Stock Actual:** Cantidad disponible en tiempo real con unidad de medida (`X UNID (Bajo)` o `Agotado (0 UNID)`) y enlace de acceso directo a la ficha del producto.
+  * **Barra de Herramientas y Exportación:** Botones funcionales `Exportar a CSV`, `Exportar a Excel`, `Impresión`, `Visibilidad de columna` y `Exportar a PDF` incluyendo la columna de ubicación.
+  * **Paginador y Contador Dinámico:** Indicador en tiempo real `Mostrando 1 a X de X entradas` según el resultado del inventario.
 ### 63. Módulo Punto de Venta (POS / "Vender") Dedicado y Standalone
 * **1. Experiencia Standalone de Alta Productividad ("A Nuestro Modo"):**
   * Se diseñó la vista `/vender` (y alias `/pos`) como una terminal de ventas dedicada en pantalla completa (sin sidebar ni topbar administrativo) para maximizar el área de trabajo y agilizar la atención rápida en caja.
@@ -424,26 +426,91 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
 * **2. Cabecera Operativa de Caja:**
   * Identificación de sucursal: `Ubicación: CASA Y CONSTRUCCION (SUCURSAL CENTRAL)`.
   * Reloj digital en vivo con fecha y hora exacta.
-  * Acceso directo a calculadora auxiliar en modal flotante (`CalculatorModal`).
-  * Botón de registro rápido `+ Agregar gasto` para egresos de caja chica.
+  * Acceso directo a calculadora auxiliar en modal flotante.
   * Botón para alternar pantalla completa (`Toggle Fullscreen`).
 * **3. Columna Izquierda: Ticket Activo y Carrito:**
   * Selector de cliente con buscador y botón `+` para creación rápida de clientes sin salir de la venta.
   * Escáner de código de barras con foco automático, captura por `Enter` y feedback sonoro instantáneo (`beep`).
   * Tabla interactiva de productos con controles de cantidad `+` / `-`, precio unitario, subtotal y botón de eliminación.
-  * Modificadores de venta en tiempo real: Descuento general (fijo / porcentaje), Impuesto/IVA configurable y Gastos de envío.
+  * Modificador ágil de **Descuento aplicado** (`-Bs.`) con ajuste directo.
 * **4. Columna Derecha: Catálogo Táctil y Filtros de Productos:**
   * Buscador en tiempo real por nombre, código o SKU.
   * Botones modales interactivos para filtrado rápido por **Categoría** y **Marca**.
   * Cuadrícula de tarjetas de productos con imagen, badge de existencias en tiempo real (`X.XX ud` o `Agotado`), precio unitario y efecto sonoro al hacer clic para añadir.
-* **5. Barra de Acciones de Cobro y Facturación:**
-  * Indicador de Total Grande resaltado con tipografía tabular.
-  * Modal de Cobro en Efectivo (`ModalEfectivo`) con cálculo automático de vuelto/cambio según el monto entregado por el cliente y botones de denominación rápida (Bs. 10, 20, 50, 100, 200).
-  * Opciones de pago: *Efectivo*, *Tarjeta*, *Pago Múltiple*, *Venta a Crédito*, *Cotización*, *Borrador* y *Suspender*.
-  * Modal de Historial de Transacciones Recientes y botón de reimpresión de última venta.
-  * Modal de Ticket Térmico de 80mm con diseño profesional listo para impresión física (`window.print()`).
+* **5. Flujo Unificado de Cobro en "Efectivo" y Gestión Opcional de Factura:**
+  * **Al pulsar `💵 Efectivo`:**
+    * El sistema **registra la venta inmediatamente en memoria y descuenta el stock de productos en tiempo real**, reproduce el sonido de caja y limpia el ticket.
+    * Al mismo tiempo, se abre automáticamente el modal **"Datos para Factura"** (exacto al ERP de referencia).
+  * **Gestión Flexible dentro del Modal:**
+    * **Si el cliente desea Factura:** El vendedor ingresa o revisa la Razón Social y NIT/CI, y presiona **`Facturar`**, lo cual actualiza la venta como Factura Electrónica SIAT con Crédito Fiscal (13% IVA) y abre el ticket térmico listo para imprimir (`🖨 window.print()`).
+    * **Si el cliente NO desea Factura:** El vendedor simplemente hace clic en **`Cerrar`** (o `✕`), la ventana se cierra limpiamente y la transacción queda ya registrada sin ningún problema como venta rápida de mostrador (`SIN NOMBRE`).
+  * **Modal de Ticket Térmico de 80mm:** Con membrete oficial, desglose de ítems, crédito fiscal, pie de página de ley SIAT e impresión física directa.
 * **6. Integración en Sidebar y Enrutamiento:**
   * Conexión directa desde la opción **"Vender"** del menú lateral (`sidebar.jsx`) hacia la ruta `/vender` registrada en `App.jsx`.
+
+### 64. Persistencia Real en Base de Datos de Ventas POS y Atribución por Empleado
+* **1. Modelos y Relaciones Sequelize (`Ventas` y `DetalleVentas`):**
+  * Se crearon los modelos [`sale.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/models/sale.js) y [`saleDetail.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/models/saleDetail.js) mapeados a las tablas existentes `Ventas` y `DetalleVentas` en SQL Server.
+  * Relaciones configuradas: `Venta.belongsTo(Empleado)`, `Venta.belongsTo(Cliente)`, `Venta.hasMany(DetalleVenta)`, y `DetalleVenta.belongsTo(Producto)`.
+* **2. Transacción Atómica ACID y Descuento Real de Stock FIFO (`sales.js`):**
+  * `POST /sales`: Maneja transacciones ACID completas con Sequelize:
+    * Registra la cabecera de `Venta` con el `EmpleadoID` del cajero/vendedor que atendió.
+    * Registra cada `DetalleVenta` con cantidades y subtotales.
+    * Descuenta el stock directamente de la tabla `Lotes` aplicando el método **FIFO** (primeros lotes por vencer / más antiguos).
+    * Registra el movimiento en `MovimientosInventario` (Kardex) con tipo `SALIDA_VENTA`, stock anterior, stock nuevo, documento de referencia (`VNT-XXXXX`) y el nombre del empleado responsable en `UsuarioResponsable`.
+  * `GET /sales/recent`: Endpoint para consultar las últimas 20 transacciones con detalle de productos, totales y cajero asignado.
+* **3. Atribución por Empleado / Cajero en Sesión:**
+  * Se vinculó el usuario autenticado desde `cyc_user_session` en `localStorage` con el `EmpleadoID` retornado por el login backend.
+  * En la cabecera superior del POS se muestra en vivo el indicador del cajero activo (`👤 Atiende: Nombre del Empleado | ROL`).
+  * En el modal de transacciones recientes se visualiza la etiqueta del empleado que realizó cada venta.
+* **4. Integración Frontend POS (`POSView.jsx` y `api.js`):**
+  * Se agregaron `createSale()` y `getRecentSales()` en `api.js`.
+  * Al pulsar `💵 Efectivo`, la venta se envía asíncronamente a la base de datos, descontando permanentemente el inventario de modo que al recargar la página (`F5`) o volver a entrar, las existencias y el historial de ventas se mantienen fieles a la base de datos de SQL Server.
+
+### 65. Rediseño del Modal de Transacciones Recientes (Estilo ERP de Referencia)
+* **1. Estructura y Pestañas Superiores (`POSView.jsx`):**
+  * Se implementó el modal con las 3 pestañas principales: **`✔ Final`** (con badge del total de ventas activas), **`>_ Cotización`** y **`>_ Borrador`**.
+* **2. Formato de Filas y Datos:**
+  * Numeración ordinal (`1.`, `2.`, `3.`, ...).
+  * Código de venta e indicador de cliente / factura: `14447 ()` para ventas sin factura y `14444 (NOMBRE CLIENTE / EMPRESA)` para ventas facturadas.
+  * **Fecha y Hora:** Inclusión de la fecha y hora exacta de realización (`07/09/2026 18:03`) y el cajero responsable.
+  * Monto total de la transacción alineado y formateado (`78.00`).
+* **3. Cuatro Botones de Acción Estilizados:**
+  * **`✏️ Editar`** (Borde Cian): Visualiza el detalle y comprobante de la transacción.
+  * **`🖨️ Impresión`** (Borde Cian): Abre inmediatamente el modal con el ticket térmico listo para imprimir (`window.print()`).
+  * **`🗑️ Borrar`** (Borde Rojo): Identificador de transacción y estado.
+  * **`📄 Facturar`** (Borde Verde): Abre el formulario de datos para factura precargado con la venta seleccionada.
+* **4. Sincronización Automática con la Base de Datos:**
+  * Al pulsar el botón **"🟣 Transacciones Recientes"** de la barra inferior, se realiza la consulta en tiempo real a `GET /sales/recent` para mostrar las ventas registradas en la base de datos de SQL Server.
+
+### 66. Edición Rápida de Ventas desde Transacciones Recientes (`POSView.jsx`)
+* **1. Carga de la Transacción al Ticket Activo:**
+  * Al pulsar el botón **`✏️ Editar`** en cualquier venta del modal de Transacciones Recientes:
+    * Se cierra el modal automáticamente.
+    * Se precargan al ticket izquierdo todos los productos, cantidades, precios unitarios y subtotales de dicha venta.
+    * Se selecciona automáticamente el cliente o razón social correspondiente.
+* **2. Encabezado de Edición (`Recibo no.: XXXXX`):**
+  * En la parte superior del panel de cobro se muestra la insignia destacada: **`Recibo no.: 14444`** junto a un botón para `✕ Cancelar edición`.
+### 67. Ajuste Diferencial y Reversión Automática de Inventario en Edición de Ventas
+* **1. Reversión y Re-aplicación en Transacción ACID (`PUT /sales/:id`):**
+  * Al modificar una venta existente:
+    * Se recuperan los detalles originales de la venta y se devuelven las unidades previas a sus respectivos `Lotes` con registro en Kardex (`AJUSTE_INGRESO`).
+    * Se recalculan los nuevos totales a partir del ticket modificado.
+    * Se descuentan únicamente las nuevas unidades vendidas mediante método FIFO con registro en Kardex (`SALIDA_VENTA`).
+  * **Efecto de Inventario Exacto:** Si una venta se reduce de 10 a 5 unidades, el inventario aumenta automáticamente +5 unidades en SQL Server de forma segura e instantánea.
+* **2. Sincronización en Tiempo Real (`POSView.jsx` y `api.js`):**
+  * Integración con `updateSale(editingSaleId, payload)`.
+  * Al completar la modificación con **`💵 Efectivo`**, el catálogo y las transacciones recientes se refrescan automáticamente desde la Base de Datos.
+
+### 68. Impresión Limpia y Directa sin Ventana Flotante Residual en Pantalla (`POSView.jsx`)
+* **Optimización del Flujo de Impresión:**
+  * Al hacer clic en el botón **`🖨️ Impresión`** desde el modal de *Transacciones Recientes*:
+    * Se envían los datos del recibo oficial de "CASA Y CONSTRUCCION" directamente al motor de impresión del navegador (`window.print()`).
+    * El elemento `#printable-receipt` permanece oculto en pantalla durante la navegación normal (`hidden print:block`) y se hace visible únicamente ante el diálogo de impresión física (`@media print`).
+    * Se eliminó el modal residual que quedaba flotando en la interfaz al terminar o cancelar la impresión, permitiendo regresar directamente a la terminal POS limpia.
+
+
+
 
 
 

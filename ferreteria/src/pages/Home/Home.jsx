@@ -122,10 +122,11 @@ function Home() {
       window.print();
     } else {
       const rows = [
-        ['Producto', 'Código', 'Stock Actual', 'Stock Mínimo', 'Estado'],
+        ['Producto', 'Código', 'Ubicación', 'Stock Actual', 'Stock Mínimo', 'Estado'],
         ...filteredProducts.map((p) => [
           p.Nombre,
           p.Codigo || p.CodigoBarras || `PRD-${p.ProductoID}`,
+          p.Ubicacion ? `${p.Ubicacion.Almacen ? `[${p.Ubicacion.Almacen.Nombre}] ` : ''}${p.Ubicacion.Descripcion || p.Ubicacion.Nombre || ''}` : 'Sin asignar',
           p.Stock ?? 0,
           p.LoteMinimo ?? 5,
           (p.Stock || 0) <= 0 ? 'Agotado' : 'Stock Bajo'
@@ -492,12 +493,14 @@ function Home() {
                 <thead>
                   <tr className="bg-slate-900/90 text-slate-400 border-b border-slate-800 uppercase tracking-wider text-[11px] font-bold">
                     <th className="py-3 px-4">Producto</th>
+                    <th className="py-3 px-4">Ubicación</th>
+                    <th className="py-3 px-4">Stock Actual</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {loadingAlerts ? (
                     <tr>
-                      <td className="py-8 text-center text-slate-500">
+                      <td colSpan="3" className="py-8 text-center text-slate-500">
                         <div className="inline-flex items-center gap-2 text-xs">
                           <div className="w-4 h-4 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
                           <span>Consultando existencias de la base de datos...</span>
@@ -506,7 +509,7 @@ function Home() {
                     </tr>
                   ) : filteredProducts.length === 0 ? (
                     <tr>
-                      <td className="py-8 text-center text-slate-400 text-xs">
+                      <td colSpan="3" className="py-8 text-center text-slate-400 text-xs">
                         <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-2">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -526,7 +529,8 @@ function Home() {
                             index % 2 === 0 ? 'bg-slate-900/20' : 'bg-transparent'
                           }`}
                         >
-                          <td className="py-3 px-4 text-slate-300 flex items-center justify-between gap-4">
+                          {/* 1. Columna: Producto */}
+                          <td className="py-3 px-4 text-slate-300">
                             <div className="flex items-center gap-2.5">
                               <span
                                 className={`w-2 h-2 rounded-full flex-shrink-0 ${
@@ -543,16 +547,33 @@ function Home() {
                                 </span>
                               </div>
                             </div>
+                          </td>
 
-                            <div className="flex items-center gap-3">
+                          {/* 2. Columna: Ubicación */}
+                          <td className="py-3 px-4 text-slate-300 whitespace-nowrap">
+                            {item.Ubicacion ? (
+                              <span className="text-cyan-400 font-semibold">
+                                {item.Ubicacion.Almacen ? `[${item.Ubicacion.Almacen.Nombre}] ` : ''}
+                                {item.Ubicacion.Descripcion || item.Ubicacion.Nombre}
+                              </span>
+                            ) : (
+                              <span className="text-slate-600 italic">Sin asignar</span>
+                            )}
+                          </td>
+
+                          {/* 3. Columna: Stock Actual */}
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <div className="flex items-center justify-between sm:justify-start gap-3">
                               <span
-                                className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase border ${
+                                className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase border ${
                                   isOutOfStock
                                     ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                                     : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                                 }`}
                               >
-                                {isOutOfStock ? `Agotado (0 ${item.Unidad?.Abreviacion || item.Unidad?.Nombre || 'UNID'})` : `${stockVal} ${item.Unidad?.Abreviacion || item.Unidad?.Nombre || 'UNID'} (Bajo)`}
+                                {isOutOfStock
+                                  ? `Agotado (0 ${item.Unidad?.Abreviacion || item.Unidad?.Nombre || 'UNID'})`
+                                  : `${stockVal} ${item.Unidad?.Abreviacion || item.Unidad?.Nombre || 'UNID'} (Bajo)`}
                               </span>
                               <Link
                                 to="/productsView"
