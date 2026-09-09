@@ -264,4 +264,27 @@ export const getRecentSales = async () => {
   return response.data;
 };
 
+// API de Reportes Estadísticos y Análisis Predictivo
+export const getSalesPerformanceReport = async (params = {}) => {
+  const response = await api.get('/reports/sales-performance', { params });
+  return response.data;
+};
+
+export const getProductSalesHistory = async (productId, days = 60) => {
+  const response = await api.get(`/reports/product-sales-history/${productId}`, { params: { days } });
+  return response.data;
+};
+
+export const getDemandForecastReport = async (params = {}) => {
+  const response = await api.get('/reports/demand-forecast', { params });
+  return response.data;
+};
+
+export const getProductForecastDetail = async (productId, params = {}) => {
+  const response = await api.get(`/reports/product-forecast/${productId}`, { params });
+  return response.data;
+};
+
 export default api;
+
+

@@ -693,3 +693,32 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
   * Si el producto está configurado con caducidad (`ManejaCaducidad = true`), la `Fecha Caducidad` es un campo **obligatorio**.
   * Se configuró el atributo `min={YYYY-MM-DD}` correspondiente al día actual y una validación de seguridad en `handleSaveStock` para impedir que se ingresen fechas de caducidad pasadas o caducadas.
 
+### 86. Motor Estadístico y Agrupación Histórica de Ventas (Paso 1) (`reports.js`, `app.js`, `api.js`)
+* **1. Endpoints de Agrupación Temporal y Análisis de Rendimiento:**
+  * Se implementó el router [`reports.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/reports.js) en `/reports/sales-performance` y `/reports/product-sales-history/:id`.
+  * Soporta agrupaciones periódicas: **`diaria`**, **`semanal`** y **`mensual`**, con filtros por rango de fechas, producto, categoría y marca.
+* **2. Métricas y Clasificación ABC (Pareto):**
+  * **KPIs Consolidados:** Ingresos totales, costo total de mercancía, ganancia bruta, margen neto (%), total de unidades vendidas y ticket promedio.
+  * **Análisis ABC de Productos:** Clasifica automáticamente los productos en **Clase A** (80% de ingresos / alta rotación), **Clase B** (15% de ingresos) y **Clase C** (5% restante) para priorizar compras y reabastecimiento.
+  * **Línea Temporal Histórica:** Genera la serie de datos cronológica necesaria para alimentar los modelos predictivos (Promedio Móvil y Suavizado Exponencial).
+
+### 87. Motor Predictivo de Demanda y Modelos Estadísticos (Paso 2) (`reports.js`, `api.js`)
+* **1. Algoritmos Predictivos Implementados:**
+  * **Promedio Móvil Simple (SMA):** Calcula la media de los últimos \(N\) periodos (ventana móvil configurable de 3 a 30 días) para suavizar fluctuaciones aleatorias.
+  * **Promedio Móvil Ponderado (WMA):** Asigna ponderaciones lineales decrecientes priorizando las ventas más recientes.
+  * **Suavizado Exponencial Simple (SES - Holt):** Aplica la constante de atenuación \(\alpha \in [0.05, 0.95]\) (\(\hat{Y}_{t+1} = \alpha Y_t + (1-\alpha)\hat{Y}_t\)).
+### 88. Panel Visual de Análisis Predictivo y Gráficos en Inicio (Paso 3) (`Home.jsx`, `PredictiveReportsTab.jsx`)
+* **1. Conmutador de Pestañas Principales en Inicio:**
+  * **`📊 Panel Operativo & Alertas`:** Mantiene intacto el resumen del día, gráfico de ventas de mostrador, alertas de stock mínimo y tabla de lotes FEFO.
+  * **`📈 Reportes & Análisis Predictivo`:** Despliega el nuevo módulo completo interactivo de proyección y reabastecimiento.
+* **2. Barra de Control y Calibración de Parámetros:**
+  * Selección interactiva de algoritmo (**`SES (Holt)`**, **`SMA Móvil`**, **`WMA Ponderado`**).
+  * Control deslizante dinámico de **Factor de Suavizado \(\alpha\)** (0.05 a 0.95) y **Ventana Móvil \(N\)** (3 a 21 días).
+  * Selector de **Horizonte de Proyección** (7, 15, 30 o 60 días).
+* **3. Gráficos Visuales SVG Interactivos:**
+  * **Curva de Demanda:** Traza la serie de ventas reales pasadas con sombreado de área conectado a la **línea punteada de proyección futura** con tooltips interactivos de valores.
+  * **Distribución Pareto ABC:** Tarjetas analíticas categorizando productos Clase A (80% ventas), Clase B (15%) y Clase C (5%).
+* **4. Tabla Maestra de Pronóstico y Órdenes de Reabastecimiento:**
+  * Columnas con semáforo de criticidad (🔴 *Agotados/Críticos*, 🟠 *Alerta Alta*, 🟡 *Alerta Media*, 🟢 *Óptimos*), unidades sugeridas a pedir al proveedor, presupuesto estimado (\(Bs.\)) y exportación completa a `CSV`, `Excel` e `Impresión`.
+* **5. Modal de Calibración y Comparación Multi-Modelo:**
+  * Al hacer clic en **`🔬 Analizar`**, se despliega una comparativa cara a cara de los tres modelos (SES, SMA y WMA) evaluando sus métricas de error (MAD y MAPE) y destacando el modelo estadístico óptimo.

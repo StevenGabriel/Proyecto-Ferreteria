@@ -4,10 +4,12 @@ import Sidebar from '../../components/sidebar/sidebar';
 import Topbar from '../../components/topbar/topbar';
 import { useSidebar } from '../../context/SidebarContext';
 import { getProducts, getCriticalStock, getExpiringLots } from '../../services/api';
+import PredictiveReportsTab from './PredictiveReportsTab';
 
 function Home() {
   const { isCollapsed } = useSidebar();
   const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [mainTab, setMainTab] = useState('DASHBOARD'); // 'DASHBOARD' | 'PREDICTIVE'
 
   // Datos para el gráfico de ventas últimos 30 días (representando la captura de pantalla)
   const salesData = [
@@ -252,8 +254,41 @@ function Home() {
             </button>
           </div>
 
-          {/* Grilla de 8 Tarjetas de Métricas */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* Conmutador de Pestañas Principales (Dashboard Operativo vs Reportes Predictivos) */}
+          <div className="flex flex-wrap bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 gap-2 self-start">
+            <button
+              type="button"
+              onClick={() => setMainTab('DASHBOARD')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+                mainTab === 'DASHBOARD'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-lg shadow-cyan-500/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              <span>📊 Panel Operativo & Alertas</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMainTab('PREDICTIVE')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+                mainTab === 'PREDICTIVE'
+                  ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-500/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              <span>📈 Reportes & Análisis Predictivo</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-400/20 text-purple-200 font-black border border-purple-400/30">
+                IA & Stats
+              </span>
+            </button>
+          </div>
+
+          {mainTab === 'PREDICTIVE' ? (
+            <PredictiveReportsTab />
+          ) : (
+            <>
+              {/* Grilla de 8 Tarjetas de Métricas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* Ventas totales */}
             <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 flex items-center justify-between hover:border-cyan-500/30 transition-all">
               <div className="space-y-1">
@@ -968,6 +1003,8 @@ function Home() {
               </div>
             </div>
           </div>
+            </>
+          )}
         </div>
       </main>
     </div>
