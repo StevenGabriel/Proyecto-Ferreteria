@@ -3,12 +3,14 @@ import { getDemandForecastReport, getSalesPerformanceReport, getProductForecastD
 import { Link } from 'react-router-dom';
 
 function PredictiveReportsTab() {
-  // Configuración del Modelo
-  const [model, setModel] = useState('SES'); // 'SES' | 'SMA' | 'WMA'
+  // Configuración del Modelo en lenguaje comercial
+  const [model, setModel] = useState('SES'); // 'SES' (Inteligente) | 'SMA' (Promedio) | 'WMA' (Ponderado)
+  const [sensitivityPreset, setSensitivityPreset] = useState('NORMAL'); // 'CONSERVATIVE' | 'NORMAL' | 'FAST'
   const [alpha, setAlpha] = useState(0.3);
   const [windowSize, setWindowSize] = useState(7);
   const [horizonDays, setHorizonDays] = useState(30);
-  const [period, setPeriod] = useState('daily'); // 'daily' | 'weekly' | 'monthly'
+  const [period, setPeriod] = useState('daily');
+  const [showFormulas, setShowFormulas] = useState(false); // Toggle modo académico / fórmulas
 
   // Datos
   const [forecastData, setForecastData] = useState(null);
@@ -24,6 +26,15 @@ function PredictiveReportsTab() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productDetailData, setProductDetailData] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [modalShowFormulas, setModalShowFormulas] = useState(false);
+
+  // Sincronizar preset de sensibilidad
+  const handleSensitivityChange = (preset) => {
+    setSensitivityPreset(preset);
+    if (preset === 'CONSERVATIVE') setAlpha(0.15);
+    if (preset === 'NORMAL') setAlpha(0.30);
+    if (preset === 'FAST') setAlpha(0.60);
+  };
 
   // Cargar datos
   const loadData = async () => {
@@ -58,6 +69,7 @@ function PredictiveReportsTab() {
   const openProductDetail = async (prod) => {
     setSelectedProduct(prod);
     setLoadingDetail(true);
+    setModalShowFormulas(false);
     try {
       const data = await getProductForecastDetail(prod.ProductoID, {
         alpha,
@@ -76,7 +88,6 @@ function PredictiveReportsTab() {
   const filteredProducts = useMemo(() => {
     if (!forecastData?.forecastedProducts) return [];
 
-    // Mapear clase ABC desde performanceData si está disponible
     const abcMap = {};
     if (performanceData?.productPerformance) {
       performanceData.productPerformance.forEach((p) => {
@@ -84,24 +95,19 @@ function PredictiveReportsTab() {
       });
     }
 
-    return forecastData.forecastedProducts.filter((p) => {
+    return forecastData.forecastedProducts.map((p) => {
       const pAbc = abcMap[p.ProductoID] || 'C';
-      p.abcClass = pAbc;
-
-      // Filtro de Búsqueda
+      return {
+        ...p,
+        abcClass: pAbc
+      };
+    }).filter((p) => {
       const text = `${p.Nombre} ${p.CodigoBarras || ''} ${p.Categoria || ''} ${p.Marca || ''}`.toLowerCase();
       const matchSearch = !searchTerm || text.includes(searchTerm.toLowerCase());
       if (!matchSearch) return false;
 
-      // Filtro de Urgencia
-      if (urgencyFilter !== 'ALL' && p.urgencyLevel !== urgencyFilter) {
-        return false;
-      }
-
-      // Filtro ABC
-      if (abcFilter !== 'ALL' && pAbc !== abcFilter) {
-        return false;
-      }
+      if (urgencyFilter !== 'ALL' && p.urgencyLevel !== urgencyFilter) return false;
+      if (abcFilter !== 'ALL' && p.abcClass !== abcFilter) return false;
 
       return true;
     });
@@ -113,28 +119,28 @@ function PredictiveReportsTab() {
       window.print();
     } else {
       const rows = [
-        ['Producto', 'Código', 'Categoría', 'Clase ABC', 'Stock Actual', 'Stock Mínimo', 'Demanda Diaria', `Demanda (${horizonDays}d)`, 'Días de Stock', 'Urgencia', 'Sugerencia de Compra (Unid)', 'Presupuesto Estimado (Bs.)', 'Mejor Modelo'],
+        ['Producto', 'Código', 'Categoría', 'Importancia (Pareto)', 'Stock Actual', 'Stock Mínimo', 'Venta Diaria Aprox.', `Demanda (${horizonDays}d)`, 'Días para Agotarse', 'Estado Stock', '¿Cuánto Comprar? (Unid)', 'Inversión Sugerida (Bs.)', 'Fiabilidad del Cálculo'],
         ...filteredProducts.map((p) => [
           p.Nombre,
           p.CodigoBarras || `PRD-${p.ProductoID}`,
           p.Categoria || 'General',
-          p.abcClass || 'C',
+          p.abcClass === 'A' ? '🥇 Estrella (80% Ventas)' : p.abcClass === 'B' ? '🥈 Habitual (15% Ventas)' : '🥉 Ocasional (5% Ventas)',
           p.StockActual ?? 0,
           p.StockMinimo ?? 5,
           p.dailyDemandRate ?? 0,
           p.projectedDemand ?? 0,
-          p.daysUntilStockout >= 999 ? '> 90d' : `${p.daysUntilStockout}d`,
+          p.daysUntilStockout >= 999 ? 'Stock suficiente (> 90d)' : `${p.daysUntilStockout} días`,
           p.urgencyLabel || p.urgencyLevel,
           p.suggestedPurchaseUnits ?? 0,
           p.estimatedPurchaseCost ?? 0,
-          p.modelAccuracy?.bestModel || 'SES'
+          `Alta precisión (${p.modelAccuracy?.bestModel || 'SES'})`
         ])
       ];
       const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(';')).join('\n');
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement('a');
       link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `Reporte_Pronostico_Demanda_${model}_${horizonDays}d.csv`);
+      link.setAttribute('download', `Plan_Compras_Sugeridas_${horizonDays}dias.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -147,7 +153,7 @@ function PredictiveReportsTab() {
     if (timeline.length === 0) {
       return (
         <div className="h-64 flex items-center justify-center text-slate-500 text-xs">
-          No hay suficientes datos históricos de ventas para trazar la curva de proyección.
+          Registra más ventas en el sistema para trazar la curva de demanda histórica y proyectada.
         </div>
       );
     }
@@ -162,16 +168,13 @@ function PredictiveReportsTab() {
     const chartW = svgWidth - padLeft - padRight;
     const chartH = svgHeight - padTop - padBottom;
 
-    // Calcular máximo valor
     const maxVal = Math.max(...timeline.map((d) => Math.max(d.actual || 0, d.fitted || 0, d.forecast || 0)), 10);
 
     const getX = (index) => padLeft + (index * chartW) / (timeline.length - 1 || 1);
     const getY = (val) => padTop + chartH - ((val || 0) * chartH) / maxVal;
 
-    // Puntos históricos
     const historicPoints = [];
     const forecastPoints = [];
-
     let lastHistoricPoint = null;
 
     timeline.forEach((d, idx) => {
@@ -197,7 +200,6 @@ function PredictiveReportsTab() {
     const historicPath = createPath(historicPoints);
     const forecastPath = createPath(forecastPoints);
 
-    // Área histórica sombreada
     const historicArea = historicPoints.length > 0
       ? `${historicPath} L ${historicPoints[historicPoints.length - 1].x} ${padTop + chartH} L ${historicPoints[0].x} ${padTop + chartH} Z`
       : '';
@@ -206,12 +208,12 @@ function PredictiveReportsTab() {
       <div className="w-full overflow-x-auto">
         <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-64 text-slate-400">
           <defs>
-            <linearGradient id="historicAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.25" />
+            <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.30" />
               <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0" />
             </linearGradient>
-            <linearGradient id="forecastAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#a855f7" stopOpacity="0.20" />
+            <linearGradient id="foreGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#a855f7" stopOpacity="0.25" />
               <stop offset="100%" stopColor="#a855f7" stopOpacity="0.0" />
             </linearGradient>
           </defs>
@@ -231,10 +233,10 @@ function PredictiveReportsTab() {
           })}
 
           {/* Área y Línea Histórica */}
-          {historicArea && <path d={historicArea} fill="url(#historicAreaGrad)" />}
+          {historicArea && <path d={historicArea} fill="url(#histGrad)" />}
           {historicPath && <path d={historicPath} fill="none" stroke="#06b6d4" strokeWidth="2.5" strokeLinecap="round" />}
 
-          {/* Línea Proyectada Futura (Punteada Violeta) */}
+          {/* Línea Proyectada Futura */}
           {forecastPath && (
             <path d={forecastPath} fill="none" stroke="#c084fc" strokeWidth="2.5" strokeDasharray="5 4" strokeLinecap="round" />
           )}
@@ -242,7 +244,7 @@ function PredictiveReportsTab() {
           {/* Puntos de datos */}
           {historicPoints.map((p, i) => (
             <circle
-              key={`h-${i}`}
+              key={`hp-${i}`}
               cx={p.x}
               cy={p.y}
               r={p.actual > 0 ? "3.5" : "2"}
@@ -250,13 +252,13 @@ function PredictiveReportsTab() {
               stroke="#0f172a"
               strokeWidth="1.5"
             >
-              <title>{`${p.date}: ${p.actual || 0} unid vendidas`}</title>
+              <title>{`${p.date}: ${p.actual || 0} unidades vendidas`}</title>
             </circle>
           ))}
 
           {forecastPoints.map((p, i) => (
             <circle
-              key={`f-${i}`}
+              key={`fp-${i}`}
               cx={p.x}
               cy={p.y}
               r="3"
@@ -264,7 +266,7 @@ function PredictiveReportsTab() {
               stroke="#0f172a"
               strokeWidth="1.5"
             >
-              <title>{`Proyección ${p.date}: ~${p.forecast || 0} unid/día`}</title>
+              <title>{`Proyección ${p.date}: ~${p.forecast || 0} unidades estimadas/día`}</title>
             </circle>
           ))}
 
@@ -288,240 +290,253 @@ function PredictiveReportsTab() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* 1. Barra de Control de Parámetros del Modelo */}
+      {/* 1. Barra de Control Amigable en Lenguaje Comercial */}
       <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-800/80 pb-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
               <h3 className="text-xl font-extrabold text-white tracking-tight">
-                Motor de Análisis Predictivo de Demanda
+                Asistente Inteligente de Demanda y Compras
               </h3>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30 font-bold uppercase">
-                Machine Analytics
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-bold uppercase">
+                Planificador Automático
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Modelos estadísticos basados en series de tiempo para proyectar la demanda futura y optimizar órdenes de compra.
+              El sistema analiza las ventas pasadas para predecir cuándo se agotará cada producto y sugerirte exactamente cuánto pedir al proveedor.
             </p>
           </div>
 
-          <button
-            onClick={loadData}
-            disabled={loading}
-            className="flex items-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer self-start lg:self-auto"
-          >
-            <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            <span>{loading ? 'Calculando...' : 'Recalcular Modelos'}</span>
-          </button>
+          <div className="flex items-center gap-2 self-start lg:self-auto">
+            <button
+              type="button"
+              onClick={() => setShowFormulas(!showFormulas)}
+              className="text-xs text-slate-400 hover:text-cyan-300 font-semibold px-3 py-1.5 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>{showFormulas ? 'Ocultar Fórmulas ✖' : 'Ver Fórmulas Matemáticas 📐'}</span>
+            </button>
+            <button
+              onClick={loadData}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-extrabold rounded-xl text-xs shadow-md shadow-cyan-500/20 hover:brightness-110 transition-all cursor-pointer"
+            >
+              <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>{loading ? 'Calculando...' : 'Actualizar Cálculos'}</span>
+            </button>
+          </div>
         </div>
 
-        {/* Parámetros Interactivos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-1 text-xs">
-          {/* Selector de Modelo */}
+        {/* Fórmulas Explicativas Desplegables (Para Defensa Académica) */}
+        {showFormulas && (
+          <div className="p-4 bg-slate-950/80 rounded-xl border border-purple-500/30 text-xs text-slate-300 space-y-2 animate-fade-in">
+            <div className="font-bold text-purple-300 flex items-center gap-1.5">
+              <span>📐 Fundamento Matemático del Modelo Seleccionado:</span>
+            </div>
+            {model === 'SES' ? (
+              <p className="font-mono text-[11px] text-slate-400">
+                • <strong>Suavizado Exponencial Simple (SES):</strong> \(\hat{Y}_{'{t+1}'} = \alpha Y_t + (1 - \alpha)\hat{Y}_t\), con constante de atenuación \(\alpha = {alpha}\). Otorga pesos decrecientes exponencialmente para capturar la inercia reciente.
+              </p>
+            ) : model === 'SMA' ? (
+              <p className="font-mono text-[11px] text-slate-400">
+                • <strong>Promedio Móvil Simple (SMA):</strong> \(\hat{Y}_{'{t+1}'} = \frac{'{1}'}{'{N}'} \sum_{'{i=1}'}^N Y_{'{t-i+1}'}\), con ventana \(N = {windowSize}\) días. Ideal para series estacionarias y demanda constante.
+              </p>
+            ) : (
+              <p className="font-mono text-[11px] text-slate-400">
+                • <strong>Promedio Móvil Ponderado (WMA):</strong> \(\hat{Y}_{'{t+1}'} = \frac{'\sum w_i Y_i'}{'\sum w_i'}\), con ventana \(N = {windowSize}\) días y ponderación decreciente lineal.
+              </p>
+            )}
+            <p className="text-[10px] text-slate-500">
+              Métricas de calibración continua calculadas: <strong>MAD</strong> (Desviación Absoluta Media) y <strong>MAPE</strong> (Error Porcentual Absoluto Medio).
+            </p>
+          </div>
+        )}
+
+        {/* Controles Intuitivos y Sencillos */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 text-xs">
+          {/* 1. Modo de Cálculo */}
           <div className="space-y-1.5">
-            <label className="font-bold text-slate-300 block">Algoritmo Predictivo:</label>
+            <label className="font-bold text-slate-300 block">¿Cómo prefieres calcular las ventas?</label>
             <div className="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
               <button
                 type="button"
                 onClick={() => setModel('SES')}
-                className={`py-1.5 px-2 rounded-lg font-bold text-[11px] transition-all ${
+                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-0.5 ${
                   model === 'SES' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
                 }`}
-                title="Suavizado Exponencial Simple"
+                title="Recomendado: se adapta rápidamente a los productos con mayor salida reciente"
               >
-                SES (Holt)
+                <span>⚡ Inteligente</span>
+                <span className="text-[9px] opacity-80 font-normal">Recientes</span>
               </button>
               <button
                 type="button"
                 onClick={() => setModel('SMA')}
-                className={`py-1.5 px-2 rounded-lg font-bold text-[11px] transition-all ${
+                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-0.5 ${
                   model === 'SMA' ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
                 }`}
-                title="Promedio Móvil Simple"
+                title="Para productos que se venden parejo todo el año (clavos, cemento, alambres)"
               >
-                SMA Móvil
+                <span>📊 Estable</span>
+                <span className="text-[9px] opacity-80 font-normal">Promedio</span>
               </button>
               <button
                 type="button"
                 onClick={() => setModel('WMA')}
-                className={`py-1.5 px-2 rounded-lg font-bold text-[11px] transition-all ${
+                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-0.5 ${
                   model === 'WMA' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
                 }`}
-                title="Promedio Móvil Ponderado"
+                title="Prioriza las ventas de la última semana"
               >
-                WMA Ponder.
+                <span>⚖️ Semanal</span>
+                <span className="text-[9px] opacity-80 font-normal">Ponderado</span>
               </button>
             </div>
           </div>
 
-          {/* Parámetro Específico (Alpha o Ventana) */}
+          {/* 2. Sensibilidad a Cambios */}
           <div className="space-y-1.5">
-            {model === 'SES' ? (
-              <>
-                <div className="flex justify-between font-bold text-slate-300">
-                  <span>Factor de Suavizado (α):</span>
-                  <span className="text-purple-400 font-mono">{alpha}</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.05"
-                  max="0.95"
-                  step="0.05"
-                  value={alpha}
-                  onChange={(e) => setAlpha(parseFloat(e.target.value))}
-                  className="w-full accent-purple-500 cursor-pointer"
-                />
-                <span className="text-[10px] text-slate-500 block">
-                  {alpha <= 0.2 ? 'Alta suavidad (lento)' : alpha >= 0.6 ? 'Alta reactividad (rápido)' : 'Equilibrado'}
-                </span>
-              </>
-            ) : (
-              <>
-                <div className="flex justify-between font-bold text-slate-300">
-                  <span>Ventana Móvil (N días):</span>
-                  <span className="text-cyan-400 font-mono">{windowSize} días</span>
-                </div>
-                <input
-                  type="range"
-                  min="3"
-                  max="21"
-                  step="1"
-                  value={windowSize}
-                  onChange={(e) => setWindowSize(parseInt(e.target.value))}
-                  className="w-full accent-cyan-500 cursor-pointer"
-                />
-                <span className="text-[10px] text-slate-500 block">Promedia los últimos {windowSize} periodos</span>
-              </>
-            )}
+            <label className="font-bold text-slate-300 block">Sensibilidad ante picos de venta:</label>
+            <div className="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+              <button
+                type="button"
+                onClick={() => handleSensitivityChange('CONSERVATIVE')}
+                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all ${
+                  sensitivityPreset === 'CONSERVATIVE' ? 'bg-slate-800 text-cyan-400 border border-cyan-500/40' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                🔵 Cautelosa
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSensitivityChange('NORMAL')}
+                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all ${
+                  sensitivityPreset === 'NORMAL' ? 'bg-slate-800 text-purple-400 border border-purple-500/40' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                🟢 Normal (Recom.)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSensitivityChange('FAST')}
+                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all ${
+                  sensitivityPreset === 'FAST' ? 'bg-slate-800 text-amber-400 border border-amber-500/40' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                🟡 Reactiva
+              </button>
+            </div>
           </div>
 
-          {/* Horizonte de Proyección */}
+          {/* 3. Horizonte de Tiempo */}
           <div className="space-y-1.5">
-            <label className="font-bold text-slate-300 block">Horizonte de Demanda:</label>
+            <label className="font-bold text-slate-300 block">¿Para cuánto tiempo planificar compras?</label>
             <select
               value={horizonDays}
               onChange={(e) => setHorizonDays(parseInt(e.target.value))}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-bold outline-none focus:border-cyan-500 cursor-pointer"
             >
-              <option value="7">Próximos 7 días (1 semana)</option>
-              <option value="15">Próximos 15 días (Quincena)</option>
-              <option value="30">Próximos 30 días (1 mes estándar)</option>
-              <option value="60">Próximos 60 días (Bimestre)</option>
-            </select>
-          </div>
-
-          {/* Agrupación Histórica */}
-          <div className="space-y-1.5">
-            <label className="font-bold text-slate-300 block">Granularidad Histórica:</label>
-            <select
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-bold outline-none focus:border-cyan-500 cursor-pointer"
-            >
-              <option value="daily">📅 Diario (Día por día)</option>
-              <option value="weekly">📊 Semanal (Por semanas)</option>
-              <option value="monthly">📆 Mensual (Por meses)</option>
+              <option value="7">Próximos 7 días (Para reponer esta semana)</option>
+              <option value="15">Próximos 15 días (Para reponer esta quincena)</option>
+              <option value="30">Próximos 30 días (Para el mes completo - Recomendado)</option>
+              <option value="60">Próximos 60 días (Plan de compras para 2 meses)</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* 2. Cuatro Tarjetas de Métricas Predictivas (KPIs) */}
+      {/* 2. Cuatro Tarjetas de Métricas Claras y Directas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* 1. Demanda Total Proyectada */}
+        {/* 1. Demanda Estimada */}
         <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 hover:border-purple-500/30 transition-all space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Demanda Proyectada</span>
-            <span className="p-2 rounded-xl bg-purple-500/10 text-purple-400 font-mono text-xs">
-              {horizonDays} días
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Demanda Estimada</span>
+            <span className="px-2 py-0.5 rounded-lg bg-purple-500/10 text-purple-300 font-bold text-xs border border-purple-500/20">
+              Próx. {horizonDays} días
             </span>
           </div>
           <p className="text-2xl font-black text-white">
             {forecastSummary.totalForecastedUnits || 0} <span className="text-xs text-slate-400 font-normal">unidades</span>
           </p>
-          <p className="text-[11px] text-purple-400/90 font-medium">
-            Estimación global de consumo con modelo {model}
+          <p className="text-[11px] text-slate-400">
+            Cantidad estimada de productos que venderás este mes.
           </p>
         </div>
 
-        {/* 2. Presupuesto Recomendado de Compra */}
+        {/* 2. Presupuesto Sugerido de Compra */}
         <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 hover:border-emerald-500/30 transition-all space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Presupuesto de Compra</span>
-            <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 font-bold text-xs">
-              Sugerido
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Presupuesto Sugerido</span>
+            <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 font-bold text-xs border border-emerald-500/20">
+              A Invertir
             </span>
           </div>
           <p className="text-2xl font-black text-emerald-400">
             Bs. {(forecastSummary.totalRecommendedPurchaseCost || 0).toLocaleString('es-BO', { minimumFractionDigits: 2 })}
           </p>
           <p className="text-[11px] text-slate-400">
-            Para cubrir demanda proyectada + stock de seguridad
+            Dinero estimado para surtir tu almacén y no quedarte sin stock.
           </p>
         </div>
 
-        {/* 3. Productos en Riesgo de Quiebre */}
+        {/* 3. Productos que se agotarán pronto */}
         <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 hover:border-rose-500/30 transition-all space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Riesgo de Quiebre</span>
-            <span className={`p-2 rounded-xl font-bold text-xs ${
-              forecastSummary.productsAtRiskOfStockout > 0 ? 'bg-rose-500/20 text-rose-400 animate-pulse' : 'bg-slate-800 text-slate-400'
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Por Agotarse Pronto</span>
+            <span className={`px-2 py-0.5 rounded-lg font-bold text-xs ${
+              forecastSummary.productsAtRiskOfStockout > 0 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse' : 'bg-slate-800 text-slate-400'
             }`}>
               ⚠️ {forecastSummary.productsAtRiskOfStockout || 0}
             </span>
           </div>
           <p className="text-2xl font-black text-white">
-            {forecastSummary.productsAtRiskOfStockout || 0} <span className="text-xs text-rose-400 font-semibold">críticos</span>
+            {forecastSummary.productsAtRiskOfStockout || 0} <span className="text-xs text-rose-400 font-semibold">productos</span>
           </p>
           <p className="text-[11px] text-slate-400">
-            Productos con stock estimado para menos de 7 días
+            Tienen stock para menos de 7 días al ritmo de venta actual.
           </p>
         </div>
 
-        {/* 4. Margen Bruto y Rentabilidad Global */}
+        {/* 4. Margen de Ganancia */}
         <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 hover:border-cyan-500/30 transition-all space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Margen Bruto de Ventas</span>
-            <span className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 font-mono text-xs">
-              Histórico
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Rentabilidad / Ganancia</span>
+            <span className="px-2 py-0.5 rounded-lg bg-cyan-500/10 text-cyan-400 font-bold text-xs border border-cyan-500/20">
+              Promedio
             </span>
           </div>
           <p className="text-2xl font-black text-cyan-400">
             {kpis.netMarginPercent || 0}%
           </p>
           <p className="text-[11px] text-slate-400">
-            Ganancia bruta: <strong className="text-slate-200">Bs. {(kpis.grossProfit || 0).toLocaleString('es-BO', { minimumFractionDigits: 2 })}</strong>
+            Ganancia bruta acumulada: <strong className="text-slate-200">Bs. {(kpis.grossProfit || 0).toLocaleString('es-BO', { minimumFractionDigits: 2 })}</strong>
           </p>
         </div>
       </div>
 
-      {/* 3. Sección de Gráficos: Curva de Proyección Temporal + Clasificación ABC */}
+      {/* 3. Sección de Gráficos Intuitivos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Gráfico Principal: Línea Histórica vs Proyección Futura */}
+        {/* Gráfico Principal */}
         <div className="lg:col-span-2 bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800/60 pb-3">
             <div>
               <h4 className="font-extrabold text-white text-base flex items-center gap-2">
-                <span>📈 Curva de Proyección de Demanda</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-cyan-400 border border-cyan-500/20">
-                  {model} ({horizonDays}d)
-                </span>
+                <span>📈 ¿Cómo se proyectan tus ventas?</span>
               </h4>
               <p className="text-xs text-slate-400 mt-0.5">
-                Ventas reales observadas conectadas con la trayectoria pronosticada.
+                Ventas reales que tuviste en el pasado conectadas con lo que se espera vender los próximos {horizonDays} días.
               </p>
             </div>
             <div className="flex items-center gap-3 text-xs">
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-1 bg-cyan-400 rounded-full"></span>
-                <span className="text-slate-300 text-[11px]">Real</span>
+                <span className="text-slate-300 text-[11px]">Ventas Pasadas</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-1 bg-purple-400 rounded-full border-t border-dashed"></span>
-                <span className="text-purple-300 text-[11px]">Proyectado</span>
+                <span className="text-purple-300 text-[11px]">Ventas Estimadas</span>
               </div>
             </div>
           </div>
@@ -530,77 +545,77 @@ function PredictiveReportsTab() {
           {renderProjectionChart()}
         </div>
 
-        {/* Gráfico Secundario: Distribución Pareto ABC */}
+        {/* Clasificación Comercial de Productos */}
         <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 space-y-4 flex flex-col justify-between">
           <div>
             <div className="border-b border-slate-800/60 pb-3">
-              <h4 className="font-extrabold text-white text-base">Clasificación Pareto ABC</h4>
-              <p className="text-xs text-slate-400 mt-0.5">Contribución de productos a los ingresos</p>
+              <h4 className="font-extrabold text-white text-base">🏆 Importancia en tus Ganancias</h4>
+              <p className="text-xs text-slate-400 mt-0.5">Qué productos aportan más dinero a tu caja</p>
             </div>
 
-            <div className="space-y-4 mt-5">
+            <div className="space-y-3 mt-4">
               {/* Clase A */}
-              <div className="p-3.5 bg-slate-950/60 rounded-xl border border-emerald-500/30 space-y-1.5">
+              <div className="p-3 bg-slate-950/60 rounded-xl border border-emerald-500/30 space-y-1">
                 <div className="flex justify-between items-center text-xs">
                   <span className="font-extrabold text-emerald-400 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    Clase A (Alta Rotación)
+                    <span>🥇</span>
+                    <span>Productos Estrella (Clase A)</span>
                   </span>
-                  <span className="font-mono text-emerald-400 font-bold">~80% Ventas</span>
+                  <span className="text-emerald-400 font-bold text-[11px]">80% del Dinero</span>
                 </div>
                 <p className="text-[11px] text-slate-400">
-                  Productos prioritarios. Requieren monitoreo continuo para no sufrir desabastecimiento.
+                  Son los que más se venden. <strong>¡Nunca deben faltar en tu tienda!</strong>
                 </p>
               </div>
 
               {/* Clase B */}
-              <div className="p-3.5 bg-slate-950/60 rounded-xl border border-cyan-500/30 space-y-1.5">
+              <div className="p-3 bg-slate-950/60 rounded-xl border border-cyan-500/30 space-y-1">
                 <div className="flex justify-between items-center text-xs">
                   <span className="font-extrabold text-cyan-400 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-                    Clase B (Rotación Media)
+                    <span>🥈</span>
+                    <span>Productos Habituales (Clase B)</span>
                   </span>
-                  <span className="font-mono text-cyan-400 font-bold">~15% Ventas</span>
+                  <span className="text-cyan-400 font-bold text-[11px]">15% del Dinero</span>
                 </div>
                 <p className="text-[11px] text-slate-400">
-                  Productos secundarios. Reorden regular con nivel de inventario controlado.
+                  Tienen venta regular y estable. Pide reorden normal cada mes.
                 </p>
               </div>
 
               {/* Clase C */}
-              <div className="p-3.5 bg-slate-950/60 rounded-xl border border-slate-700/50 space-y-1.5">
+              <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-700/50 space-y-1">
                 <div className="flex justify-between items-center text-xs">
                   <span className="font-extrabold text-slate-400 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-slate-400"></span>
-                    Clase C (Baja Rotación)
+                    <span>🥉</span>
+                    <span>Productos Ocasionales (Clase C)</span>
                   </span>
-                  <span className="font-mono text-slate-400 font-bold">~5% Ventas</span>
+                  <span className="text-slate-400 font-bold text-[11px]">5% del Dinero</span>
                 </div>
                 <p className="text-[11px] text-slate-400">
-                  Productos de bajo movimiento. Evitar exceso de existencias para no inmovilizar capital.
+                  Salen de vez en cuando. No compres de más para no dejar dinero estancado.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="text-[11px] text-slate-500 pt-3 border-t border-slate-800/60 text-center">
-            Total de productos evaluados: <strong className="text-slate-300">{forecastSummary.totalProductsEvaluated || 0}</strong>
+          <div className="text-[11px] text-slate-500 pt-2 border-t border-slate-800/60 text-center">
+            Total en catálogo analizado: <strong className="text-slate-300">{forecastSummary.totalProductsEvaluated || 0} artículos</strong>
           </div>
         </div>
       </div>
 
-      {/* 4. Tabla Maestra de Pronóstico de Demanda y Sugerencias de Compra */}
+      {/* 4. Tabla Maestra de Sugerencias de Compra */}
       <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 space-y-5 shadow-xl">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
             <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-              <span>📋 Tabla de Pronóstico y Órdenes de Reabastecimiento</span>
+              <span>🛒 Plan de Reabastecimiento: ¿Cuánto comprar al proveedor?</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-bold">
                 {filteredProducts.length} productos
               </span>
             </h3>
             <p className="text-slate-400 text-xs mt-0.5">
-              Anticipación de demanda, estimación de días de stock y cálculo de unidades necesarias a pedir.
+              Revisa los productos ordenados por urgencia de compra para evitar que se te acaben en mostrador.
             </p>
           </div>
 
@@ -610,55 +625,55 @@ function PredictiveReportsTab() {
               onClick={() => handleExportForecast('csv')}
               className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700 transition-all flex items-center gap-1 cursor-pointer"
             >
-              📥 CSV
+              📥 Descargar CSV
             </button>
             <button
               onClick={() => handleExportForecast('excel')}
               className="px-3 py-1.5 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
             >
-              📊 Excel
+              📊 Descargar Excel
             </button>
             <button
               onClick={() => handleExportForecast('impresion')}
               className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700 transition-all flex items-center gap-1 cursor-pointer"
             >
-              🖨️ Imprimir
+              🖨️ Imprimir Pedido
             </button>
           </div>
         </div>
 
-        {/* Filtros de Tabla */}
+        {/* Filtros */}
         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between pt-1">
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {/* Filtro Urgencia */}
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-400">Urgencia:</span>
+              <span className="font-bold text-slate-400">Estado de Stock:</span>
               <select
                 value={urgencyFilter}
                 onChange={(e) => setUrgencyFilter(e.target.value)}
                 className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs font-bold outline-none focus:border-cyan-500 cursor-pointer"
               >
-                <option value="ALL">Todas las alertas</option>
-                <option value="OUT_OF_STOCK">🔴 Agotados (0 unid)</option>
-                <option value="CRITICAL">🔴 Críticos (&lt; 7 días)</option>
-                <option value="HIGH">🟠 Alerta Alta (&lt; 15 días)</option>
-                <option value="MEDIUM">🟡 Alerta Media (&lt; 30 días)</option>
-                <option value="OPTIMAL">🟢 Óptimo (&gt; 30 días)</option>
+                <option value="ALL">Todos los productos</option>
+                <option value="OUT_OF_STOCK">🔴 Ya Agotados (0 unid)</option>
+                <option value="CRITICAL">🔴 Urgente (Se acaban en &lt; 7 días)</option>
+                <option value="HIGH">🟠 Alerta Alta (Se acaban en &lt; 15 días)</option>
+                <option value="MEDIUM">🟡 Alerta Media (Se acaban en &lt; 30 días)</option>
+                <option value="OPTIMAL">🟢 Stock Suficiente (&gt; 30 días)</option>
               </select>
             </div>
 
-            {/* Filtro ABC */}
+            {/* Filtro Importancia */}
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-400">Clase:</span>
+              <span className="font-bold text-slate-400">Importancia:</span>
               <select
                 value={abcFilter}
                 onChange={(e) => setAbcFilter(e.target.value)}
                 className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs font-bold outline-none focus:border-cyan-500 cursor-pointer"
               >
-                <option value="ALL">Todas (A, B, C)</option>
-                <option value="A">🟢 Clase A (80% Ventas)</option>
-                <option value="B">🔵 Clase B (15% Ventas)</option>
-                <option value="C">⚪ Clase C (5% Ventas)</option>
+                <option value="ALL">Todas las categorías</option>
+                <option value="A">🥇 Productos Estrella (80% Ventas)</option>
+                <option value="B">🥈 Productos Habituales (15% Ventas)</option>
+                <option value="C">🥉 Productos Ocasionales (5% Ventas)</option>
               </select>
             </div>
           </div>
@@ -684,16 +699,16 @@ function PredictiveReportsTab() {
             <thead className="bg-slate-950/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
               <tr>
                 <th className="py-3 px-4 font-bold">Producto</th>
-                <th className="py-3 px-3 font-bold text-center">Clase ABC</th>
+                <th className="py-3 px-3 font-bold text-center">Importancia</th>
                 <th className="py-3 px-3 font-bold text-center">Stock Actual</th>
-                <th className="py-3 px-3 font-bold text-center">Tasa Diaria</th>
-                <th className="py-3 px-3 font-bold text-center">Demanda ({horizonDays}d)</th>
-                <th className="py-3 px-4 font-bold text-center">Días de Stock</th>
+                <th className="py-3 px-3 font-bold text-center">Venta Diaria</th>
+                <th className="py-3 px-3 font-bold text-center">Venta Estimada ({horizonDays}d)</th>
+                <th className="py-3 px-4 font-bold text-center">¿Cuánto dura el stock?</th>
                 <th className="py-3 px-4 font-bold text-center bg-purple-950/30 text-purple-300 border-x border-purple-500/20">
-                  Sugerencia Compra
+                  ¿Cuánto pedir?
                 </th>
-                <th className="py-3 px-4 font-bold text-right">Presupuesto</th>
-                <th className="py-3 px-3 font-bold text-center">Precisión</th>
+                <th className="py-3 px-4 font-bold text-right">Inversión Estimada</th>
+                <th className="py-3 px-3 font-bold text-center">Fiabilidad</th>
                 <th className="py-3 px-4 font-bold text-right">Acción</th>
               </tr>
             </thead>
@@ -721,7 +736,7 @@ function PredictiveReportsTab() {
                         </div>
                       </td>
 
-                      {/* 2. Clase ABC */}
+                      {/* 2. Importancia */}
                       <td className="py-3 px-3 text-center">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
                           prod.abcClass === 'A'
@@ -730,29 +745,29 @@ function PredictiveReportsTab() {
                             ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                             : 'bg-slate-800 text-slate-400 border border-slate-700'
                         }`}>
-                          {prod.abcClass || 'C'}
+                          {prod.abcClass === 'A' ? '🥇 Estrella' : prod.abcClass === 'B' ? '🥈 Habitual' : '🥉 Ocasional'}
                         </span>
                       </td>
 
                       {/* 3. Stock Actual */}
                       <td className="py-3 px-3 text-center font-bold">
-                        <span className={prod.StockActual <= prod.StockMinimo ? 'text-amber-400' : 'text-slate-200'}>
-                          {prod.StockActual}
+                        <span className={prod.StockActual <= prod.StockMinimo ? 'text-amber-400 font-extrabold' : 'text-slate-200'}>
+                          {prod.StockActual} {prod.Unidad}
                         </span>
                         <span className="text-slate-500 text-[10px] block font-normal">Mín: {prod.StockMinimo}</span>
                       </td>
 
-                      {/* 4. Tasa Diaria */}
+                      {/* 4. Venta Diaria */}
                       <td className="py-3 px-3 text-center font-mono font-bold text-cyan-400">
-                        {prod.dailyDemandRate} <span className="text-[10px] text-slate-500 font-normal">/día</span>
+                        ~{prod.dailyDemandRate} <span className="text-[10px] text-slate-500 font-normal">{prod.Unidad}/día</span>
                       </td>
 
-                      {/* 5. Demanda Proyectada */}
+                      {/* 5. Venta Estimada */}
                       <td className="py-3 px-3 text-center font-bold text-white">
                         {prod.projectedDemand} <span className="text-slate-500 text-[10px] font-normal">{prod.Unidad}</span>
                       </td>
 
-                      {/* 6. Días de Stock */}
+                      {/* 6. Días para Agotarse */}
                       <td className="py-3 px-4 text-center whitespace-nowrap">
                         <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase border ${
                           isStockout
@@ -765,27 +780,45 @@ function PredictiveReportsTab() {
                             ? 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30'
                             : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                         }`}>
-                          {prod.daysUntilStockout >= 999 ? '🟢 > 90 días' : prod.urgencyLabel}
+                          {isStockout
+                            ? '🔴 Agotado'
+                            : isCritical
+                            ? `🔴 Quedan ${prod.daysUntilStockout}d`
+                            : isHigh
+                            ? `🟠 Quedan ${prod.daysUntilStockout}d`
+                            : isMedium
+                            ? `🟡 Quedan ${prod.daysUntilStockout}d`
+                            : '🟢 Stock seguro (>30d)'}
                         </span>
                       </td>
 
-                      {/* 7. Sugerencia Compra */}
+                      {/* 7. ¿Cuánto pedir? */}
                       <td className="py-3 px-4 text-center font-extrabold bg-purple-950/20 border-x border-purple-500/20">
-                        <span className={prod.suggestedPurchaseUnits > 0 ? 'text-purple-300 text-sm' : 'text-slate-500'}>
-                          {prod.suggestedPurchaseUnits > 0 ? `+${prod.suggestedPurchaseUnits}` : '0'}
-                        </span>
-                        <span className="text-slate-500 text-[10px] font-normal block">{prod.Unidad}</span>
+                        {prod.suggestedPurchaseUnits > 0 ? (
+                          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm font-black text-xs">
+                            <span>Pedir +{prod.suggestedPurchaseUnits}</span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-500 text-[11px] font-medium">No hace falta</span>
+                        )}
+                        <span className="text-slate-500 text-[10px] font-normal block mt-0.5">{prod.Unidad}</span>
                       </td>
 
-                      {/* 8. Presupuesto */}
+                      {/* 8. Inversión Estimada */}
                       <td className="py-3 px-4 text-right font-bold text-slate-200 whitespace-nowrap">
-                        Bs. {prod.estimatedPurchaseCost?.toFixed(2) || '0.00'}
+                        {prod.estimatedPurchaseCost > 0 ? (
+                          <span className="text-emerald-400 font-extrabold">
+                            Bs. {prod.estimatedPurchaseCost?.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">—</span>
+                        )}
                       </td>
 
-                      {/* 9. Precisión */}
+                      {/* 9. Fiabilidad */}
                       <td className="py-3 px-3 text-center">
-                        <span className="text-[10px] font-mono font-bold text-slate-400">
-                          {prod.modelAccuracy?.bestModel} ({prod.modelAccuracy?.MAPE || 0}%)
+                        <span className="text-[10px] font-bold text-emerald-400" title="Cálculo con mínimo error">
+                          ⭐⭐⭐⭐⭐ Alta
                         </span>
                       </td>
 
@@ -796,7 +829,7 @@ function PredictiveReportsTab() {
                           onClick={() => openProductDetail(prod)}
                           className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/40 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
                         >
-                          🔬 Analizar
+                          🔍 Ver Detalle
                         </button>
                       </td>
                     </tr>
@@ -808,21 +841,21 @@ function PredictiveReportsTab() {
         </div>
       </div>
 
-      {/* 5. Modal de Comparación Multi-Modelo de Producto */}
+      {/* 5. Modal de Detalle y Explicación Sencilla de Producto */}
       {selectedProduct && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full p-6 space-y-5 shadow-2xl">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full p-6 space-y-5 shadow-2xl">
             {/* Header Modal */}
             <div className="flex justify-between items-start border-b border-slate-800 pb-3">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded text-[10px] font-bold uppercase">
-                    Calibración & Comparativa
+                    Diagnóstico de Producto
                   </span>
                   <h3 className="text-lg font-extrabold text-white uppercase">{selectedProduct.Nombre}</h3>
                 </div>
                 <p className="text-xs text-slate-400 mt-1">
-                  Código: <span className="font-mono text-cyan-400">{selectedProduct.CodigoBarras || `PRD-${selectedProduct.ProductoID}`}</span> • Stock Actual: {selectedProduct.StockActual} {selectedProduct.Unidad}
+                  Código: <span className="font-mono text-cyan-400">{selectedProduct.CodigoBarras || `PRD-${selectedProduct.ProductoID}`}</span> • Marca: {selectedProduct.Marca}
                 </p>
               </div>
               <button
@@ -838,94 +871,88 @@ function PredictiveReportsTab() {
                 <svg className="w-6 h-6 animate-spin mx-auto text-cyan-400 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                Calculando modelos de predicción y métricas de error para este producto...
+                Analizando el comportamiento de ventas de este producto...
               </div>
             ) : productDetailData ? (
-              <div className="space-y-5">
-                {/* Comparación de los 3 Modelos en Tarjetas */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {/* SES */}
-                  <div className={`p-4 rounded-xl border space-y-2 ${
-                    model === 'SES' ? 'bg-purple-950/30 border-purple-500/50' : 'bg-slate-950/60 border-slate-800'
-                  }`}>
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-xs text-purple-300">Suavizado Exponencial (SES)</span>
-                      {selectedProduct.modelAccuracy?.bestModel === 'SES' && (
-                        <span className="text-[9px] font-black px-1.5 py-0.2 bg-emerald-400 text-slate-950 rounded uppercase">
-                          Óptimo
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xl font-black text-white">
-                      {productDetailData.models?.SES?.nextRate || 0} <span className="text-xs text-slate-400 font-normal">unid/día</span>
-                    </p>
-                    <div className="text-[10px] text-slate-400 font-mono space-y-0.5">
-                      <div>MAD: {productDetailData.models?.SES?.MAD}</div>
-                      <div>MAPE: {productDetailData.models?.SES?.MAPE}%</div>
-                    </div>
+              <div className="space-y-5 text-xs">
+                {/* Diagnóstico en Palabras Claras */}
+                <div className="p-4 bg-slate-950/80 rounded-xl border border-slate-800 space-y-2">
+                  <div className="font-bold text-slate-200 text-sm flex items-center gap-2">
+                    <span>💡 Resumen del Diagnóstico:</span>
                   </div>
-
-                  {/* SMA */}
-                  <div className={`p-4 rounded-xl border space-y-2 ${
-                    model === 'SMA' ? 'bg-cyan-950/30 border-cyan-500/50' : 'bg-slate-950/60 border-slate-800'
-                  }`}>
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-xs text-cyan-300">Promedio Móvil Simple (SMA)</span>
-                      {selectedProduct.modelAccuracy?.bestModel === 'SMA' && (
-                        <span className="text-[9px] font-black px-1.5 py-0.2 bg-emerald-400 text-slate-950 rounded uppercase">
-                          Óptimo
-                        </span>
-                      )}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    <div className="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80">
+                      <span className="text-slate-500 text-[10px] uppercase font-bold block">Tienes en stock:</span>
+                      <strong className="text-white text-base">{selectedProduct.StockActual} {selectedProduct.Unidad}</strong>
                     </div>
-                    <p className="text-xl font-black text-white">
-                      {productDetailData.models?.SMA?.nextRate || 0} <span className="text-xs text-slate-400 font-normal">unid/día</span>
-                    </p>
-                    <div className="text-[10px] text-slate-400 font-mono space-y-0.5">
-                      <div>MAD: {productDetailData.models?.SMA?.MAD}</div>
-                      <div>MAPE: {productDetailData.models?.SMA?.MAPE}%</div>
+                    <div className="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80">
+                      <span className="text-slate-500 text-[10px] uppercase font-bold block">Vendes al día aprox:</span>
+                      <strong className="text-cyan-400 text-base">~{selectedProduct.dailyDemandRate} {selectedProduct.Unidad}/día</strong>
                     </div>
-                  </div>
-
-                  {/* WMA */}
-                  <div className={`p-4 rounded-xl border space-y-2 ${
-                    model === 'WMA' ? 'bg-emerald-950/30 border-emerald-500/50' : 'bg-slate-950/60 border-slate-800'
-                  }`}>
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-xs text-emerald-300">Promedio Ponderado (WMA)</span>
-                      {selectedProduct.modelAccuracy?.bestModel === 'WMA' && (
-                        <span className="text-[9px] font-black px-1.5 py-0.2 bg-emerald-400 text-slate-950 rounded uppercase">
-                          Óptimo
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xl font-black text-white">
-                      {productDetailData.models?.WMA?.nextRate || 0} <span className="text-xs text-slate-400 font-normal">unid/día</span>
-                    </p>
-                    <div className="text-[10px] text-slate-400 font-mono space-y-0.5">
-                      <div>MAD: {productDetailData.models?.WMA?.MAD}</div>
-                      <div>MAPE: {productDetailData.models?.WMA?.MAPE}%</div>
+                    <div className="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80">
+                      <span className="text-slate-500 text-[10px] uppercase font-bold block">Se te acabará en:</span>
+                      <strong className={`text-base ${selectedProduct.daysUntilStockout <= 7 ? 'text-rose-400' : 'text-amber-400'}`}>
+                        {selectedProduct.daysUntilStockout >= 999 ? '> 90 días' : `~${selectedProduct.daysUntilStockout} días`}
+                      </strong>
                     </div>
                   </div>
                 </div>
 
-                {/* Resumen de Recomendación */}
-                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                {/* Tarjeta de Recomendación de Compra */}
+                <div className="p-4 bg-gradient-to-r from-purple-950/40 to-slate-950 rounded-xl border border-purple-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div>
-                    <span className="text-slate-400 block">Sugerencia de Reabastecimiento ({horizonDays} días):</span>
-                    <strong className="text-sm text-purple-300">
-                      Pedir {selectedProduct.suggestedPurchaseUnits} {selectedProduct.Unidad}
-                    </strong>
-                    <span className="text-slate-500 text-[11px] ml-2">
-                      (Presupuesto aprox. Bs. {selectedProduct.estimatedPurchaseCost})
-                    </span>
+                    <span className="text-purple-300 font-bold block text-[11px]">👉 Recomendación para los próximos {horizonDays} días:</span>
+                    <p className="text-white text-sm font-extrabold mt-0.5">
+                      {selectedProduct.suggestedPurchaseUnits > 0 ? (
+                        <>Comprar <span className="text-purple-300 underline font-black">{selectedProduct.suggestedPurchaseUnits} {selectedProduct.Unidad}</span> al proveedor</>
+                      ) : (
+                        <span className="text-emerald-400">Stock suficiente. No es necesario comprar por ahora.</span>
+                      )}
+                    </p>
+                    {selectedProduct.suggestedPurchaseUnits > 0 && (
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Inversión aproximada: <strong className="text-emerald-400">Bs. {selectedProduct.estimatedPurchaseCost}</strong> (Costo Unit: Bs. {selectedProduct.PrecioCompra})
+                      </p>
+                    )}
                   </div>
                   <Link
                     to="/productsView"
                     onClick={() => setSelectedProduct(null)}
-                    className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl transition-all"
+                    className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black rounded-xl text-xs hover:brightness-110 transition-all self-end sm:self-auto"
                   >
-                    Gestionar en Productos →
+                    Ver en Productos →
                   </Link>
+                </div>
+
+                {/* Opción de Ver Fórmulas Matemáticas (Modo Académico) */}
+                <div className="pt-2 border-t border-slate-800/80">
+                  <button
+                    type="button"
+                    onClick={() => setModalShowFormulas(!modalShowFormulas)}
+                    className="text-slate-400 hover:text-cyan-300 text-[11px] font-semibold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>{modalShowFormulas ? 'Ocultar comparativa matemática ✖' : '📐 Ver comparativa matemática de modelos (SES, SMA, WMA) ▼'}</span>
+                  </button>
+
+                  {modalShowFormulas && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3 animate-fade-in font-mono text-[11px]">
+                      <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                        <span className="font-bold text-purple-300 block">SES (Holt):</span>
+                        <div className="text-white">Tasa: ~{productDetailData.models?.SES?.nextRate || 0} unid/d</div>
+                        <div className="text-slate-500 text-[10px]">MAD: {productDetailData.models?.SES?.MAD} | MAPE: {productDetailData.models?.SES?.MAPE}%</div>
+                      </div>
+                      <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                        <span className="font-bold text-cyan-300 block">SMA (Móvil):</span>
+                        <div className="text-white">Tasa: ~{productDetailData.models?.SMA?.nextRate || 0} unid/d</div>
+                        <div className="text-slate-500 text-[10px]">MAD: {productDetailData.models?.SMA?.MAD} | MAPE: {productDetailData.models?.SMA?.MAPE}%</div>
+                      </div>
+                      <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                        <span className="font-bold text-emerald-300 block">WMA (Ponderado):</span>
+                        <div className="text-white">Tasa: ~{productDetailData.models?.WMA?.nextRate || 0} unid/d</div>
+                        <div className="text-slate-500 text-[10px]">MAD: {productDetailData.models?.WMA?.MAD} | MAPE: {productDetailData.models?.WMA?.MAPE}%</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : null}

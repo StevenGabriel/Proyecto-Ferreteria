@@ -718,7 +718,23 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
 * **3. Gráficos Visuales SVG Interactivos:**
   * **Curva de Demanda:** Traza la serie de ventas reales pasadas con sombreado de área conectado a la **línea punteada de proyección futura** con tooltips interactivos de valores.
   * **Distribución Pareto ABC:** Tarjetas analíticas categorizando productos Clase A (80% ventas), Clase B (15%) y Clase C (5%).
-* **4. Tabla Maestra de Pronóstico y Órdenes de Reabastecimiento:**
-  * Columnas con semáforo de criticidad (🔴 *Agotados/Críticos*, 🟠 *Alerta Alta*, 🟡 *Alerta Media*, 🟢 *Óptimos*), unidades sugeridas a pedir al proveedor, presupuesto estimado (\(Bs.\)) y exportación completa a `CSV`, `Excel` e `Impresión`.
-* **5. Modal de Calibración y Comparación Multi-Modelo:**
-  * Al hacer clic en **`🔬 Analizar`**, se despliega una comparativa cara a cara de los tres modelos (SES, SMA y WMA) evaluando sus métricas de error (MAD y MAPE) y destacando el modelo estadístico óptimo.
+### 89. Rediseño con Lenguaje Comercial Amigable y Modo Académico de Fórmulas (`PredictiveReportsTab.jsx`)
+* **1. Enfoque Intuitivo para Personas de Mostrador y Negocio:**
+  * **Traducción de Algoritmos a Modos de Negocio:**
+    * *Suavizado Exponencial (SES)* $\rightarrow$ **⚡ Modo Inteligente (Tendencia Reciente)** (aprende rápido de las últimas ventas).
+    * *Promedio Móvil Simple (SMA)* $\rightarrow$ **📊 Modo Estable (Promedio)** (ideal para productos con ventas constantes).
+    * *Promedio Ponderado (WMA)* $\rightarrow$ **⚖️ Modo Semanal (Ponderado)** (equilibra semanas anteriores).
+  * **Configuración de Sensibilidad Simplificada:**
+    * Presets con un solo clic: **🔵 Cautelosa** ($\alpha=0.15$), **🟢 Normal (Recomendada)** ($\alpha=0.30$) y **🟡 Reactiva** ($\alpha=0.60$).
+  * **Clasificación Comercial Pareto ABC:**
+    * Clase A $\rightarrow$ **🥇 Productos Estrella (80% de tus ventas)**.
+    * Clase B $\rightarrow$ **🥈 Productos Habituales (15% de tus ventas)**.
+    * Clase C $\rightarrow$ **🥉 Productos Ocasionales (5% de tus ventas)**.
+  * **Guía Práctica para Proveedores:**
+    * Columnas claras: **"¿Cuánto pedir al proveedor?"** (unidades requeridas) e **"Inversión estimada (Bs.)"** basada en costo de reposición.
+* **2. Desplegable de Fórmulas Matemáticas para Fines Académicos / Defensa:**
+  * Botón opcional **`📐 Ver Fórmulas Matemáticas y Definiciones Técnicas`** tanto en la barra superior como en el modal de diagnóstico individual.
+  * Muestra las ecuaciones formales completas:
+    * $\hat{Y}_{t+1} = \alpha Y_t + (1-\alpha)\hat{Y}_t$ (SES / Holt).
+    * $\text{SMA}_k = \frac{1}{k}\sum_{i=0}^{k-1} Y_{t-i}$.
+    * Fórmulas de precisión y error: $\text{MAD} = \frac{1}{n}\sum |Y_t - \hat{Y}_t|$, $\text{MAPE} = \frac{100\%}{n}\sum \left|\frac{Y_t - \hat{Y}_t}{Y_t}\right|$, $\text{RMSE} = \sqrt{\frac{1}{n}\sum (Y_t - \hat{Y}_t)^2}$.
