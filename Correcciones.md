@@ -721,20 +721,28 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
 ### 89. Rediseño con Lenguaje Comercial Amigable y Modo Académico de Fórmulas (`PredictiveReportsTab.jsx`)
 * **1. Enfoque Intuitivo para Personas de Mostrador y Negocio:**
   * **Traducción de Algoritmos a Modos de Negocio:**
-    * *Suavizado Exponencial (SES)* $\rightarrow$ **⚡ Modo Inteligente (Tendencia Reciente)** (aprende rápido de las últimas ventas).
-    * *Promedio Móvil Simple (SMA)* $\rightarrow$ **📊 Modo Estable (Promedio)** (ideal para productos con ventas constantes).
-    * *Promedio Ponderado (WMA)* $\rightarrow$ **⚖️ Modo Semanal (Ponderado)** (equilibra semanas anteriores).
+    * *Suavizado Exponencial (SES)* $\rightarrow$ **Modo Inteligente (Tendencia Reciente)** (aprende rápido de las últimas ventas).
+    * *Promedio Móvil Simple (SMA)* $\rightarrow$ **Modo Estable (Promedio)** (ideal para productos con ventas constantes).
+    * *Promedio Ponderado (WMA)* $\rightarrow$ **Modo Ponderado (Semanal)** (equilibra semanas anteriores).
   * **Configuración de Sensibilidad Simplificada:**
-    * Presets con un solo clic: **🔵 Cautelosa** ($\alpha=0.15$), **🟢 Normal (Recomendada)** ($\alpha=0.30$) y **🟡 Reactiva** ($\alpha=0.60$).
+    * Presets con un solo clic: **Cautelosa** ($\alpha=0.15$), **Normal (Recomendada)** ($\alpha=0.30$) y **Reactiva** ($\alpha=0.60$).
   * **Clasificación Comercial Pareto ABC:**
-    * Clase A $\rightarrow$ **🥇 Productos Estrella (80% de tus ventas)**.
-    * Clase B $\rightarrow$ **🥈 Productos Habituales (15% de tus ventas)**.
-    * Clase C $\rightarrow$ **🥉 Productos Ocasionales (5% de tus ventas)**.
+    * Clase A $\rightarrow$ **Clase A (Productos Estrella - 80% de ventas)**.
+    * Clase B $\rightarrow$ **Clase B (Productos Habituales - 15% de ventas)**.
+    * Clase C $\rightarrow$ **Clase C (Productos Ocasionales - 5% de ventas)**.
   * **Guía Práctica para Proveedores:**
-    * Columnas claras: **"¿Cuánto pedir al proveedor?"** (unidades requeridas) e **"Inversión estimada (Bs.)"** basada en costo de reposición.
+    * Columnas claras: **"Sugerencia de Pedido"** (unidades requeridas) e **"Inversión estimada (Bs.)"** basada en costo de reposición.
 * **2. Desplegable de Fórmulas Matemáticas para Fines Académicos / Defensa:**
-  * Botón opcional **`📐 Ver Fórmulas Matemáticas y Definiciones Técnicas`** tanto en la barra superior como en el modal de diagnóstico individual.
+  * Botón opcional **`Ver Fundamento Matemático`** tanto en la barra superior como en el modal de diagnóstico individual.
   * Muestra las ecuaciones formales completas:
     * $\hat{Y}_{t+1} = \alpha Y_t + (1-\alpha)\hat{Y}_t$ (SES / Holt).
     * $\text{SMA}_k = \frac{1}{k}\sum_{i=0}^{k-1} Y_{t-i}$.
     * Fórmulas de precisión y error: $\text{MAD} = \frac{1}{n}\sum |Y_t - \hat{Y}_t|$, $\text{MAPE} = \frac{100\%}{n}\sum \left|\frac{Y_t - \hat{Y}_t}{Y_t}\right|$, $\text{RMSE} = \sqrt{\frac{1}{n}\sum (Y_t - \hat{Y}_t)^2}$.
+
+### 90. Estandarización Visual Profesional e Iconografía SVG (`Home.jsx`, `PredictiveReportsTab.jsx`)
+* **1. Sustitución de Emojis Informales por Iconos Vectoriales SVG:**
+  * Se reemplazaron todos los emoticones de texto (`📊`, `📈`, `⚡`, `⚖️`, `🥇`, `🥈`, `🥉`, `🛒`, `📥`, `🖨️`, `⭐`, `🔍`, `💡`, etc.) por iconos vectoriales SVG limpios y nítidos integrados a la paleta de colores del sistema (Cyan, Esmeralda, Púrpura, Ámbar).
+* **2. Badges y Semáforos de Estado Empresariales:**
+  * Los círculos de color emoji (`🔴`, `🟠`, `🟡`, `🟢`) fueron sustituidos por badges de estado con microindicadores circulares CSS (`w-1.5 h-1.5 rounded-full`) y tipografía técnica limpia (*"Agotado"*, *"X días"*, *"Seguro (>30d)"*).
+  * Las etiquetas de fiabilidad y clasificación pasaron a insignias elegantes con bordes sutiles (*"Clase A"*, *"Óptima"* con escudo de verificación SVG).
+

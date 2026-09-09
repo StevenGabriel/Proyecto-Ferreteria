@@ -265,7 +265,10 @@ function Home() {
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
               }`}
             >
-              <span>📊 Panel Operativo & Alertas</span>
+              <svg className="w-4 h-4 text-current" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              <span>Panel Operativo & Alertas</span>
             </button>
             <button
               type="button"
@@ -276,7 +279,10 @@ function Home() {
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
               }`}
             >
-              <span>📈 Reportes & Análisis Predictivo</span>
+              <svg className="w-4 h-4 text-current" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+              </svg>
+              <span>Reportes & Análisis Predictivo</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-400/20 text-purple-200 font-black border border-purple-400/30">
                 IA & Stats
               </span>
@@ -774,11 +780,11 @@ function Home() {
                   className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs font-bold outline-none focus:border-amber-500/50 cursor-pointer"
                 >
                   <option value="ALL">Todos los lotes con caducidad</option>
-                  <option value="EXPIRED">🔴 Lotes Vencidos</option>
-                  <option value="EXPIRING_SOON">🟠 Críticos (Vencen en &lt; 30 días)</option>
-                  <option value="WARNING">🟡 Alerta Preventiva (Vencen en &lt; 60 días)</option>
-                  <option value="OPTIMAL">🟢 Vigentes (&gt; 60 días)</option>
-                  <option value="CRITICAL_ALL">🚨 Vencidos + Críticos</option>
+                  <option value="EXPIRED">Lotes Vencidos</option>
+                  <option value="EXPIRING_SOON">Críticos (Menos de 30 días)</option>
+                  <option value="WARNING">Alerta preventiva (Menos de 60 días)</option>
+                  <option value="OPTIMAL">Vigentes (Más de 60 días)</option>
+                  <option value="CRITICAL_ALL">Vencidos + Críticos</option>
                 </select>
               </div>
 

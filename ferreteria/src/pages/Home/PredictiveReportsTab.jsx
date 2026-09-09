@@ -124,7 +124,7 @@ function PredictiveReportsTab() {
           p.Nombre,
           p.CodigoBarras || `PRD-${p.ProductoID}`,
           p.Categoria || 'General',
-          p.abcClass === 'A' ? '🥇 Estrella (80% Ventas)' : p.abcClass === 'B' ? '🥈 Habitual (15% Ventas)' : '🥉 Ocasional (5% Ventas)',
+          p.abcClass === 'A' ? 'Clase A (Alta Rotación - 80%)' : p.abcClass === 'B' ? 'Clase B (Rotación Regular - 15%)' : 'Clase C (Baja Rotación - 5%)',
           p.StockActual ?? 0,
           p.StockMinimo ?? 5,
           p.dailyDemandRate ?? 0,
@@ -314,7 +314,10 @@ function PredictiveReportsTab() {
               onClick={() => setShowFormulas(!showFormulas)}
               className="text-xs text-slate-400 hover:text-cyan-300 font-semibold px-3 py-1.5 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
-              <span>{showFormulas ? 'Ocultar Fórmulas ✖' : 'Ver Fórmulas Matemáticas 📐'}</span>
+              <svg className="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <span>{showFormulas ? 'Ocultar Fundamento' : 'Ver Fundamento Matemático'}</span>
             </button>
             <button
               onClick={loadData}
@@ -332,8 +335,11 @@ function PredictiveReportsTab() {
         {/* Fórmulas Explicativas Desplegables (Para Defensa Académica) */}
         {showFormulas && (
           <div className="p-4 bg-slate-950/80 rounded-xl border border-purple-500/30 text-xs text-slate-300 space-y-2 animate-fade-in">
-            <div className="font-bold text-purple-300 flex items-center gap-1.5">
-              <span>📐 Fundamento Matemático del Modelo Seleccionado:</span>
+            <div className="font-bold text-purple-300 flex items-center gap-2">
+              <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <span>Fundamento Matemático del Modelo Seleccionado:</span>
             </div>
             {model === 'SES' ? (
               <p className="font-mono text-[11px] text-slate-400">
@@ -358,74 +364,92 @@ function PredictiveReportsTab() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 text-xs">
           {/* 1. Modo de Cálculo */}
           <div className="space-y-1.5">
-            <label className="font-bold text-slate-300 block">¿Cómo prefieres calcular las ventas?</label>
+            <label className="font-bold text-slate-300 block">Método de Proyección:</label>
             <div className="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
               <button
                 type="button"
                 onClick={() => setModel('SES')}
-                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-0.5 ${
+                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-1 ${
                   model === 'SES' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
                 }`}
                 title="Recomendado: se adapta rápidamente a los productos con mayor salida reciente"
               >
-                <span>⚡ Inteligente</span>
-                <span className="text-[9px] opacity-80 font-normal">Recientes</span>
+                <div className="flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5 text-current" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span>Inteligente</span>
+                </div>
+                <span className="text-[9px] opacity-80 font-normal">SES (Reciente)</span>
               </button>
               <button
                 type="button"
                 onClick={() => setModel('SMA')}
-                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-0.5 ${
+                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-1 ${
                   model === 'SMA' ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
                 }`}
-                title="Para productos que se venden parejo todo el año (clavos, cemento, alambres)"
+                title="Para productos que se venden parejo todo el año"
               >
-                <span>📊 Estable</span>
-                <span className="text-[9px] opacity-80 font-normal">Promedio</span>
+                <div className="flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5 text-current" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <span>Estable</span>
+                </div>
+                <span className="text-[9px] opacity-80 font-normal">SMA (Promedio)</span>
               </button>
               <button
                 type="button"
                 onClick={() => setModel('WMA')}
-                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-0.5 ${
+                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-1 ${
                   model === 'WMA' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
                 }`}
                 title="Prioriza las ventas de la última semana"
               >
-                <span>⚖️ Semanal</span>
-                <span className="text-[9px] opacity-80 font-normal">Ponderado</span>
+                <div className="flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5 text-current" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                  </svg>
+                  <span>Ponderado</span>
+                </div>
+                <span className="text-[9px] opacity-80 font-normal">WMA (Semanal)</span>
               </button>
             </div>
           </div>
 
           {/* 2. Sensibilidad a Cambios */}
           <div className="space-y-1.5">
-            <label className="font-bold text-slate-300 block">Sensibilidad ante picos de venta:</label>
+            <label className="font-bold text-slate-300 block">Sensibilidad ante Variaciones:</label>
             <div className="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
               <button
                 type="button"
                 onClick={() => handleSensitivityChange('CONSERVATIVE')}
-                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all ${
+                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
                   sensitivityPreset === 'CONSERVATIVE' ? 'bg-slate-800 text-cyan-400 border border-cyan-500/40' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                🔵 Cautelosa
+                <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                <span>Cautelosa</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleSensitivityChange('NORMAL')}
-                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all ${
+                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
                   sensitivityPreset === 'NORMAL' ? 'bg-slate-800 text-purple-400 border border-purple-500/40' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                🟢 Normal (Recom.)
+                <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+                <span>Normal</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleSensitivityChange('FAST')}
-                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all ${
+                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
                   sensitivityPreset === 'FAST' ? 'bg-slate-800 text-amber-400 border border-amber-500/40' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                🟡 Reactiva
+                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span>Reactiva</span>
               </button>
             </div>
           </div>
@@ -485,14 +509,17 @@ function PredictiveReportsTab() {
         <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 hover:border-rose-500/30 transition-all space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Por Agotarse Pronto</span>
-            <span className={`px-2 py-0.5 rounded-lg font-bold text-xs ${
+            <span className={`px-2 py-0.5 rounded-lg font-bold text-xs flex items-center gap-1 ${
               forecastSummary.productsAtRiskOfStockout > 0 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse' : 'bg-slate-800 text-slate-400'
             }`}>
-              ⚠️ {forecastSummary.productsAtRiskOfStockout || 0}
+              <svg className="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>{forecastSummary.productsAtRiskOfStockout || 0}</span>
             </span>
           </div>
           <p className="text-2xl font-black text-white">
-            {forecastSummary.productsAtRiskOfStockout || 0} <span className="text-xs text-rose-400 font-semibold">productos</span>
+            {forecastSummary.productsAtRiskOfStockout || 0} <span className="text-xs text-rose-400 font-semibold">artículos</span>
           </p>
           <p className="text-[11px] text-slate-400">
             Tienen stock para menos de 7 días al ritmo de venta actual.
@@ -522,11 +549,18 @@ function PredictiveReportsTab() {
         <div className="lg:col-span-2 bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800/60 pb-3">
             <div>
-              <h4 className="font-extrabold text-white text-base flex items-center gap-2">
-                <span>📈 ¿Cómo se proyectan tus ventas?</span>
-              </h4>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                  </svg>
+                </div>
+                <h4 className="font-extrabold text-white text-base">
+                  Proyección de Demanda y Ventas
+                </h4>
+              </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Ventas reales que tuviste en el pasado conectadas con lo que se espera vender los próximos {horizonDays} días.
+                Ventas reales históricas conectadas con la estimación para los próximos {horizonDays} días.
               </p>
             </div>
             <div className="flex items-center gap-3 text-xs">
@@ -549,50 +583,57 @@ function PredictiveReportsTab() {
         <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 space-y-4 flex flex-col justify-between">
           <div>
             <div className="border-b border-slate-800/60 pb-3">
-              <h4 className="font-extrabold text-white text-base">🏆 Importancia en tus Ganancias</h4>
-              <p className="text-xs text-slate-400 mt-0.5">Qué productos aportan más dinero a tu caja</p>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <h4 className="font-extrabold text-white text-base">Clasificación ABC de Rentabilidad</h4>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">Aporte relativo de cada grupo a los ingresos de caja</p>
             </div>
 
             <div className="space-y-3 mt-4">
               {/* Clase A */}
               <div className="p-3 bg-slate-950/60 rounded-xl border border-emerald-500/30 space-y-1">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-extrabold text-emerald-400 flex items-center gap-1.5">
-                    <span>🥇</span>
-                    <span>Productos Estrella (Clase A)</span>
-                  </span>
+                  <div className="flex items-center gap-1.5 font-extrabold text-emerald-400">
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 text-[10px]">A</span>
+                    <span>Productos Estrella</span>
+                  </div>
                   <span className="text-emerald-400 font-bold text-[11px]">80% del Dinero</span>
                 </div>
                 <p className="text-[11px] text-slate-400">
-                  Son los que más se venden. <strong>¡Nunca deben faltar en tu tienda!</strong>
+                  Son los artículos con mayor facturación. <strong>Prioridad alta de reposición.</strong>
                 </p>
               </div>
 
               {/* Clase B */}
               <div className="p-3 bg-slate-950/60 rounded-xl border border-cyan-500/30 space-y-1">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-extrabold text-cyan-400 flex items-center gap-1.5">
-                    <span>🥈</span>
-                    <span>Productos Habituales (Clase B)</span>
-                  </span>
+                  <div className="flex items-center gap-1.5 font-extrabold text-cyan-400">
+                    <span className="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 text-[10px]">B</span>
+                    <span>Productos Habituales</span>
+                  </div>
                   <span className="text-cyan-400 font-bold text-[11px]">15% del Dinero</span>
                 </div>
                 <p className="text-[11px] text-slate-400">
-                  Tienen venta regular y estable. Pide reorden normal cada mes.
+                  Tienen venta regular y estable. Mantener un stock de seguridad estándar.
                 </p>
               </div>
 
               {/* Clase C */}
               <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-700/50 space-y-1">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-extrabold text-slate-400 flex items-center gap-1.5">
-                    <span>🥉</span>
-                    <span>Productos Ocasionales (Clase C)</span>
-                  </span>
+                  <div className="flex items-center gap-1.5 font-extrabold text-slate-300">
+                    <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold border border-slate-700 text-[10px]">C</span>
+                    <span>Productos Ocasionales</span>
+                  </div>
                   <span className="text-slate-400 font-bold text-[11px]">5% del Dinero</span>
                 </div>
                 <p className="text-[11px] text-slate-400">
-                  Salen de vez en cuando. No compres de más para no dejar dinero estancado.
+                  Rotación baja o esporádica. Evitar sobrestock para no inmovilizar capital.
                 </p>
               </div>
             </div>
@@ -608,14 +649,21 @@ function PredictiveReportsTab() {
       <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 space-y-5 shadow-xl">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
-            <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-              <span>🛒 Plan de Reabastecimiento: ¿Cuánto comprar al proveedor?</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-bold">
-                {filteredProducts.length} productos
-              </span>
-            </h3>
-            <p className="text-slate-400 text-xs mt-0.5">
-              Revisa los productos ordenados por urgencia de compra para evitar que se te acaben en mostrador.
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                <span>Plan de Reabastecimiento de Inventario</span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-bold">
+                  {filteredProducts.length} productos
+                </span>
+              </h3>
+            </div>
+            <p className="text-slate-400 text-xs mt-1">
+              Listado priorizado según urgencia y nivel de agotamiento para la generación de órdenes de compra.
             </p>
           </div>
 
@@ -623,21 +671,30 @@ function PredictiveReportsTab() {
           <div className="flex items-center gap-2 self-start lg:self-auto">
             <button
               onClick={() => handleExportForecast('csv')}
-              className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700 transition-all flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              📥 Descargar CSV
+              <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Descargar CSV</span>
             </button>
             <button
               onClick={() => handleExportForecast('excel')}
-              className="px-3 py-1.5 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1.5 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              📊 Descargar Excel
+              <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Descargar Excel</span>
             </button>
             <button
               onClick={() => handleExportForecast('impresion')}
-              className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700 transition-all flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              🖨️ Imprimir Pedido
+              <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              <span>Imprimir Plan</span>
             </button>
           </div>
         </div>
@@ -653,27 +710,27 @@ function PredictiveReportsTab() {
                 onChange={(e) => setUrgencyFilter(e.target.value)}
                 className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs font-bold outline-none focus:border-cyan-500 cursor-pointer"
               >
-                <option value="ALL">Todos los productos</option>
-                <option value="OUT_OF_STOCK">🔴 Ya Agotados (0 unid)</option>
-                <option value="CRITICAL">🔴 Urgente (Se acaban en &lt; 7 días)</option>
-                <option value="HIGH">🟠 Alerta Alta (Se acaban en &lt; 15 días)</option>
-                <option value="MEDIUM">🟡 Alerta Media (Se acaban en &lt; 30 días)</option>
-                <option value="OPTIMAL">🟢 Stock Suficiente (&gt; 30 días)</option>
+                <option value="ALL">Todos los estados</option>
+                <option value="OUT_OF_STOCK">Agotados (0 unid)</option>
+                <option value="CRITICAL">Críticos (Menos de 7 días)</option>
+                <option value="HIGH">Alerta alta (Menos de 15 días)</option>
+                <option value="MEDIUM">Alerta media (Menos de 30 días)</option>
+                <option value="OPTIMAL">Stock suficiente (Más de 30 días)</option>
               </select>
             </div>
 
             {/* Filtro Importancia */}
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-400">Importancia:</span>
+              <span className="font-bold text-slate-400">Clasificación:</span>
               <select
                 value={abcFilter}
                 onChange={(e) => setAbcFilter(e.target.value)}
                 className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs font-bold outline-none focus:border-cyan-500 cursor-pointer"
               >
-                <option value="ALL">Todas las categorías</option>
-                <option value="A">🥇 Productos Estrella (80% Ventas)</option>
-                <option value="B">🥈 Productos Habituales (15% Ventas)</option>
-                <option value="C">🥉 Productos Ocasionales (5% Ventas)</option>
+                <option value="ALL">Todas las clasificaciones</option>
+                <option value="A">Clase A - Alta Rotación (80% Ventas)</option>
+                <option value="B">Clase B - Rotación Regular (15% Ventas)</option>
+                <option value="C">Clase C - Baja Rotación (5% Ventas)</option>
               </select>
             </div>
           </div>
@@ -699,13 +756,13 @@ function PredictiveReportsTab() {
             <thead className="bg-slate-950/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
               <tr>
                 <th className="py-3 px-4 font-bold">Producto</th>
-                <th className="py-3 px-3 font-bold text-center">Importancia</th>
+                <th className="py-3 px-3 font-bold text-center">Clasificación</th>
                 <th className="py-3 px-3 font-bold text-center">Stock Actual</th>
                 <th className="py-3 px-3 font-bold text-center">Venta Diaria</th>
                 <th className="py-3 px-3 font-bold text-center">Venta Estimada ({horizonDays}d)</th>
-                <th className="py-3 px-4 font-bold text-center">¿Cuánto dura el stock?</th>
+                <th className="py-3 px-4 font-bold text-center">Cobertura de Stock</th>
                 <th className="py-3 px-4 font-bold text-center bg-purple-950/30 text-purple-300 border-x border-purple-500/20">
-                  ¿Cuánto pedir?
+                  Sugerencia de Pedido
                 </th>
                 <th className="py-3 px-4 font-bold text-right">Inversión Estimada</th>
                 <th className="py-3 px-3 font-bold text-center">Fiabilidad</th>
@@ -745,7 +802,7 @@ function PredictiveReportsTab() {
                             ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                             : 'bg-slate-800 text-slate-400 border border-slate-700'
                         }`}>
-                          {prod.abcClass === 'A' ? '🥇 Estrella' : prod.abcClass === 'B' ? '🥈 Habitual' : '🥉 Ocasional'}
+                          {prod.abcClass === 'A' ? 'Clase A' : prod.abcClass === 'B' ? 'Clase B' : 'Clase C'}
                         </span>
                       </td>
 
@@ -769,9 +826,9 @@ function PredictiveReportsTab() {
 
                       {/* 6. Días para Agotarse */}
                       <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase border ${
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase border ${
                           isStockout
-                            ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                            ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
                             : isCritical
                             ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
                             : isHigh
@@ -780,15 +837,22 @@ function PredictiveReportsTab() {
                             ? 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30'
                             : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                         }`}>
-                          {isStockout
-                            ? '🔴 Agotado'
-                            : isCritical
-                            ? `🔴 Quedan ${prod.daysUntilStockout}d`
-                            : isHigh
-                            ? `🟠 Quedan ${prod.daysUntilStockout}d`
-                            : isMedium
-                            ? `🟡 Quedan ${prod.daysUntilStockout}d`
-                            : '🟢 Stock seguro (>30d)'}
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            isStockout || isCritical
+                              ? 'bg-rose-400'
+                              : isHigh
+                              ? 'bg-amber-400'
+                              : isMedium
+                              ? 'bg-yellow-400'
+                              : 'bg-emerald-400'
+                          }`}></span>
+                          <span>
+                            {isStockout
+                              ? 'Agotado'
+                              : isCritical || isHigh || isMedium
+                              ? `${prod.daysUntilStockout} días`
+                              : 'Seguro (>30d)'}
+                          </span>
                         </span>
                       </td>
 
@@ -799,7 +863,7 @@ function PredictiveReportsTab() {
                             <span>Pedir +{prod.suggestedPurchaseUnits}</span>
                           </div>
                         ) : (
-                          <span className="text-slate-500 text-[11px] font-medium">No hace falta</span>
+                          <span className="text-slate-500 text-[11px] font-medium">Suficiente</span>
                         )}
                         <span className="text-slate-500 text-[10px] font-normal block mt-0.5">{prod.Unidad}</span>
                       </td>
@@ -817,8 +881,11 @@ function PredictiveReportsTab() {
 
                       {/* 9. Fiabilidad */}
                       <td className="py-3 px-3 text-center">
-                        <span className="text-[10px] font-bold text-emerald-400" title="Cálculo con mínimo error">
-                          ⭐⭐⭐⭐⭐ Alta
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20" title="Cálculo con mínimo error">
+                          <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                          </svg>
+                          <span>Óptima</span>
                         </span>
                       </td>
 
@@ -827,9 +894,12 @@ function PredictiveReportsTab() {
                         <button
                           type="button"
                           onClick={() => openProductDetail(prod)}
-                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/40 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/40 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ml-auto"
                         >
-                          🔍 Ver Detalle
+                          <svg className="w-3 h-3 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          <span>Ver Detalle</span>
                         </button>
                       </td>
                     </tr>
@@ -878,7 +948,10 @@ function PredictiveReportsTab() {
                 {/* Diagnóstico en Palabras Claras */}
                 <div className="p-4 bg-slate-950/80 rounded-xl border border-slate-800 space-y-2">
                   <div className="font-bold text-slate-200 text-sm flex items-center gap-2">
-                    <span>💡 Resumen del Diagnóstico:</span>
+                    <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Resumen del Diagnóstico:</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                     <div className="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80">
@@ -901,7 +974,7 @@ function PredictiveReportsTab() {
                 {/* Tarjeta de Recomendación de Compra */}
                 <div className="p-4 bg-gradient-to-r from-purple-950/40 to-slate-950 rounded-xl border border-purple-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div>
-                    <span className="text-purple-300 font-bold block text-[11px]">👉 Recomendación para los próximos {horizonDays} días:</span>
+                    <span className="text-purple-300 font-bold block text-[11px]">Recomendación de Reorden ({horizonDays} días):</span>
                     <p className="text-white text-sm font-extrabold mt-0.5">
                       {selectedProduct.suggestedPurchaseUnits > 0 ? (
                         <>Comprar <span className="text-purple-300 underline font-black">{selectedProduct.suggestedPurchaseUnits} {selectedProduct.Unidad}</span> al proveedor</>
@@ -931,7 +1004,10 @@ function PredictiveReportsTab() {
                     onClick={() => setModalShowFormulas(!modalShowFormulas)}
                     className="text-slate-400 hover:text-cyan-300 text-[11px] font-semibold flex items-center gap-1.5 cursor-pointer"
                   >
-                    <span>{modalShowFormulas ? 'Ocultar comparativa matemática ✖' : '📐 Ver comparativa matemática de modelos (SES, SMA, WMA) ▼'}</span>
+                    <svg className="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <span>{modalShowFormulas ? 'Ocultar comparativa matemática' : 'Ver comparativa técnica de modelos (SES, SMA, WMA)'}</span>
                   </button>
 
                   {modalShowFormulas && (
