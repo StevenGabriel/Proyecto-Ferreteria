@@ -140,7 +140,12 @@ function Topbar() {
   const userEmail = user?.Correo || '';
   const initials = user ? getInitials(nombreCompleto) : 'OP';
 
-  const activeExpiringLots = expiringLots.filter((l) => !dismissedNotifIds.includes(`lot-${l.LoteID}`));
+  const activeExpiringLots = expiringLots.filter((l) => {
+    if (dismissedNotifIds.includes(`lot-${l.LoteID}`)) return false;
+    // Auto-desaparición tras 7 días de vencido
+    if (l.status === 'EXPIRED' && l.daysRemaining !== undefined && l.daysRemaining < -7) return false;
+    return true;
+  });
   const activeCriticalProducts = criticalProducts.filter((p) => !dismissedNotifIds.includes(`prod-${p.ProductoID}`));
   const activeAlertsCount = activeExpiringLots.length + activeCriticalProducts.length;
 

@@ -91,6 +91,30 @@ function Home() {
   const [expiringSearch, setExpiringSearch] = useState('');
   const [expiringFilter, setExpiringFilter] = useState('ALL');
 
+  // Lotes vencidos descartados manualmente por el usuario
+  const [dismissedExpiredLots, setDismissedExpiredLots] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cyc_dismissed_expired_lots');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleDismissExpiredLot = (e, loteId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDismissedExpiredLots((prev) => {
+      const next = [...new Set([...prev, loteId])];
+      try {
+        localStorage.setItem('cyc_dismissed_expired_lots', JSON.stringify(next));
+      } catch (err) {
+        console.warn('Error guardando lotes descartados:', err);
+      }
+      return next;
+    });
+  };
+
   useEffect(() => {
     setLoadingAlerts(true);
     setLoadingExpiring(true);
@@ -123,6 +147,16 @@ function Home() {
 
   const filteredExpiringLots = useMemo(() => {
     return expiringLots.filter((lot) => {
+      // 1. Auto-desaparición tras 7 días de vencido
+      if (lot.status === 'EXPIRED' && lot.daysRemaining !== undefined && lot.daysRemaining < -7) {
+        return false;
+      }
+
+      // 2. Lotes descartados manualmente por el usuario
+      if (dismissedExpiredLots.includes(lot.LoteID)) {
+        return false;
+      }
+
       const text = `${lot.ProductoNombre || ''} ${lot.CodigoBarras || ''} ${lot.NotaLote || ''} ${lot.Marca || ''}`.toLowerCase();
       const matchSearch = !expiringSearch || text.includes(expiringSearch.toLowerCase());
       if (!matchSearch) return false;
@@ -135,7 +169,7 @@ function Home() {
 
       return true;
     });
-  }, [expiringLots, expiringSearch, expiringFilter]);
+  }, [expiringLots, expiringSearch, expiringFilter, dismissedExpiredLots]);
 
   const handleExport = (type) => {
     if (type === 'impresion') {
@@ -883,12 +917,24 @@ function Home() {
 
                           {/* 6. Acción */}
                           <td className="py-3 px-4 text-right whitespace-nowrap">
-                            <Link
-                              to="/productsView"
-                              className="text-[11px] text-cyan-400 hover:text-cyan-300 font-bold hover:underline"
-                            >
-                              Ver en Productos →
-                            </Link>
+                            <div className="flex items-center justify-end gap-2">
+                              {isExpired && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDismissExpiredLot(e, lot.LoteID)}
+                                  title="Descartar este lote de la alerta"
+                                  className="text-[11px] px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 border border-rose-500/30 font-bold transition-all flex items-center gap-1 cursor-pointer"
+                                >
+                                  <span>✕ Descartar lote</span>
+                                </button>
+                              )}
+                              <Link
+                                to="/productsView"
+                                className="text-[11px] text-cyan-400 hover:text-cyan-300 font-bold hover:underline"
+                              >
+                                Ver en Productos →
+                              </Link>
+                            </div>
                           </td>
                         </tr>
                       );

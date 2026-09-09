@@ -233,6 +233,25 @@ function ProductView() {
       return;
     }
 
+    const todayStr = new Date().toISOString().slice(0, 10);
+
+    for (const r of newRowsToSave) {
+      if (!r.fecha) {
+        alert("La Fecha de Ingreso es obligatoria para registrar el stock.");
+        return;
+      }
+      if (stockProduct.ManejaCaducidad) {
+        if (!r.fechaVencimiento) {
+          alert(`El producto "${stockProduct.Nombre}" está configurado con caducidad. Es obligatorio ingresar la Fecha de Caducidad para cada lote.`);
+          return;
+        }
+        if (r.fechaVencimiento < todayStr) {
+          alert(`La Fecha de Caducidad (${r.fechaVencimiento}) no puede ser anterior a la fecha actual (${todayStr}).`);
+          return;
+        }
+      }
+    }
+
     const payload = {
       ProductoID: stockProduct.ProductoID,
       lotes: newRowsToSave.map((r) => ({
@@ -891,11 +910,12 @@ function ProductView() {
                               type="datetime-local"
                               value={row.fecha}
                               disabled={row.isRegistered}
+                              required={!row.isRegistered}
                               onChange={(e) => handleStockRowChange(row.id, "fecha", e.target.value)}
                               className={`border rounded-lg px-2 py-1.5 text-xs outline-none w-full ${
                                 row.isRegistered
                                   ? 'bg-slate-950 border-slate-800 text-slate-500 cursor-not-allowed'
-                                  : 'bg-slate-900 border-slate-800 text-slate-300'
+                                  : 'bg-slate-900 border-slate-800 text-slate-300 focus:border-cyan-500'
                               }`}
                             />
                           </td>
@@ -907,6 +927,8 @@ function ProductView() {
                                 type="date"
                                 value={row.fechaVencimiento}
                                 disabled={row.isRegistered}
+                                required={!row.isRegistered}
+                                min={new Date().toISOString().slice(0, 10)}
                                 onChange={(e) => handleStockRowChange(row.id, "fechaVencimiento", e.target.value)}
                                 placeholder="YYYY-MM-DD"
                                 className={`border rounded-lg px-2 py-1.5 text-xs outline-none w-full font-semibold ${

@@ -678,6 +678,18 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
 * **2. Estilo Visual Uniforme en la Tabla Verde:**
   * Se removió el fondo amarillo y el badge de la cabecera, integrando `Fecha Caducidad` con la misma estética verde esmeralda y campos homogéneos que el resto de las columnas (`Fecha Ingreso`, `Cantidad`, etc.).
 
+### 84. Regla de Caducidad: Auto-desaparición a los 7 Días y Botón "Descartar Lote" (`Home.jsx`, `topbar.jsx`)
+* **1. Ventana Máxima de 7 Días para Alertas de Lotes Vencidos:**
+  * Cuando un lote llega a su fecha límite de caducidad (`🔴 Vencido`), la alerta visual en el Dashboard ([`Home.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/Home.jsx)) y en la Campanita ([`topbar.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/topbar/topbar.jsx)) permanece visible por un máximo de **7 días**.
+  * Si transcurren más de 7 días desde el vencimiento sin acción, la alerta **desaparece automáticamente** para no acumular registros obsoletos de forma indefinida.
+* **2. Botón de Acción "✕ Descartar lote":**
+  * En la tabla de vencimientos del Dashboard, cada lote que se encuentra en estado vencido (dentro de los 7 días de gracia) incluye un botón directo **`✕ Descartar lote`** junto al enlace de *Ver en Productos*.
+  * Al hacer clic, el lote se descarta de las alertas en tiempo real y se guarda en `cyc_dismissed_expired_lots` (`localStorage`) para que no vuelva a aparecer en pantalla.
 
-
+### 85. Validación Estricta de Fechas en Stock de Apertura (`ProductView.jsx`)
+* **1. Fecha de Ingreso Obligatoria:**
+  * El campo `Fecha Ingreso` es estrictamente requerido (`required`) al registrar un nuevo lote.
+* **2. Validación de Fecha de Caducidad (No menor a la actual):**
+  * Si el producto está configurado con caducidad (`ManejaCaducidad = true`), la `Fecha Caducidad` es un campo **obligatorio**.
+  * Se configuró el atributo `min={YYYY-MM-DD}` correspondiente al día actual y una validación de seguridad en `handleSaveStock` para impedir que se ingresen fechas de caducidad pasadas o caducadas.
 
