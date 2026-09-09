@@ -29,6 +29,8 @@ function ProductRegisterForm() {
   const [LoteMinimo, setLoteMinimo] = useState("5");
   const [PrecioCompra, setPrecioCompra] = useState("");
   const [Margen, setMargen] = useState("25");
+  const [ManejaCaducidad, setManejaCaducidad] = useState(false);
+  const [DiasAlertaCaducidad, setDiasAlertaCaducidad] = useState("30");
 
   // Gestión de Imagen y Archivos
   const [Imagen, setImagen] = useState("");
@@ -209,6 +211,8 @@ function ProductRegisterForm() {
     setCategoriaId("");
     setPrecioCompra("");
     setMargen("25");
+    setManejaCaducidad(false);
+    setDiasAlertaCaducidad("30");
     removeImage();
   };
 
@@ -273,6 +277,8 @@ function ProductRegisterForm() {
       LoteMinimo: LoteMinimo ? parseInt(LoteMinimo) : 5,
       PrecioCompra: PrecioCompra ? parseFloat(PrecioCompra) : null,
       Margen: Margen ? parseFloat(Margen) : null,
+      ManejaCaducidad,
+      DiasAlertaCaducidad: DiasAlertaCaducidad ? parseInt(DiasAlertaCaducidad) : 30,
       Imagen: finalImageUrl,
     };
 
@@ -520,6 +526,70 @@ function ProductRegisterForm() {
                   rows="2"
                   className="bg-slate-950 border border-slate-800/80 rounded-xl focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 text-slate-200 placeholder-slate-600 outline-none w-full p-3 transition-all text-sm resize-none"
                 />
+              </div>
+
+              {/* Control de Caducidad y Vencimiento */}
+              <div className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 flex-shrink-0 mt-0.5">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                        Control de Caducidad y Vencimiento
+                        <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-slate-800 text-amber-400 border border-amber-500/30">
+                          Lotes FEFO
+                        </span>
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Activa esta opción si el producto cuenta con fecha de vencimiento (ej. pinturas, siliconas, pegamentos, masillas, cemento, etc.).
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Switch / Toggle */}
+                  <label className="relative inline-flex items-center cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={ManejaCaducidad}
+                      onChange={(e) => setManejaCaducidad(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                    <span className="ml-3 text-xs font-bold text-slate-300 whitespace-nowrap">
+                      {ManejaCaducidad ? "Con Caducidad" : "Sin Caducidad"}
+                    </span>
+                  </label>
+                </div>
+
+                {ManejaCaducidad && (
+                  <div className="pt-4 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in text-xs">
+                    <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl text-amber-300/90 text-xs">
+                      <p className="font-semibold">
+                        ℹ️ Al activar la caducidad, el sistema solicitará la <strong>Fecha de Vencimiento</strong> de cada lote físico al ingresar <strong>Stock de Apertura</strong> o registrar <strong>Compras</strong>.
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block mb-1.5 font-bold text-slate-400 uppercase tracking-wider text-[11px]">
+                        Alerta preventiva previa (Días antes de vencer):
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="1"
+                          max="365"
+                          value={DiasAlertaCaducidad}
+                          onChange={(e) => setDiasAlertaCaducidad(e.target.value)}
+                          className="w-28 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white font-bold text-xs outline-none focus:border-amber-500"
+                        />
+                        <span className="text-slate-400 font-semibold">días de anticipación en el semáforo</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

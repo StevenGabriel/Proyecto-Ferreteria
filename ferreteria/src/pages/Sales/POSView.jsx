@@ -35,15 +35,115 @@ function POSView() {
   const barcodeInputRef = useRef(null);
 
   // Cliente seleccionado
-  const [clients, setClients] = useState([
-    { id: 1, name: 'Cliente General (Sin Factura)', nit: '0', phone: '-' },
-    { id: 2, name: 'Constructora Los Andes S.R.L.', nit: '4839201018', phone: '76543210' },
-    { id: 3, name: 'Carlos Mendoza Ramos', nit: '5948302', phone: '68920192' },
-    { id: 4, name: 'Ingeniería & Proyectos C&C', nit: '1029384019', phone: '71239847' }
-  ]);
-  const [selectedClient, setSelectedClient] = useState(clients[0]);
+  const [clients, setClients] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cyc_pos_clients');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((c, i) => ({
+            id: c.id || c.ClienteID || i + 1,
+            name: c.name || c.Nombre || 'Cliente General',
+            nit: c.nit || c.NIT || '0',
+            phone: c.phone || c.Telefono || '-',
+            email: c.email || c.Email || '',
+            address: c.address || c.Direccion || ''
+          }));
+        }
+      }
+    } catch {}
+    return [
+      { id: 1, name: 'Cliente General (Sin Factura)', nit: '0', phone: '-', email: '', address: 'Ventas en Mostrador' },
+      { id: 2, name: 'Constructora Los Andes S.R.L.', nit: '4839201018', phone: '76543210', email: 'contacto@losandes.com', address: 'Av. Blanco Galindo Km 4' },
+      { id: 3, name: 'Carlos Mendoza Ramos', nit: '5948302', phone: '68920192', email: 'carlos.mendoza@gmail.com', address: 'Zona Norte' },
+      { id: 4, name: 'Ingeniería & Proyectos C&C', nit: '1029384019', phone: '71239847', email: 'proyectos@cyc.com', address: 'Calle Heroínas #450' }
+    ];
+  });
+  const [selectedClient, setSelectedClient] = useState(() => clients[0] || { id: 1, name: 'Cliente General (Sin Factura)', nit: '0' });
   const [showNewClientModal, setShowNewClientModal] = useState(false);
-  const [newClientForm, setNewClientForm] = useState({ name: '', nit: '', phone: '', email: '' });
+  const [newClientForm, setNewClientForm] = useState({
+    TipoContacto: 'Individual',
+    NombreEmpresa: '',
+    name: '',
+    apellidos: '',
+    RazonSocial: '',
+    TipoDocumentoSIAT: 'NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA',
+    nit: '',
+    phone: '0',
+    email: '',
+    address: ''
+  });
+
+  // Guardar nuevo cliente rápido desde POS
+  const handleSaveQuickClient = (e) => {
+    e.preventDefault();
+    const isCompany = newClientForm.TipoContacto === 'Empresa';
+    const mainName = isCompany
+      ? (newClientForm.NombreEmpresa.trim() || newClientForm.name.trim() || newClientForm.RazonSocial.trim())
+      : ([newClientForm.name.trim(), newClientForm.apellidos.trim()].filter(Boolean).join(' ') || newClientForm.RazonSocial.trim());
+
+    if (!mainName) {
+      showToast('Por favor ingrese al menos el nombre o razón social del cliente.', 'error');
+      return;
+    }
+
+    const resolvedRazonSocial = newClientForm.RazonSocial.trim() || mainName.toUpperCase();
+    const resolvedNIT = newClientForm.nit.trim() || '0';
+    const resolvedPhone = newClientForm.phone.trim() || '0';
+    const newId = Date.now();
+    const contactCode = `CO0${462 + clients.length}`;
+
+    const created = {
+      id: newId,
+      ClienteID: newId,
+      TipoContacto: newClientForm.TipoContacto,
+      CodigoContacto: contactCode,
+      NombreEmpresa: isCompany ? mainName : '',
+      name: mainName,
+      Nombre: mainName,
+      RazonSocial: resolvedRazonSocial,
+      TipoDocumentoSIAT: newClientForm.TipoDocumentoSIAT,
+      nit: resolvedNIT,
+      NIT: resolvedNIT,
+      phone: resolvedPhone,
+      Movil: resolvedPhone,
+      Telefono: resolvedPhone,
+      email: newClientForm.email.trim() || '',
+      Email: newClientForm.email.trim() || '',
+      address: newClientForm.address.trim() || '',
+      Direccion: newClientForm.address.trim() || '',
+      createdAt: new Date().toISOString()
+    };
+
+    const updated = [created, ...clients];
+    setClients(updated);
+    setSelectedClient(created);
+    try {
+      localStorage.setItem('cyc_pos_clients', JSON.stringify(updated));
+    } catch {}
+
+    // Sincronizar automáticamente con los datos de factura del POS
+    setInvoiceCustomerType('NORMAL');
+    setInvoiceRazonSocial(resolvedRazonSocial);
+    setInvoiceDocNumber(resolvedNIT);
+    setInvoiceDocType(newClientForm.TipoDocumentoSIAT.includes('CI') ? 'CI' : 'NIT');
+    setInvoiceEmail(created.email);
+
+    setShowNewClientModal(false);
+    setNewClientForm({
+      TipoContacto: 'Individual',
+      NombreEmpresa: '',
+      name: '',
+      apellidos: '',
+      RazonSocial: '',
+      TipoDocumentoSIAT: 'NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA',
+      nit: '',
+      phone: '0',
+      email: '',
+      address: ''
+    });
+    showToast(`Cliente "${created.name}" registrado y seleccionado para la venta`, 'success');
+  };
 
   // Descuentos
   const [discount, setDiscount] = useState(0);
@@ -62,6 +162,10 @@ function POSView() {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showRecentSalesModal, setShowRecentSalesModal] = useState(false);
   const [showCalculatorModal, setShowCalculatorModal] = useState(false);
+  const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
+  const [editingCartItem, setEditingCartItem] = useState(null); // Producto del ticket que se está editando
+  const [itemUnitPrice, setItemUnitPrice] = useState('');
+  const [itemDescription, setItemDescription] = useState('');
   const [recentSalesTab, setRecentSalesTab] = useState('FINAL'); // 'FINAL' | 'COTIZACION' | 'BORRADOR'
   const [editingSaleId, setEditingSaleId] = useState(null); // Recibo no. en edición (ej. 14444)
 
@@ -70,6 +174,14 @@ function POSView() {
   const [emitInvoice, setEmitInvoice] = useState(true);
   const [lastSaleReceipt, setLastSaleReceipt] = useState(null);
   const [recentSales, setRecentSales] = useState([]);
+  const [quotations, setQuotations] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cyc_pos_quotations');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Toast
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -187,6 +299,7 @@ function POSView() {
         );
       } else {
         const price = parseFloat(product.PrecioVenta || product.Precio || 0);
+        const precioSinFac = parseFloat(product.PrecioSinFactura || 0);
         return [
           ...prevCart,
           {
@@ -195,8 +308,12 @@ function POSView() {
             code: product.Codigo || product.CodigoBarras || `PRD-${product.ProductoID}`,
             price: price,
             PrecioVenta: price,
+            PrecioSinFactura: precioSinFac,
             unit: product.Unidad?.Abreviacion || product.Unidad?.Nombre || 'PZA',
             quantity: 1,
+            discountType: 'Fijo',
+            discountAmount: 0,
+            customNote: '',
             maxStock: stockAvailable,
             subtotal: price,
             image: product.Imagen
@@ -256,15 +373,51 @@ function POSView() {
     showToast('Producto removido del ticket', 'info');
   };
 
-  // Vaciar ticket
+  // Abrir modal de detalles y edición de precio del ítem
+  const handleOpenItemDetails = (item) => {
+    setEditingCartItem(item);
+    setItemUnitPrice(item.price.toFixed(2));
+    setItemDescription(item.customNote || '');
+  };
+
+  // Guardar cambios del ítem desde el modal
+  const handleSaveItemDetails = (e) => {
+    if (e) e.preventDefault();
+    if (!editingCartItem) return;
+
+    const newPrice = Math.max(0, parseFloat(itemUnitPrice) || 0);
+
+    setCart((prev) =>
+      prev.map((it) => {
+        if (it.ProductoID === editingCartItem.ProductoID) {
+          return {
+            ...it,
+            price: newPrice,
+            customNote: itemDescription,
+            subtotal: it.quantity * newPrice
+          };
+        }
+        return it;
+      })
+    );
+
+    setEditingCartItem(null);
+    showToast(`Precio actualizado para "${editingCartItem.name}"`, 'success');
+  };
+
+  // Solicitar vaciar ticket con modal estilizado
   const clearCart = () => {
     if (cart.length === 0) return;
-    if (window.confirm('¿Deseas cancelar y vaciar el ticket de venta actual?')) {
-      setCart([]);
-      setDiscount(0);
-      setEditingSaleId(null);
-      showToast('Venta cancelada y ticket vaciado', 'info');
-    }
+    setShowCancelConfirmModal(true);
+  };
+
+  // Confirmar vaciado del ticket
+  const handleConfirmClearCart = () => {
+    setCart([]);
+    setDiscount(0);
+    setEditingSaleId(null);
+    setShowCancelConfirmModal(false);
+    showToast('Venta cancelada y ticket vaciado', 'info');
   };
 
   // Cálculos de Totales
@@ -601,6 +754,122 @@ function POSView() {
     showToast(`La transacción #${s.ventaID || s.id} está asegurada en la Base de Datos.`, 'info');
   };
 
+  // -------------------------------------------------------------
+  // GESTIÓN DE COTIZACIONES (SIN DESCUENTO DE STOCK)
+  // -------------------------------------------------------------
+  const handleQuotationClick = () => {
+    if (cart.length === 0) {
+      showToast('Agrega al menos un producto al ticket antes de generar una cotización', 'error');
+      return;
+    }
+
+    const isNamed = selectedClient && selectedClient.id !== 1;
+    const clientName = isNamed ? selectedClient.name : 'SIN NOMBRE';
+    const clientNit = selectedClient && selectedClient.nit !== '0' ? selectedClient.nit : '0';
+
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const timeStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const quoteNum = Math.floor(10000 + Math.random() * 90000);
+
+    const quoteData = {
+      id: `COT-${quoteNum}`,
+      quoteID: quoteNum,
+      client: clientName,
+      nit: clientNit,
+      empleado: currentUser?.Nombre || 'Cajero / Vendedor',
+      total: finalTotal,
+      discount: discount,
+      subtotal: subtotalProducts,
+      items: totalQuantity,
+      time: timeStr,
+      status: 'COTIZACION',
+      detalles: cart.map((item) => ({
+        ProductoID: item.ProductoID,
+        producto: item.name,
+        codigo: item.code,
+        cantidad: item.quantity,
+        precioUnitario: parseFloat(item.price || item.PrecioVenta || 0),
+        subtotal: item.subtotal,
+        imagen: item.image,
+        unit: item.unit
+      }))
+    };
+
+    const updatedQuotes = [quoteData, ...quotations];
+    setQuotations(updatedQuotes);
+    try {
+      localStorage.setItem('cyc_pos_quotations', JSON.stringify(updatedQuotes));
+    } catch (e) {
+      console.error('Error guardando cotización:', e);
+    }
+
+    // Vaciar el carrito tras emitir la cotización
+    setCart([]);
+    setDiscount(0);
+    setEditingSaleId(null);
+    showToast(`Cotización #COT-${quoteNum} guardada exitosamente (sin descontar stock)`, 'success');
+  };
+
+  // Cargar Cotización al ticket activo para continuarla o cobrarla
+  const handleLoadQuotation = (q) => {
+    // Asignar cliente
+    if (q.client && q.client !== 'SIN NOMBRE') {
+      const existing = clients.find((c) => c.name.toLowerCase() === q.client.toLowerCase());
+      if (existing) {
+        setSelectedClient(existing);
+      } else {
+        const tempClient = {
+          id: clients.length + 1,
+          name: q.client,
+          nit: q.nit || '0',
+          phone: '-'
+        };
+        setClients((prev) => [...prev, tempClient]);
+        setSelectedClient(tempClient);
+      }
+    } else {
+      setSelectedClient(clients[0]);
+    }
+
+    // Cargar productos
+    const loadedItems = (q.detalles || []).map((dt) => {
+      const matchedProd = products.find((p) => p.ProductoID === dt.ProductoID);
+      const unitPrice = dt.precioUnitario || parseFloat(matchedProd?.PrecioVenta || 0);
+      const qty = dt.cantidad || 1;
+      return {
+        ProductoID: dt.ProductoID,
+        name: dt.producto || matchedProd?.Nombre || 'Producto',
+        code: dt.codigo || matchedProd?.Codigo || `PRD-${dt.ProductoID}`,
+        price: unitPrice,
+        PrecioVenta: unitPrice,
+        unit: dt.unit || matchedProd?.Unidad?.Abreviacion || 'PZA',
+        quantity: qty,
+        maxStock: matchedProd ? (matchedProd.Stock || 100) : 100,
+        subtotal: qty * unitPrice,
+        image: dt.imagen || matchedProd?.Imagen || null
+      };
+    });
+
+    setCart(loadedItems);
+    setDiscount(parseFloat(q.discount || 0));
+    setEditingSaleId(null); // Es cotización nueva a cobrar o modificar
+    setShowRecentSalesModal(false);
+    showToast(`Cotización #${q.quoteID || q.id} cargada al ticket. Puede cobrar con Efectivo o modificarla.`, 'info');
+  };
+
+  // Eliminar Cotización
+  const handleDeleteQuotation = (q) => {
+    const updated = quotations.filter((item) => item.id !== q.id);
+    setQuotations(updated);
+    try {
+      localStorage.setItem('cyc_pos_quotations', JSON.stringify(updated));
+    } catch (e) {
+      console.error(e);
+    }
+    showToast(`Cotización #${q.quoteID || q.id} eliminada`, 'info');
+  };
+
   // Crear Cliente Rápido
   const handleCreateClient = (e) => {
     e.preventDefault();
@@ -713,13 +982,13 @@ function POSView() {
       {/* ========================================================================= */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* ======================================================================= */}
-        {/* PANEL IZQUIERDO: TICKET / MOSTRADOR DE COBRO                           */}
+        {/* PANEL IZQUIERDO: TICKET / MOSTRADOR DE COBRO (AMPLIADO Y MÁS CÓMODO)   */}
         {/* ======================================================================= */}
-        <div className="w-full lg:w-[48%] xl:w-[45%] bg-slate-900/60 border-r border-slate-800 flex flex-col justify-between overflow-hidden">
+        <div className="w-full lg:w-[50%] xl:w-[48%] 2xl:w-[46%] bg-slate-900/70 border-r border-slate-800 flex flex-col justify-between overflow-hidden">
           {/* Fila 1: Selector de Cliente y Recibo No en Edición */}
-          <div className="p-3 border-b border-slate-800 bg-slate-900/40 space-y-2">
+          <div className="p-3.5 border-b border-slate-800 bg-slate-900/60 space-y-2.5">
             {editingSaleId && (
-              <div className="flex items-center justify-between bg-cyan-500/10 border border-cyan-500/30 rounded-lg px-3 py-1.5 text-xs text-cyan-300 font-bold animate-fade-in">
+              <div className="flex items-center justify-between bg-cyan-500/10 border border-cyan-500/30 rounded-xl px-3.5 py-2 text-xs text-cyan-300 font-bold animate-fade-in">
                 <span className="flex items-center gap-1.5 font-mono">
                   <span>Recibo no.:</span>
                   <strong className="text-white text-sm">{editingSaleId}</strong>
@@ -731,7 +1000,7 @@ function POSView() {
                     setCart([]);
                     showToast('Edición de venta cancelada', 'info');
                   }}
-                  className="text-[11px] text-slate-400 hover:text-rose-400 font-normal transition-colors underline"
+                  className="text-xs text-slate-400 hover:text-rose-400 font-normal transition-colors underline"
                   title="Cancelar edición de venta"
                 >
                   ✕ Cancelar edición
@@ -740,8 +1009,8 @@ function POSView() {
             )}
 
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 flex-shrink-0">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <div className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 flex-shrink-0">
+                <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
@@ -752,7 +1021,7 @@ function POSView() {
                   const target = clients.find((c) => c.id === parseInt(e.target.value));
                   if (target) setSelectedClient(target);
                 }}
-                className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white font-semibold focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
+                className="flex-1 bg-slate-800/90 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-bold focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
               >
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -763,7 +1032,7 @@ function POSView() {
 
               <button
                 onClick={() => setShowNewClientModal(true)}
-                className="w-8 h-8 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/40 flex items-center justify-center font-bold text-base transition-all"
+                className="w-9 h-9 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/40 flex items-center justify-center font-black text-lg transition-all"
                 title="Registrar nuevo cliente rápido"
               >
                 +
@@ -779,16 +1048,16 @@ function POSView() {
                   placeholder="Introduzca el nombre del producto / SKU / código de barras de escaneo..."
                   value={barcodeInput}
                   onChange={(e) => setBarcodeInput(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-medium transition-all"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-medium transition-all"
                 />
-                <svg className="w-4 h-4 text-slate-500 absolute left-2.5 top-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
 
               <button
                 type="submit"
-                className="w-8 h-8 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white flex items-center justify-center font-bold text-sm transition-all"
+                className="w-9 h-9 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white flex items-center justify-center font-black text-base shadow-md shadow-cyan-600/20 transition-all"
                 title="Buscar o añadir"
               >
                 +
@@ -796,59 +1065,73 @@ function POSView() {
             </form>
           </div>
 
-          {/* Tabla de Productos en Ticket */}
-          <div className="flex-1 overflow-y-auto p-2">
-            <table className="w-full text-left text-xs border-collapse">
+          {/* Tabla de Productos en Ticket (Más espaciosa y legible) */}
+          <div className="flex-1 overflow-y-auto p-3">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-slate-400 border-b border-slate-800 text-[11px] uppercase tracking-wider font-bold">
-                  <th className="pb-2 pl-2">Producto ⓘ</th>
-                  <th className="pb-2 text-center w-28">Cantidad</th>
-                  <th className="pb-2 text-right w-24">Subtotal</th>
-                  <th className="pb-2 text-center w-10">✖</th>
+                <tr className="text-slate-400 border-b border-slate-800 text-xs uppercase tracking-wider font-extrabold">
+                  <th className="pb-3 pl-2 font-bold">Producto ⓘ</th>
+                  <th className="pb-3 text-center w-36 font-bold">Cantidad</th>
+                  <th className="pb-3 text-right w-32 font-bold">Subtotal</th>
+                  <th className="pb-3 text-center w-12 font-bold">✖</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/50 font-medium">
+              <tbody className="divide-y divide-slate-800/60 font-medium">
                 {cart.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="py-16 text-center text-slate-500">
-                      <div className="w-12 h-12 rounded-full bg-slate-800/40 border border-slate-700/60 flex items-center justify-center text-slate-500 mx-auto mb-3">
-                        <svg className="w-6 h-6 opacity-60" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <td colSpan="4" className="py-20 text-center text-slate-500">
+                      <div className="w-14 h-14 rounded-2xl bg-slate-800/40 border border-slate-700/60 flex items-center justify-center text-slate-500 mx-auto mb-3">
+                        <svg className="w-7 h-7 opacity-60" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                       </div>
-                      <p className="text-xs font-semibold text-slate-400">El ticket de venta está vacío</p>
-                      <p className="text-[11px] text-slate-600 mt-1">Escanea un código de barras o pulsa un producto del catálogo</p>
+                      <p className="text-sm font-bold text-slate-400">El ticket de venta está vacío</p>
+                      <p className="text-xs text-slate-500 mt-1">Escanea un código de barras o pulsa un producto del catálogo táctil</p>
                     </td>
                   </tr>
                 ) : (
                   cart.map((item) => (
-                    <tr key={item.ProductoID} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="py-2.5 pl-2">
-                        <div className="font-bold text-slate-200 uppercase leading-tight truncate max-w-[180px] sm:max-w-[220px]">
-                          {item.name}
+                    <tr key={item.ProductoID} className="hover:bg-slate-800/40 transition-colors group">
+                      <td
+                        onClick={() => handleOpenItemDetails(item)}
+                        className="py-3.5 pl-2 cursor-pointer"
+                        title="Haga clic para ver detalles, cambiar precio o agregar notas"
+                      >
+                        <div className="font-extrabold text-slate-100 group-hover:text-cyan-300 text-sm leading-snug uppercase max-w-[220px] sm:max-w-[280px] transition-colors flex items-center gap-2">
+                          <span className="text-[11px] font-black px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 font-mono border border-cyan-500/30">
+                            Ver
+                          </span>
+                          <span className="truncate">{item.name}</span>
                         </div>
-                        <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-                          <span className="font-mono text-cyan-400">{item.code}</span>
-                          <span>•</span>
-                          <span>Bs. {item.price.toFixed(2)} c/u</span>
+                        <div className="text-xs text-slate-400 flex items-center gap-2 mt-1">
+                          <span className="font-mono text-cyan-400 font-semibold">{item.code}</span>
+                          <span className="text-slate-600">•</span>
+                          <span className="font-bold text-slate-300">Bs. {item.price.toFixed(2)} c/u</span>
+                          {item.customNote && (
+                            <span className="text-[11px] text-amber-400 italic bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20 truncate max-w-[140px]">
+                              📝 {item.customNote}
+                            </span>
+                          )}
                         </div>
                       </td>
 
-                      {/* Contador de Cantidad */}
-                      <td className="py-2.5 text-center">
-                        <div className="inline-flex items-center border border-slate-700 bg-slate-950 rounded-lg overflow-hidden">
+                      {/* Contador de Cantidad (Más Grande y Táctil) */}
+                      <td className="py-3.5 text-center">
+                        <div className="inline-flex items-center border border-slate-700 bg-slate-950 rounded-xl overflow-hidden shadow-inner p-0.5">
                           <button
+                            type="button"
                             onClick={() => updateQuantity(item.ProductoID, -1)}
-                            className="px-2 py-1 hover:bg-slate-800 text-slate-300 font-black transition-colors"
+                            className="w-8 h-8 flex items-center justify-center hover:bg-slate-800 text-slate-300 hover:text-white font-black text-base transition-colors rounded-lg"
                           >
                             -
                           </button>
-                          <span className="px-2 text-xs font-bold text-white min-w-[24px] text-center">
+                          <span className="px-3 text-sm font-black text-white min-w-[32px] text-center font-mono">
                             {item.quantity}
                           </span>
                           <button
+                            type="button"
                             onClick={() => updateQuantity(item.ProductoID, 1)}
-                            className="px-2 py-1 hover:bg-slate-800 text-slate-300 font-black transition-colors"
+                            className="w-8 h-8 flex items-center justify-center hover:bg-slate-800 text-slate-300 hover:text-white font-black text-base transition-colors rounded-lg"
                           >
                             +
                           </button>
@@ -856,15 +1139,16 @@ function POSView() {
                       </td>
 
                       {/* Subtotal del item */}
-                      <td className="py-2.5 text-right font-extrabold text-slate-200">
+                      <td className="py-3.5 text-right font-black text-slate-100 text-sm font-mono">
                         Bs. {item.subtotal.toFixed(2)}
                       </td>
 
                       {/* Botón Borrar fila */}
-                      <td className="py-2.5 text-center">
+                      <td className="py-3.5 text-center">
                         <button
+                          type="button"
                           onClick={() => removeFromCart(item.ProductoID)}
-                          className="text-slate-500 hover:text-rose-400 p-1 rounded transition-colors"
+                          className="w-7 h-7 rounded-lg inline-flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
                           title="Quitar del ticket"
                         >
                           ✕
@@ -1053,16 +1337,9 @@ function POSView() {
         {/* Acciones Rápidas Izquierda */}
         <div className="flex flex-wrap items-center gap-1.5 text-xs">
           <button
-            onClick={() => showToast('Venta guardada en borrador', 'info')}
-            className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-bold border border-slate-700 transition-all"
-          >
-            <span>📝</span>
-            <span>Borrador</span>
-          </button>
-
-          <button
-            onClick={() => showToast('Cotización generada', 'info')}
-            className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-bold border border-slate-700 transition-all"
+            onClick={handleQuotationClick}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-cyan-400 rounded-xl font-bold border border-slate-700 transition-all shadow-sm"
+            title="Guardar como cotización sin descontar inventario"
           >
             <span>✏️</span>
             <span>Cotización</span>
@@ -1675,6 +1952,170 @@ function POSView() {
       )}
 
       {/* ========================================================================= */}
+      {/* 6.5 MODAL CONFIRMACIÓN: CANCELAR Y VACIAR TICKET                          */}
+      {/* ========================================================================= */}
+      {showCancelConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto text-2xl shadow-inner">
+              <svg className="w-7 h-7 text-rose-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            
+            <div className="space-y-1">
+              <h3 className="font-extrabold text-white text-base">
+                ¿Cancelar ticket de venta?
+              </h3>
+              <p className="text-xs text-slate-400">
+                Se quitarán todos los productos cargados en el ticket actual y se reiniciará la operación.
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCancelConfirmModal(false)}
+                className="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors"
+              >
+                No, mantener
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmClearCart}
+                className="w-1/2 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl text-xs shadow-lg shadow-rose-600/20 transition-all"
+              >
+                Sí, vaciar ticket
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 6.8 MODAL: DETALLES DE PRODUCTO, PRECIO UNITARIO Y DESCUENTOS             */}
+      {/* ========================================================================= */}
+      {editingCartItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <form
+            onSubmit={handleSaveItemDetails}
+            className="bg-slate-900 border border-slate-700/90 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 text-white my-auto max-h-[92vh] overflow-y-auto"
+          >
+            {/* Cabecera */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div>
+                <h3 className="font-extrabold text-white text-base leading-tight uppercase">
+                  {editingCartItem.name}
+                </h3>
+                <span className="text-[11px] font-mono text-cyan-400">
+                  {editingCartItem.code}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingCartItem(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* SECCIÓN INFORMATIVA: PRECIO CON Y SIN FACTURA REGISTRADOS */}
+            <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3.5 space-y-2">
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                Precios Registrados del Producto (Referencia Informativa)
+              </span>
+              <div className="grid grid-cols-2 gap-3">
+                <div
+                  onClick={() => setItemUnitPrice((editingCartItem.PrecioVenta || editingCartItem.price || 0).toFixed(2))}
+                  className="bg-slate-900/90 border border-slate-700/80 hover:border-cyan-500/60 p-2.5 rounded-xl cursor-pointer transition-all group"
+                  title="Haga clic para aplicar este precio al campo de Precio Unitario"
+                >
+                  <div className="text-[10px] text-slate-400 font-bold flex items-center justify-between">
+                    <span>Precio CON Factura</span>
+                    <span className="text-[9px] text-cyan-400 group-hover:underline">Aplicar ↲</span>
+                  </div>
+                  <div className="text-sm font-black text-cyan-400 font-mono mt-0.5">
+                    Bs. {(editingCartItem.PrecioVenta || editingCartItem.price || 0).toFixed(2)}
+                  </div>
+                </div>
+
+                <div
+                  onClick={() => {
+                    const sinFac = editingCartItem.PrecioSinFactura || ((editingCartItem.PrecioVenta || editingCartItem.price || 0) * 0.87);
+                    setItemUnitPrice(parseFloat(sinFac || 0).toFixed(2));
+                  }}
+                  className="bg-slate-900/90 border border-slate-700/80 hover:border-emerald-500/60 p-2.5 rounded-xl cursor-pointer transition-all group"
+                  title="Haga clic para aplicar este precio al campo de Precio Unitario"
+                >
+                  <div className="text-[10px] text-slate-400 font-bold flex items-center justify-between">
+                    <span>Precio SIN Factura</span>
+                    <span className="text-[9px] text-emerald-400 group-hover:underline">Aplicar ↲</span>
+                  </div>
+                  <div className="text-sm font-black text-emerald-400 font-mono mt-0.5">
+                    Bs. {(editingCartItem.PrecioSinFactura || ((editingCartItem.PrecioVenta || editingCartItem.price || 0) * 0.87)).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* FORMULARIO EDITABLE: PRECIO UNITARIO, DESCUENTOS Y DESCRIPCIÓN */}
+            <div className="space-y-4">
+              {/* Precio Unitario Editable por el Vendedor */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Precio unitario (Bs.) *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={itemUnitPrice}
+                  onChange={(e) => setItemUnitPrice(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-black text-white focus:outline-none focus:border-cyan-400 font-mono"
+                  placeholder="0.00"
+                  autoFocus
+                />
+              </div>
+
+
+
+              {/* Descripción / Notas del ítem */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Descripción / Observaciones
+                </label>
+                <textarea
+                  rows="3"
+                  value={itemDescription}
+                  onChange={(e) => setItemDescription(e.target.value)}
+                  placeholder="Agregue el IMEI del producto, el número de serie u otra información aquí."
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                ></textarea>
+              </div>
+            </div>
+
+            {/* BOTONES DE ACCIÓN */}
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setEditingCartItem(null)}
+                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors"
+              >
+                Cerrar
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold rounded-xl text-xs shadow-lg shadow-cyan-600/20 transition-all"
+              >
+                Guardar Cambios
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
       {/* 7. MODAL: FILTRAR POR CATEGORÍA                                           */}
       {/* ========================================================================= */}
       {showCategoryFilterModal && (
@@ -1783,7 +2224,7 @@ function POSView() {
               </button>
             </div>
 
-            {/* Pestañas Superiores: Final, Cotización, Borrador */}
+            {/* Pestañas Superiores: Final y Cotización */}
             <div className="flex items-center gap-2 border-b border-slate-800 pb-2 flex-shrink-0 text-xs font-bold">
               <button
                 type="button"
@@ -1812,19 +2253,6 @@ function POSView() {
               >
                 <span>&gt;_</span>
                 <span>Cotización</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setRecentSalesTab('BORRADOR')}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg transition-all ${
-                  recentSalesTab === 'BORRADOR'
-                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <span>&gt;_</span>
-                <span>Borrador</span>
               </button>
             </div>
 
@@ -1929,13 +2357,321 @@ function POSView() {
                   })
                 )
               ) : (
-                <div className="py-12 text-center text-slate-400 text-xs space-y-1">
-                  <p className="font-bold text-slate-300">
-                    No hay {recentSalesTab.toLowerCase()}s pendientes en esta sesión.
-                  </p>
-                </div>
+                /* LISTA DE COTIZACIONES */
+                quotations.length === 0 ? (
+                  <div className="py-12 text-center text-slate-400 text-xs space-y-2">
+                    <div className="w-12 h-12 rounded-full bg-slate-800 text-cyan-400 flex items-center justify-center mx-auto text-xl">
+                      ✏️
+                    </div>
+                    <p className="text-base font-bold text-slate-300">No hay cotizaciones registradas</p>
+                    <p>Agregue productos al ticket y presione "Cotización" en la barra inferior para guardar una proforma sin descontar inventario.</p>
+                  </div>
+                ) : (
+                  quotations.map((q, idx) => {
+                    const isNamed = q.client && q.client !== 'SIN NOMBRE';
+                    const clientDisplay = isNamed ? q.client : '';
+
+                    return (
+                      <div
+                        key={idx}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-2.5 bg-slate-950/60 hover:bg-slate-800/40 rounded-xl border border-slate-800/70 transition-all gap-2 text-xs"
+                      >
+                        {/* 1. Número de Fila + Código de Cotización + Cliente */}
+                        <div className="flex items-start sm:items-center gap-2.5 min-w-[220px]">
+                          <span className="font-extrabold text-slate-500 text-[11px] w-5 text-right flex-shrink-0">
+                            {idx + 1}.
+                          </span>
+                          <div>
+                            <div className="font-extrabold text-white text-xs tracking-tight">
+                              <span className="font-mono text-amber-400">COT-{q.quoteID || q.id}</span>
+                              <span className="ml-1 text-slate-300 uppercase">
+                                ({clientDisplay})
+                              </span>
+                            </div>
+                            {/* Fecha y Empleado */}
+                            <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5 font-mono">
+                              <span className="text-amber-400/90 font-semibold">{q.time}</span>
+                              {q.empleado && (
+                                <span className="text-slate-400">
+                                  • <span className="text-slate-300">{q.empleado}</span>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 2. Total de la Cotización */}
+                        <div className="text-left sm:text-right font-black text-amber-300 text-sm sm:px-3 flex-shrink-0 font-mono">
+                          Bs. {typeof q.total === 'number'
+                            ? q.total.toFixed(2)
+                            : parseFloat(q.total || 0).toFixed(2)}
+                        </div>
+
+                        {/* 3. Botones de Acción: Cargar al Ticket, Imprimir Cotización, Borrar */}
+                        <div className="flex flex-wrap items-center gap-1.5 flex-shrink-0">
+                          {/* Cargar al ticket / Editar */}
+                          <button
+                            type="button"
+                            onClick={() => handleLoadQuotation(q)}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-cyan-500/70 text-cyan-400 hover:bg-cyan-500/10 font-bold text-[11px] transition-all"
+                            title="Cargar cotización al ticket activo para cobrar o editar"
+                          >
+                            <span>🛒</span>
+                            <span>Cargar al Ticket</span>
+                          </button>
+
+                          {/* Imprimir */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const receiptData = {
+                                id: `COT-${q.quoteID || q.id}`,
+                                ticketID: `COT-${q.quoteID || q.id}`,
+                                client: isNamed ? q.client : 'CLIENTE PROFORMA',
+                                nit: q.nit || '0',
+                                docType: 'NIT',
+                                complemento: '',
+                                email: '',
+                                customerType: isNamed ? 'NORMAL' : 'SIN_NOMBRE',
+                                items: (q.detalles || []).map((d, i) => ({
+                                  ProductoID: d.ProductoID || i,
+                                  name: d.producto,
+                                  quantity: d.cantidad,
+                                  price: d.precioUnitario,
+                                  unit: d.unit || 'UNID',
+                                  subtotal: d.subtotal
+                                })),
+                                totalItemsCount: q.items || 1,
+                                subtotal: parseFloat(q.subtotal || q.total || 0),
+                                discount: parseFloat(q.discount || 0),
+                                total: parseFloat(q.total || 0),
+                                baseCreditoFiscal: parseFloat(q.total || 0),
+                                creditoFiscal: 0,
+                                cashReceived: 0,
+                                change: 0,
+                                time: q.time,
+                                paymentMethod: 'COTIZACIÓN (PROFORMA)',
+                                isInvoice: false,
+                                empleado: q.empleado || currentUser?.Nombre || 'Cajero'
+                              };
+                              setLastSaleReceipt(receiptData);
+                              setTimeout(() => {
+                                window.print();
+                              }, 100);
+                            }}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-amber-500/70 text-amber-400 hover:bg-amber-500/10 font-bold text-[11px] transition-all"
+                            title="Imprimir proforma / cotización"
+                          >
+                            <span>🖨️</span>
+                            <span>Impresión</span>
+                          </button>
+
+                          {/* Borrar */}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteQuotation(q)}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-500/70 text-rose-400 hover:bg-rose-500/10 font-bold text-[11px] transition-all"
+                            title="Eliminar cotización"
+                          >
+                            <span>🗑️</span>
+                            <span>Borrar</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 9. MODAL: REGISTRAR NUEVO CLIENTE RÁPIDO PARA FACTURACIÓN                 */}
+      {/* ========================================================================= */}
+      {showNewClientModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="font-extrabold text-white text-base flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+                Agregar un nuevo contacto
+              </h3>
+              <button onClick={() => setShowNewClientModal(false)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <form onSubmit={handleSaveQuickClient} className="space-y-3.5 text-xs">
+              {/* Selector Individual vs Empresa */}
+              <div className="flex items-center justify-between bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                <span className="text-slate-400 font-bold">Tipo de cliente:</span>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-1.5 text-slate-200 cursor-pointer font-bold">
+                    <input
+                      type="radio"
+                      name="quickTipoContacto"
+                      value="Individual"
+                      checked={newClientForm.TipoContacto === 'Individual'}
+                      onChange={() => setNewClientForm({ ...newClientForm, TipoContacto: 'Individual' })}
+                      className="text-cyan-500 bg-slate-900 border-slate-700"
+                    />
+                    <span>Individual</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 text-slate-200 cursor-pointer font-bold">
+                    <input
+                      type="radio"
+                      name="quickTipoContacto"
+                      value="Empresa"
+                      checked={newClientForm.TipoContacto === 'Empresa'}
+                      onChange={() => setNewClientForm({ ...newClientForm, TipoContacto: 'Empresa' })}
+                      className="text-cyan-500 bg-slate-900 border-slate-700"
+                    />
+                    <span>Empresa</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Nombre de la empresa si es Empresa */}
+              {newClientForm.TipoContacto === 'Empresa' ? (
+                <div>
+                  <label className="block text-cyan-300 font-bold mb-1">Nombre de la empresa:*</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej. PORTE ASESORIA Y CONFECCION S.R.L."
+                    value={newClientForm.NombreEmpresa}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNewClientForm({
+                        ...newClientForm,
+                        NombreEmpresa: val,
+                        RazonSocial: (!newClientForm.RazonSocial || newClientForm.RazonSocial === newClientForm.NombreEmpresa) ? val.toUpperCase() : newClientForm.RazonSocial
+                      });
+                    }}
+                    className="w-full bg-slate-950 border border-cyan-700/60 rounded-xl px-3 py-2 text-white font-bold outline-none focus:border-cyan-400 uppercase"
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-slate-400 font-semibold mb-1">Nombres:*</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej. DANIEL"
+                      value={newClientForm.name}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const fullName = [val, newClientForm.apellidos].filter(Boolean).join(' ');
+                        setNewClientForm({
+                          ...newClientForm,
+                          name: val,
+                          RazonSocial: fullName.toUpperCase()
+                        });
+                      }}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-500 font-bold uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 font-semibold mb-1">Apellidos:</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. RODRIGUEZ"
+                      value={newClientForm.apellidos}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const fullName = [newClientForm.name, val].filter(Boolean).join(' ');
+                        setNewClientForm({
+                          ...newClientForm,
+                          apellidos: val,
+                          RazonSocial: fullName.toUpperCase()
+                        });
+                      }}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-500 font-semibold uppercase"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Razón Social para Facturación */}
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Razón Social para Facturación:</label>
+                <input
+                  type="text"
+                  placeholder="Razón social que figurará en la factura SIAT"
+                  value={newClientForm.RazonSocial}
+                  onChange={(e) => setNewClientForm({ ...newClientForm, RazonSocial: e.target.value.toUpperCase() })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-500 font-bold uppercase"
+                />
+              </div>
+
+              {/* Tipo de Documento y NIT / CI */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Tipo de Documento:</label>
+                  <select
+                    value={newClientForm.TipoDocumentoSIAT}
+                    onChange={(e) => setNewClientForm({ ...newClientForm, TipoDocumentoSIAT: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-white outline-none focus:border-cyan-500 font-semibold text-[11px]"
+                  >
+                    <option value="NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA">NIT</option>
+                    <option value="CI - CÉDULA DE IDENTIDAD">CI (Cédula de Identidad)</option>
+                    <option value="PASAPORTE">Pasaporte</option>
+                    <option value="OTRO DOCUMENTO">Otro Documento</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Número de impuesto / NIT / CI:</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. 4502616-1S o 0"
+                    value={newClientForm.nit}
+                    onChange={(e) => setNewClientForm({ ...newClientForm, nit: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-cyan-300 font-mono font-bold outline-none focus:border-cyan-500"
+                  />
+                </div>
+              </div>
+
+              {/* Móvil y Email */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Móvil cliente:* (Default: 0)</label>
+                  <input
+                    type="text"
+                    placeholder="0"
+                    value={newClientForm.phone}
+                    onChange={(e) => setNewClientForm({ ...newClientForm, phone: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono outline-none focus:border-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Email Factura:</label>
+                  <input
+                    type="email"
+                    placeholder="cliente@correo.com"
+                    value={newClientForm.email}
+                    onChange={(e) => setNewClientForm({ ...newClientForm, email: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowNewClientModal(false)}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 font-bold rounded-xl hover:bg-slate-700"
+                >
+                  Cerrar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30"
+                >
+                  Guardar y Seleccionar
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -509,11 +509,174 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
     * El elemento `#printable-receipt` permanece oculto en pantalla durante la navegación normal (`hidden print:block`) y se hace visible únicamente ante el diálogo de impresión física (`@media print`).
     * Se eliminó el modal residual que quedaba flotando en la interfaz al terminar o cancelar la impresión, permitiendo regresar directamente a la terminal POS limpia.
 
+### 69. Purga Integral y Limpieza de Código Muerto en Frontend (`src/`)
+* **Eliminación de Componentes y Páginas Heredadas/Duplicadas:**
+  * Se removieron las vistas obsoletas de autenticación previa (`components/Login/Administrator/`, `components/Login/Clients/`, `components/Login/Products/`, `pages/Admins/LoginAdm.*`, `pages/Admins/RegisterAdm.*`, `pages/Clients/LoginClie.*`).
+  * Se eliminaron archivos de prueba y plantillas no utilizadas (`components/DataComponent.jsx`, `components/header/`, `pages/About/`, `App.test.js`, `setupTests.js`, `reportWebVitals.js`, `logo.svg`, `index.js`).
+* **Optimización de Rutas en [`App.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/App.jsx):**
+  * Se limpiaron todos los imports no utilizados y se normalizó la tabla de enrutamiento del sistema a las vistas maestras oficiales.
+* **Resultado:**
+  * El árbol de código se redujo de **46 archivos a 25 archivos activos esenciales**, con compilación limpia (`npm run build` con código de salida 0).
 
+### 70. Modal Moderno de Confirmación para Cancelar y Vaciar Ticket POS (`POSView.jsx`)
+* **Reemplazo de Diálogo Nativo del Navegador:**
+  * Se eliminó el cuadro de alerta nativo del navegador (`window.confirm`) que rompía la estética visual.
+  * Se implementó una **tarjeta modal oscura estilizada (`showCancelConfirmModal`)** con:
+    * Ícono de papelera/vaciado con resplandor en rojo suave.
+    * Título y mensaje claro: *"¿Cancelar ticket de venta? Se quitarán todos los productos cargados en el ticket actual y se reiniciará la operación."*
+    * Botón de cancelación seguro: **`No, mantener`** (gris oscuro).
+    * Botón de acción principal: **`Sí, vaciar ticket`** (rojo carmesí destacado).
+    * Toast informativo instantáneo confirmando el reinicio del ticket.
 
+### 72. Flujo Completo de Cotizaciones y Proformas POS (`POSView.jsx`)
+* **1. Emisión de Cotizaciones sin Descuento de Inventario:**
+  * Al hacer clic en el botón **`✏️ Cotización`** de la barra inferior:
+    * Se emite una proforma con correlativo único (`COT-XXXXX`), fecha, hora, cliente y desglose de productos.
+    * **No descuenta stock de Lotes ni altera el inventario físico en BD.**
+    * Se vacía el ticket activo y se notifica al cajero con un toast de confirmación.
+* **2. Visualización y Gestión en Transacciones Recientes (`>_ Cotización`):**
+  * En la pestaña **`>_ Cotización`** se listan todas las cotizaciones emitidas con su código en ámbar, nombre de cliente, fecha, operador y total (`Bs. XX.XX`).
+  * **Acciones por Cotización:**
+    * **`🛒 Cargar al Ticket`:** Carga todos los ítems y cliente de la cotización al ticket activo en 1 clic para que el vendedor pueda agregar más productos o concretar la venta cobrando con **`💵 Efectivo`**.
+    * **`🖨️ Impresión`:** Imprime la proforma física o comprobante de cotización oficial para entregar al cliente.
+    * **`🗑️ Borrar`:** Elimina la cotización del historial de proformas.
 
+### 73. Modal de Detalles de Ítem, Modificador de Precio y Tarjetas Informativas (`POSView.jsx`)
+* **1. Apertura Rápida desde el Ticket de Venta:**
+  * Al hacer clic en cualquier producto cargado en la tabla del ticket (identificado con el badge interactivo `Ver` y cursor pointer), se abre el modal de edición de línea.
+* **2. Cajas Informativas de Precios Registrados:**
+  * Se diseñaron dos tarjetas destacadas de referencia rápida:
+    * 🔹 **Precio CON Factura:** Muestra el precio de venta oficial del catálogo (`Bs. XX.XX`). Al hacer clic, aplica este monto automáticamente al campo editable.
+    * 🟢 **Precio SIN Factura:** Muestra el precio sin factura configurado o calculado para venta de mostrador (`Bs. XX.XX`). Al hacer clic, traslada el valor al campo editable.
+* **3. Formulario Simplificado y Limpio:**
+  * **`Precio unitario (Bs.)`:** Campo numérico libre donde el vendedor puede colocar el precio acordado para la venta.
+  * **`Descripción / Observaciones`:** Área de texto para notas (número de serie, IMEI, medidas especiales, etc.).
+  * *(Se eliminaron los selectores innecesarios de tipo e importe de descuento para mantener la pantalla rápida y libre de distracciones).*
+* **4. Recálculo Automático en el Ticket:**
+  * Al guardar los cambios, el ticket actualiza el precio unitario, el subtotal de la fila y el total general de la venta de forma inmediata.
 
+### 74. Ampliación Estética y Optimización Ergonómica del Panel de Ticket POS (`POSView.jsx`)
+* **1. Mayor Amplitud del Área de Trabajo:**
+  * Se incrementó el ancho del panel izquierdo a `w-[50%]` / `xl:w-[48%]` / `2xl:w-[46%]`, equilibrando perfectamente la terminal de ventas para que el listado de productos sea el protagonista del mostrador.
+* **2. Tipografía y Filas Más Espaciosas:**
+  * Altura de fila aumentada (`py-3.5`) con fondo alternado interactivo al pasar el cursor.
+  * Nombres de productos más visibles y nítidos (`text-sm font-extrabold text-slate-100`).
+  * Subtotales destacados en tipografía monoespaciada en negrita (`text-sm font-black text-slate-100`).
+* **3. Botonera Táctil de Cantidades (`+` / `-`) Más Cómoda:**
+  * Controles de cantidad con botones redondeados y amplios (`w-8 h-8 font-black text-base`), pensados tanto para clics rápidos con ratón como para pantallas táctiles de mostrador.
+  * Botón de eliminación estilizado con efecto hover en rojo suave.
 
+### 75. Limpieza de Sesión Inicial y Eliminación de Nombres por Defecto (`Topbar`, `Sidebar`, `Home`)
+* **1. Comportamiento de Sesión en el Navegador:**
+  * Las sesiones de usuario (`cyc_user_session` y `cyc_client_session`) se almacenan en el `localStorage` del navegador. Si previamente se inició sesión en la máquina, el navegador la preserva hasta que se haga clic en **"Cerrar Sesión"**.
+* **2. Eliminación de Textos Quemados (Hardcoded Fallbacks):**
+  * Se removieron todos los nombres por defecto ("Oscar Edgar Claros Davalos" o emails quemados) en [`topbar.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/topbar/topbar.jsx), [`sidebar.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/sidebar/sidebar.jsx) y [`Home.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/Home.jsx).
+  * Cuando no existe una sesión activa, el catálogo de la tienda muestra limpiamente el botón **`Iniciar Sesión / Registrarse`** para clientes y operadores.
+
+### 76. Módulo de Contactos y Replicación del Administrador de Proveedores (`SupplierView.jsx`, `sidebar.jsx`, `backend`)
+* **1. Nuevo Menú Desplegable "Contactos" en la Barra Lateral:**
+  * Se añadió la sección colapsable **`Contactos`** en [`sidebar.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/sidebar/sidebar.jsx) posicionada según el ERP de referencia.
+  * Al hacer clic, despliega exclusivamente las dos opciones solicitadas:
+    1. **`Proveedores`** (Ruta: `/proveedores`)
+    2. **`Clientes`** (Ruta: `/clientes`)
+* **2. Replicación Exacta de la Vista de Proveedores ([`SupplierView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Contacts/SupplierView.jsx)):**
+  * **Cabecera:** Título `Proveedores` con subtítulo `Administra tus Proveedores` y botón de acción superior derecho **`+ Añadir`**.
+  * **Tarjeta de Filtros Colapsable:** Panel con toggle desplegable para filtrar por término de pago y estado de compras adeudadas.
+  * **Herramientas de Exportación y Visibilidad:** Botones `Exportar a CSV`, `Exportar a Excel`, `Impresión`, `Visibilidad de columna` (menú flotante para ocultar/mostrar columnas dinámicamente) y `Exportar a PDF`.
+  * **DataTable Completa:** Columnas idénticas al sistema ERP de referencia:
+    * `Acción` (botón dropdown `Acciones ▾` con opciones: *Ver Detalles*, *Editar*, *Eliminar*).
+    * `ID de contacto` (ej. `C00461`), `Nombre de la empresa`, `Nombre`, `Email`, `Razón social`, `Número de impuesto (NIT)`, `Término de pago`, `Saldo de apertura`, `Saldo anticipado`, `Añadido`, `Dirección`, `Móvil cliente`, `Total compra debida`, `Total de devoluciones de compra adeudadas`.
+  * **Modales Integrados:** Modales modernos para alta de proveedor (`+ Añadir`), edición rápida (`Editar`), ficha detallada con resumen financiero (`Ver Detalles`) y confirmación de eliminación segura (`Eliminar`).
+* **3. Backend y Modelo de Base de Datos:**
+  * Se actualizó el modelo [`supplier.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/models/supplier.js) y las rutas de API en [`suppliers.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/suppliers.js) con soporte completo para CRUD y generación secuencial de códigos de contacto (`C00001`...).
+  * Se conectaron las funciones en [`api.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/services/api.js) y se registraron las rutas en [`App.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/App.jsx).
+
+### 77. Control Inteligente de Caducidad y Vencimiento FEFO (`ProductRegisterForm.jsx`, `ProductEditForm.jsx`, `ProductView.jsx`, `backend`)
+* **1. Selector de Caducidad en la Ficha del Producto:**
+  * En [`ProductRegisterForm.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Products/ProductRegisterForm.jsx) y [`ProductEditForm.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Products/ProductEditForm.jsx) se incorporó la tarjeta **Control de Caducidad y Vencimiento (Lotes FEFO)**.
+  * Cuenta con un switch intuitivo: `¿Este producto cuenta con fecha de vencimiento? (Con Caducidad / Sin Caducidad)`.
+  * Si está activado, permite configurar los `Días de alerta preventiva previa` (por defecto 30 días para el semáforo).
+* **2. Ingreso de Fecha de Caducidad en el Stock de Apertura Multi-fila ([`ProductView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Products/ProductView.jsx)):**
+  * En el modal verde estilo ERP de **Añadir Stock de Apertura**, se agregó la columna **Fecha Caducidad**.
+  * Si el producto tiene activada la caducidad, la cabecera se resalta en tono ámbar indicando `VENCE`.
+  * Cada fila ingresada guarda su fecha de vencimiento específica por lote en la base de datos para el motor FEFO.
+* **3. Persistencia en Base de Datos MSSQL:**
+  * Se añadieron los campos `ManejaCaducidad` (BOOLEAN) y `DiasAlertaCaducidad` (INTEGER) en [`product.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/models/product.js) y [`products.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/products.js).
+  * Los lotes guardados en [`lots.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/lots.js) persisten su `FechaVencimiento`.
+
+### 78. Simplificación del Módulo de Clientes para Facturación y Retiro de Proveedores (`sidebar.jsx`, `ClientView.jsx`, `POSView.jsx`)
+* **1. Retiro de Proveedores y Menú Directo de Clientes en el Sidebar:**
+  * Se eliminó el submódulo de Proveedores conforme al alcance del proyecto.
+  * En [`sidebar.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/sidebar/sidebar.jsx) se reemplazó el desplegable por un acceso directo y limpio **`Clientes`** (`/clientes`).
+* **2. Módulo de Gestión de Clientes Enfocado a Facturación SIAT ([`ClientView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Contacts/ClientView.jsx)):**
+  * Vista adaptada para almacenar y administrar la información tributaria requerida para la emisión de facturas:
+    * `Nombre Completo`, `Razón Social para Factura`, `Número de Identificación Tributaria (NIT / CI)`, `Email de Factura Electrónica`, `Teléfono / Celular` y `Dirección`.
+  * Herramientas de exportación (`CSV`, `Excel`, `Impresión`, `Visibilidad de columnas`, `PDF`), búsqueda rápida y paginación.
+* **3. Sincronización en Tiempo Real con el Punto de Venta POS ([`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx)):**
+  * Los clientes registrados en `/clientes` se encuentran inmediatamente disponibles en el selector de clientes del mostrador POS.
+  * Se habilitó el botón `+` en el encabezado del ticket POS para registrar nuevos clientes rápidamente durante la venta y autoseleccionarlos para la factura.
+
+### 79. Replicación Exacta de Modales de Clientes (Individual vs. Empresa) y Flexibilidad Tributaria SIAT (`ClientView.jsx`, `POSView.jsx`)
+* **1. Modal Idéntico al Sistema de Referencia para "Agregar un nuevo contacto" y "Editar contacto":**
+  * **Selector de Tipo con Radio Buttons:** Conmutador inmediato entre **`Individual`** y **`Empresa`**.
+  * **Campos Específicos por Tipo:**
+    * Si se selecciona **`Empresa`**, se despliega el campo prioritario: **`Nombre de la empresa:*`** (ej. *PORTE ASESORIA Y CONFECCION S.R.L.*), el cual sincroniza automáticamente la `Razón social` tributaria.
+    * Si se selecciona **`Individual`**, se muestran los campos divididos: `Prefijo:` (*Señor, señora, señorita...*), `Nombres:*`, `Segundo nombre:` y `Apellidos:`.
+  * **Campos de Contacto y Configuración:**
+    * `ID de contacto:` Generado de forma automática secuencialmente (ej. `CO0462`, `CO0466`, `CO0467`) o editable con placeholder *Dejar vacío para autogenerar*.
+    * Se removió el campo innecesario `Grupo de clientes` tanto para individual como para empresa, dejando una fila superior limpia de 3 columnas (`Tipo de Contacto`, `Tipo` e `ID de contacto`).
+    * `Móvil cliente:*` con valor numérico por defecto **`0`**.
+    * `Número de contacto alternativo:`, `Línea fija:`, `Email:`.
+    * `Fecha de nacimiento:` con selector de fecha.
+    * `Asignado a:` selector de usuario responsable.
+  * **Sección de Facturación SIAT:**
+    * `Razón social:` Campo principal para la emisión del documento fiscal.
+    * `Tipo de Documento de Identidad (SIAT):` Dropdown con opciones normativas (*NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA*, *CI - CÉDULA DE IDENTIDAD*, *PASAPORTE*, *OTRO DOCUMENTO*).
+    * `Número de impuesto / Documento:` Permite alfanuméricos con guiones o complementos (ej. *4502616-1S*, *280376027*, *5948302* o *0*).
+  * **Secciones Desplegables / Acordeones:**
+    * `Más información ▾` (Dirección, Ciudad).
+    * `Agregar personas de contacto ▾` (Contactos secundarios de compras o almacén).
+* **2. Validación Flexible Adaptada al Mostrador:**
+  * No es obligatorio llenar todos los campos secundarios; para clientes de paso basta con ingresar el Nombre o la Razón Social y el NIT/CI.
+  * Si no se especifica móvil o NIT, el sistema asigna por defecto `0` para garantizar compatibilidad con ventas en mostrador y facturación sin nombre.
+* **3. Registro Rápido en el POS ([`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx)):**
+  * El modal rápido de clientes `+` en la pantalla de ventas soporta la misma distinción entre `Individual` y `Empresa`, autocompletando de inmediato los datos de facturación en el ticket.
+
+### 80. Visualización Dual de Alertas de Caducidad y Stock (Campanita Topbar + Tabla Dashboard FEFO) (`topbar.jsx`, `Home.jsx`)
+* **1. Campanita de Notificaciones Interactiva en el Menú Superior ([`topbar.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/topbar/topbar.jsx)):**
+  * **Badge Dinámico en Tiempo Real:** Calcula el total de alertas activas (`Vencidos`, `Próximos a Vencer < 30d/60d`, `Agotados` y `Stock Crítico`).
+  * **Panel Flotante Desplegable:**
+    * Pestañas de filtrado: **`Todas`**, **`⏰ Vencimientos`** y **`📉 Stock Bajo`**.
+    * Fichas detalladas con indicador de color (🔴 / 🟠 / 🟡), días restantes, lote específico y stock restante.
+    * Botón de actualización inmediata y acceso directo a Kardex e Inventario.
+* **2. Tabla Visual de Caducidad de Lotes FEFO en la Página de Inicio ([`Home.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/Home.jsx)):**
+  * **Ubicación:** Ubicada inmediatamente debajo de la tabla de alertas de existencias.
+  * **Columnas:** `Producto` (Nombre, Código, Marca), `Lote #` (`LOTE-X`), `Fecha Caducidad`, `Estado / Semáforo` (🔴 Vencido, 🟠 Crítico &lt; 30d, 🟡 Alerta &lt; 60d, 🟢 Vigente), `Stock Lote` y `Acción` (enlace directo a `Ver en Productos →`).
+  * **Filtros y Herramientas:** Selector por estado (*Todos*, *Vencidos*, *Críticos*, *Preventivos*, *Vigentes*), buscador en tiempo real y exportación completa (`CSV`, `Excel`, `Impresión`, `PDF`).
+
+### 81. Redirección de Enlaces de Alertas a "Lista de Productos" (`/productsView`) (`topbar.jsx`, `Home.jsx`)
+* **1. Reemplazo de Enlaces Obsoletos de Kardex:**
+  * Dado que la vista principal donde se gestiona el catálogo, existencias, lotes y precios es **"Lista de Productos"** ([`ProductView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Products/ProductView.jsx) en `/productsView`), se redirigieron todos los accesos rápidos:
+    * **En la campanita del Topbar ([`topbar.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/topbar/topbar.jsx)):** El enlace del pie ahora dice `Ver Lista de Productos & Lotes →` y redirige a `/productsView`. Asimismo, el dropdown de perfil redirige directamente a `Lista de Productos`.
+    * **En la tabla del Dashboard ([`Home.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/Home.jsx)):** El botón superior del encabezado ahora es `Ver Lista de Productos & Lotes →` (`/productsView`) y en cada fila de la tabla la acción es `Ver en Productos →` (`/productsView`).
+
+### 82. Sistema de Descarte y Marcado de Notificaciones Leídas (`topbar.jsx`)
+* **1. Descarte Individual (Botón ✕):**
+  * Cada tarjeta de alerta (lote por vencer o producto con stock crítico) cuenta con un botón interactivo `✕` para descartarla de inmediato.
+  * Al hacer clic, la notificación se oculta y el contador de la campanita disminuye en tiempo real.
+* **2. Acción Masiva "Marcar todas como leídas":**
+  * Botón en el encabezado del desplegable (`✓ Marcar todas`) para limpiar todas las alertas activas con un solo clic.
+* **3. Persistencia en Almacenamiento Local (`localStorage`):**
+  * Las alertas descartadas se almacenan en `cyc_dismissed_notifications` para no volver a molestar al usuario en la misma sesión/dispositivo.
+* **4. Estado Vacío Inteligente y Restablecimiento:**
+  * Cuando todas las notificaciones han sido descartadas, el panel muestra el mensaje *"¡Todo al día! Has descartado las notificaciones activas"* junto con un enlace interactivo para **`↺ Restablecer alertas descartadas`** si se desea volver a revisarlas.
+
+### 83. Visualización Condicional y Diseño Limpio de "Fecha Caducidad" en Stock de Apertura (`ProductView.jsx`)
+* **1. Ocultamiento Automático para Productos No Perecederos:**
+  * En el modal de **"Añadir stock de apertura"** ([`ProductView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Products/ProductView.jsx)), la columna y los campos de entrada de **`Fecha Caducidad`** ahora se renderizan **únicamente** si el producto tiene habilitada la opción de caducidad (`ManejaCaducidad = true`).
+  * Para herramientas, materiales o artículos que no vencen (`ManejaCaducidad = false`), la columna se oculta por completo, dejando una tabla más limpia y directa centrada en Cantidad, Costo, Subtotal, Fecha de Ingreso y Nota/Lote.
+* **2. Estilo Visual Uniforme en la Tabla Verde:**
+  * Se removió el fondo amarillo y el badge de la cabecera, integrando `Fecha Caducidad` con la misma estética verde esmeralda y campos homogéneos que el resto de las columnas (`Fecha Ingreso`, `Cantidad`, etc.).
 
 
 

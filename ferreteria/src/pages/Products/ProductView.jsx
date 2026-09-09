@@ -156,6 +156,7 @@ function ProductView() {
           cantidad: l.Stock.toString(),
           costo: product.PrecioCompra ? product.PrecioCompra.toString() : "",
           fecha: l.fecha_creacion ? new Date(l.fecha_creacion).toISOString().slice(0, 16) : hoy,
+          fechaVencimiento: l.FechaVencimiento ? l.FechaVencimiento.toString().slice(0, 10) : "",
           nota: l.NotaLote || l.NumeroLote || "Stock de apertura",
           isRegistered: true
         }));
@@ -165,6 +166,7 @@ function ProductView() {
           cantidad: "",
           costo: product.PrecioCompra ? product.PrecioCompra.toString() : "",
           fecha: hoy,
+          fechaVencimiento: "",
           nota: "",
           isRegistered: false
         });
@@ -180,6 +182,7 @@ function ProductView() {
             cantidad: "",
             costo: product.PrecioCompra ? product.PrecioCompra.toString() : "",
             fecha: hoy,
+            fechaVencimiento: "",
             nota: "Stock inicial de apertura",
             isRegistered: false
           }
@@ -198,6 +201,7 @@ function ProductView() {
         cantidad: "",
         costo: stockProduct?.PrecioCompra ? stockProduct.PrecioCompra.toString() : "",
         fecha: hoy,
+        fechaVencimiento: "",
         nota: "",
         isRegistered: false
       }
@@ -235,6 +239,7 @@ function ProductView() {
         cantidad: parseFloat(r.cantidad),
         costo: parseFloat(r.costo || 0),
         fecha: r.fecha,
+        FechaVencimiento: r.fechaVencimiento || null,
         nota: r.nota || "Stock de apertura"
       }))
     };
@@ -808,8 +813,11 @@ function ProductView() {
                       <th className="px-4 py-3 min-w-[140px]">Cantidad restante</th>
                       <th className="px-4 py-3 min-w-[130px]">Costo unitario (antes de impuestos)</th>
                       <th className="px-4 py-3 min-w-[120px]">Subtotal (antes de impuestos)</th>
-                      <th className="px-4 py-3 min-w-[170px]">Fecha</th>
-                      <th className="px-4 py-3 min-w-[280px]">Nota</th>
+                      <th className="px-4 py-3 min-w-[160px]">Fecha Ingreso</th>
+                      {Boolean(stockProduct.ManejaCaducidad) && (
+                        <th className="px-4 py-3 min-w-[160px]">Fecha Caducidad</th>
+                      )}
+                      <th className="px-4 py-3 min-w-[240px]">Nota / Lote</th>
                       <th className="px-2 py-3 text-center min-w-[70px]">Acción</th>
                     </tr>
                   </thead>
@@ -877,7 +885,7 @@ function ProductView() {
                             Bs. {subtotal}
                           </td>
 
-                          {/* Fecha */}
+                          {/* Fecha Ingreso */}
                           <td className="px-4 py-3">
                             <input
                               type="datetime-local"
@@ -891,6 +899,24 @@ function ProductView() {
                               }`}
                             />
                           </td>
+
+                          {/* Fecha de Caducidad / Vencimiento (Solo si el producto maneja caducidad) */}
+                          {Boolean(stockProduct.ManejaCaducidad) && (
+                            <td className="px-4 py-3">
+                              <input
+                                type="date"
+                                value={row.fechaVencimiento}
+                                disabled={row.isRegistered}
+                                onChange={(e) => handleStockRowChange(row.id, "fechaVencimiento", e.target.value)}
+                                placeholder="YYYY-MM-DD"
+                                className={`border rounded-lg px-2 py-1.5 text-xs outline-none w-full font-semibold ${
+                                  row.isRegistered
+                                    ? 'bg-slate-950 border-slate-800 text-slate-500 cursor-not-allowed'
+                                    : 'bg-slate-900 border-slate-800 text-slate-300 focus:border-cyan-500'
+                                }`}
+                              />
+                            </td>
+                          )}
 
                           {/* Nota / Observación */}
                           <td className="px-4 py-3">

@@ -90,6 +90,56 @@ function Sidebar({ activeItem }) {
           </Link>
 
           {/* Opción: Productos (Colapsable / Desplegable) */}
+          {/* Opción: Gestión de Usuarios / Empleados */}
+          <Link
+            to="/usuarios"
+            title="Gestión de usuarios"
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+              isCollapsed ? 'justify-center px-0' : ''
+            } ${
+              activeItem === 'usuarios'
+                ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Gestión de usuarios</span>}
+          </Link>
+
+          {/* Opción: Clientes (Directo para facturación y ventas) */}
+          <Link
+            to="/clientes"
+            title="Clientes"
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+              isCollapsed ? 'justify-center px-0' : ''
+            } ${
+              activeItem === 'clientes' || activeItem === 'contactos-clientes'
+                ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Clientes</span>}
+          </Link>
+
+          {/* Opción: Facturación SIAT */}
+          <button
+            title="Facturación SIAT"
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200 ${
+              isCollapsed ? 'justify-center px-0' : ''
+            }`}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Facturación SIAT</span>}
+          </button>
+
+          {/* Opción: Productos (Colapsable / Desplegable) */}
           <div>
             <button
               onClick={handleProductsClick}
@@ -199,19 +249,6 @@ function Sidebar({ activeItem }) {
             )}
           </div>
 
-          {/* Opción: Facturación SIAT */}
-          <button
-            title="Facturación SIAT"
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200 ${
-              isCollapsed ? 'justify-center px-0' : ''
-            }`}
-          >
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-            {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Facturación SIAT</span>}
-          </button>
-
           {/* Opción: Vender */}
           <Link
             to="/vender"
@@ -229,24 +266,6 @@ function Sidebar({ activeItem }) {
             </svg>
             {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Vender</span>}
           </Link>
-
-          {/* Opción: Gestión de Usuarios / Empleados (Objetivo 4) */}
-          <Link
-            to="/usuarios"
-            title="Usuarios y Roles"
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-              isCollapsed ? 'justify-center px-0' : ''
-            } ${
-              activeItem === 'usuarios'
-                ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-            }`}
-          >
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Usuarios y Roles</span>}
-          </Link>
         </nav>
       </div>
 
@@ -259,11 +278,11 @@ function Sidebar({ activeItem }) {
             user = saved ? JSON.parse(saved) : null;
           } catch (e) {}
 
-          const fullName = user?.Nombre || 'Oscar Edgar';
-          const role = user?.Rol || 'Administrador';
+          const fullName = user?.Nombre || (user ? 'Operador' : '');
+          const role = user?.Rol || 'Operador';
           const parts = fullName.trim().split(' ').filter(Boolean);
-          const initials = parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : (parts[0]?.substring(0, 2).toUpperCase() || 'OE');
-          const shortName = parts.length >= 2 ? `${parts[0]} ${parts[1]}` : fullName;
+          const initials = parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : (parts[0]?.substring(0, 2).toUpperCase() || 'OP');
+          const shortName = parts.length >= 2 ? `${parts[0]} ${parts[1]}` : (fullName || 'Operador');
 
           return (
             <div

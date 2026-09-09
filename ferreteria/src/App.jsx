@@ -1,17 +1,15 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home/Home';
-import About from './pages/About/About';
 import Login from './pages/Auth/Login';
 import ForgotPassword from './pages/Auth/ForgotPassword';
 import ResetPassword from './pages/Auth/ResetPassword';
-import RegisterAdmins from './pages/Admins/RegisterAdm';
 import RegisterClients from './pages/Clients/RegisterClie';
 import ClientCatalog from './pages/Clients/ClientCatalog';
 
 import ProductView from './pages/Products/ProductView';
 import ProductRegister from './pages/Products/ProductRegisterForm';
-import ProductEdit from './pages/Products/ProductEditForm'; // Asegúrate de importar el componente de edición
+import ProductEdit from './pages/Products/ProductEditForm';
 import BrandView from './pages/Brands/BrandView';
 import CategoryView from './pages/Categories/CategoryView';
 import UnitView from './pages/Units/UnitView';
@@ -20,14 +18,8 @@ import WarehouseView from './pages/Warehouses/WarehouseView';
 import UserManagement from './pages/Users/UserManagement';
 import InventoryControl from './pages/Inventory/InventoryControl';
 import POSView from './pages/Sales/POSView';
-
-
-//import Navigation from './components/Navigation'; // Si tienes un componente de navegación
-import DataComponent from './components/DataComponent';
-import RegisterAdmin from './components/Login/Administrator/RegisterAdmin';
+import ClientView from './pages/Contacts/ClientView';
 import { SidebarProvider } from './context/SidebarContext';
-
-// Importar otras páginas y componentes según sea necesario
 
 function App() {
   return (
@@ -45,12 +37,15 @@ function App() {
             <Route path="/dashboard" element={<Home />} />
             <Route path="/admin" element={<Home />} />
             <Route path="/home" element={<Home />} />
-            <Route path="/about" element={<About />} />
 
             {/* Gestión de Usuarios y Permisos RBAC (Objetivo 4) */}
             <Route path="/usuarios" element={<UserManagement />} />
             <Route path="/empleados" element={<UserManagement />} />
             <Route path="/personal" element={<UserManagement />} />
+
+            {/* Gestión de Clientes para Ventas y Facturación */}
+            <Route path="/clientes" element={<ClientView />} />
+            <Route path="/contactos/clientes" element={<ClientView />} />
 
             {/* Control de Inventario, Semáforo de Caducidad y Kardex (Objetivo 2) */}
             <Route path="/inventario" element={<InventoryControl />} />
@@ -68,9 +63,10 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/recuperar-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/registerAdm" element={<RegisterAdmins />} />
             <Route path="/registerClie" element={<RegisterClients />} />
+            <Route path="/registro" element={<RegisterClients />} />
 
+            {/* Vistas de Configuración de Productos y Almacén */}
             <Route path="/productsView" element={<ProductView />} />
             <Route path="/productReg" element={<ProductRegister />} />
             <Route path="/productEdit/:ProductoID" element={<ProductEdit />} />
@@ -79,8 +75,6 @@ function App() {
             <Route path="/unidades" element={<UnitView />} />
             <Route path="/locations" element={<LocationView />} />
             <Route path="/almacenes" element={<WarehouseView />} />
-
-            {/* Otras rutas */}
           </Routes>
         </div>
       </SidebarProvider>
