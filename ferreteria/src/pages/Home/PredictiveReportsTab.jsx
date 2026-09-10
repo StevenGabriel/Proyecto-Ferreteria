@@ -310,55 +310,18 @@ function PredictiveReportsTab() {
 
           <div className="flex items-center gap-2 self-start lg:self-auto">
             <button
-              type="button"
-              onClick={() => setShowFormulas(!showFormulas)}
-              className="text-xs text-slate-400 hover:text-cyan-300 font-semibold px-3 py-1.5 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer"
-            >
-              <svg className="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
-              <span>{showFormulas ? 'Ocultar Fundamento' : 'Ver Fundamento Matemático'}</span>
-            </button>
-            <button
               onClick={loadData}
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-extrabold rounded-xl text-xs shadow-md shadow-cyan-500/20 hover:brightness-110 transition-all cursor-pointer"
+              title="Recargar datos del servidor"
+              className="flex items-center gap-2 px-3.5 py-2 bg-slate-800/90 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/40 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm"
             >
-              <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              <span>{loading ? 'Calculando...' : 'Actualizar Cálculos'}</span>
+              <span>{loading ? 'Calculando...' : 'Actualizar'}</span>
             </button>
           </div>
         </div>
-
-        {/* Fórmulas Explicativas Desplegables (Para Defensa Académica) */}
-        {showFormulas && (
-          <div className="p-4 bg-slate-950/80 rounded-xl border border-purple-500/30 text-xs text-slate-300 space-y-2 animate-fade-in">
-            <div className="font-bold text-purple-300 flex items-center gap-2">
-              <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
-              <span>Fundamento Matemático del Modelo Seleccionado:</span>
-            </div>
-            {model === 'SES' ? (
-              <p className="font-mono text-[11px] text-slate-400">
-                • <strong>Suavizado Exponencial Simple (SES):</strong> \(\hat{Y}_{'{t+1}'} = \alpha Y_t + (1 - \alpha)\hat{Y}_t\), con constante de atenuación \(\alpha = {alpha}\). Otorga pesos decrecientes exponencialmente para capturar la inercia reciente.
-              </p>
-            ) : model === 'SMA' ? (
-              <p className="font-mono text-[11px] text-slate-400">
-                • <strong>Promedio Móvil Simple (SMA):</strong> \(\hat{Y}_{'{t+1}'} = \frac{'{1}'}{'{N}'} \sum_{'{i=1}'}^N Y_{'{t-i+1}'}\), con ventana \(N = {windowSize}\) días. Ideal para series estacionarias y demanda constante.
-              </p>
-            ) : (
-              <p className="font-mono text-[11px] text-slate-400">
-                • <strong>Promedio Móvil Ponderado (WMA):</strong> \(\hat{Y}_{'{t+1}'} = \frac{'\sum w_i Y_i'}{'\sum w_i'}\), con ventana \(N = {windowSize}\) días y ponderación decreciente lineal.
-              </p>
-            )}
-            <p className="text-[10px] text-slate-500">
-              Métricas de calibración continua calculadas: <strong>MAD</strong> (Desviación Absoluta Media) y <strong>MAPE</strong> (Error Porcentual Absoluto Medio).
-            </p>
-          </div>
-        )}
 
         {/* Controles Intuitivos y Sencillos */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 text-xs">
@@ -995,40 +958,6 @@ function PredictiveReportsTab() {
                   >
                     Ver en Productos →
                   </Link>
-                </div>
-
-                {/* Opción de Ver Fórmulas Matemáticas (Modo Académico) */}
-                <div className="pt-2 border-t border-slate-800/80">
-                  <button
-                    type="button"
-                    onClick={() => setModalShowFormulas(!modalShowFormulas)}
-                    className="text-slate-400 hover:text-cyan-300 text-[11px] font-semibold flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <svg className="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
-                    <span>{modalShowFormulas ? 'Ocultar comparativa matemática' : 'Ver comparativa técnica de modelos (SES, SMA, WMA)'}</span>
-                  </button>
-
-                  {modalShowFormulas && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3 animate-fade-in font-mono text-[11px]">
-                      <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
-                        <span className="font-bold text-purple-300 block">SES (Holt):</span>
-                        <div className="text-white">Tasa: ~{productDetailData.models?.SES?.nextRate || 0} unid/d</div>
-                        <div className="text-slate-500 text-[10px]">MAD: {productDetailData.models?.SES?.MAD} | MAPE: {productDetailData.models?.SES?.MAPE}%</div>
-                      </div>
-                      <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
-                        <span className="font-bold text-cyan-300 block">SMA (Móvil):</span>
-                        <div className="text-white">Tasa: ~{productDetailData.models?.SMA?.nextRate || 0} unid/d</div>
-                        <div className="text-slate-500 text-[10px]">MAD: {productDetailData.models?.SMA?.MAD} | MAPE: {productDetailData.models?.SMA?.MAPE}%</div>
-                      </div>
-                      <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
-                        <span className="font-bold text-emerald-300 block">WMA (Ponderado):</span>
-                        <div className="text-white">Tasa: ~{productDetailData.models?.WMA?.nextRate || 0} unid/d</div>
-                        <div className="text-slate-500 text-[10px]">MAD: {productDetailData.models?.WMA?.MAD} | MAPE: {productDetailData.models?.WMA?.MAPE}%</div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             ) : null}

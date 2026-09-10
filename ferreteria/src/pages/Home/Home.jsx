@@ -236,8 +236,8 @@ function Home() {
         {/* Barra Superior (Topbar) */}
         <Topbar />
 
-        {/* Contenido Dinámico */}
-        <div className="p-8 max-w-7xl w-full mx-auto space-y-8 flex-1">
+        {/* Contenido Dinámico con ancho completo idéntico a Clientes */}
+        <div className="p-6 md:p-8 max-w-[1920px] w-full mx-auto space-y-6 flex-1">
           {/* Banner de Bienvenida */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>

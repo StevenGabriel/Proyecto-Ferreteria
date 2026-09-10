@@ -739,10 +739,25 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
     * $\text{SMA}_k = \frac{1}{k}\sum_{i=0}^{k-1} Y_{t-i}$.
     * Fórmulas de precisión y error: $\text{MAD} = \frac{1}{n}\sum |Y_t - \hat{Y}_t|$, $\text{MAPE} = \frac{100\%}{n}\sum \left|\frac{Y_t - \hat{Y}_t}{Y_t}\right|$, $\text{RMSE} = \sqrt{\frac{1}{n}\sum (Y_t - \hat{Y}_t)^2}$.
 
-### 90. Estandarización Visual Profesional e Iconografía SVG (`Home.jsx`, `PredictiveReportsTab.jsx`)
-* **1. Sustitución de Emojis Informales por Iconos Vectoriales SVG:**
-  * Se reemplazaron todos los emoticones de texto (`📊`, `📈`, `⚡`, `⚖️`, `🥇`, `🥈`, `🥉`, `🛒`, `📥`, `🖨️`, `⭐`, `🔍`, `💡`, etc.) por iconos vectoriales SVG limpios y nítidos integrados a la paleta de colores del sistema (Cyan, Esmeralda, Púrpura, Ámbar).
-* **2. Badges y Semáforos de Estado Empresariales:**
-  * Los círculos de color emoji (`🔴`, `🟠`, `🟡`, `🟢`) fueron sustituidos por badges de estado con microindicadores circulares CSS (`w-1.5 h-1.5 rounded-full`) y tipografía técnica limpia (*"Agotado"*, *"X días"*, *"Seguro (>30d)"*).
-  * Las etiquetas de fiabilidad y clasificación pasaron a insignias elegantes con bordes sutiles (*"Clase A"*, *"Óptima"* con escudo de verificación SVG).
+### 91. Compatibilidad de Consultas de Fechas en SQL Server y Activación del Histórico (`reports.js`)
+* **1. Corrección de Formato de Fechas para MSSQL (`Conversion failed when converting date`):**
+  * SQL Server no admite zonas horarias directas (`+00:00`) en columnas de tipo `DATETIME`.
+  * Se implementó `formatSQLDateTime` para estructurar los filtros temporales en formato canónico `'YYYY-MM-DD HH:mm:ss'` en las consultas de `/reports/sales-performance`, `/reports/demand-forecast` y `/reports/product-forecast/:id`.
+* **2. Mapeo Seguro de Asociaciones Sequelize:**
+  * Se soportó la inclusión `sd.Venta || sd.Ventum` garantizando que los cálculos de series temporales extraigan adecuadamente la fecha de cada transacción.
+### 92. Expansión de Ancho Completo en Inicio y Reportes Predictivos (`Home.jsx`)
+* **1. Homologación de Espaciado con la Vista de Clientes:**
+  * Se sustituyó la restricción de ancho fijo `max-w-7xl` (1280px) por `max-w-[1920px] p-6 md:p-8 w-full mx-auto space-y-6 flex-1`, idéntica a la vista de **Clientes** (`ClientView.jsx`).
+  * Con este cambio, tanto el **Panel Operativo** como la pestaña de **Reportes & Análisis Predictivo** (gráficos, tarjetas de métricas y tabla maestra de reabastecimiento) aprovechan todo el ancho de la pantalla reduciendo los márgenes laterales vacíos.
+
+### 93. Limpieza de Cabecera y Enfoque Comercial Minimalista (`PredictiveReportsTab.jsx`)
+* **1. Eliminación de Desplegables de Fórmulas Matemáticas:**
+  * Se retiró el botón *"Ver Fundamento Matemático"* de la barra superior y del modal de diagnóstico de producto, dejando una interfaz 100% limpia y centrada en lenguaje de negocios para el usuario.
+* **2. Botón de Actualización Discreto y Reactividad Automática:**
+  * Se simplificó el botón de actualización a un botón discreto y elegante con icono de recarga (`↺ Actualizar`).
+  * El sistema ya recalibra automáticamente las proyecciones en tiempo real ante cualquier cambio de método, sensibilidad o periodo sin obligar a presionar botones.
+
+
+
+
 
