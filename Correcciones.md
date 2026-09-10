@@ -759,5 +759,16 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
 
 
 
-
-
+### 94. Panel de Guía de Uso en Reportes & Análisis Predictivo (`PredictiveReportsTab.jsx`)
+* **Problema:** Un usuario común sin conocimientos de estadística o análisis no sabía qué significaban los términos SES, SMA, WMA ni cómo interpretar los controles del módulo predictivo.
+* **Solución:** Se agregó un panel colapsable **"¿Cómo usar esta sección?"** al inicio de la pestaña `PredictiveReportsTab`, antes de la barra de control principal.
+* **Detalles de implementación:**
+  * Se reemplazó la variable de estado `showFormulas` (ya sin uso tras la sección 93) por `showGuide` para controlar el accordion.
+  * El panel se muestra **siempre visible en su cabecera** (icono info + título + descripción corta + chevron animado), y expande su contenido al hacer clic.
+  * Cuando desplegado, el panel explica en lenguaje llano:
+    * **¿Qué hace la sección?** → predice agotamiento de stock y cuánto pedir al proveedor.
+    * **Métodos de proyección** → tarjetas en 3 columnas para Inteligente (SES), Promedio Estable (SMA) y Ponderado (WMA) con descripción en lenguaje de negocio.
+    * **Sensibilidad y Periodo de proyección** → qué controla cada opción en términos prácticos.
+    * **Tabla de reabastecimiento** → cómo leer las columnas y el código de colores (rojo/amarillo/verde).
+  * Estilo consistente con el resto de la UI: `bg-slate-900/50 border-slate-700/60 rounded-2xl`, texto `text-cyan-400` para etiquetas y `text-slate-300/400` para descripciones.
+  * Build verificado correctamente tras los cambios.

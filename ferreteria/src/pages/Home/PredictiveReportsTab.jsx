@@ -10,7 +10,7 @@ function PredictiveReportsTab() {
   const [windowSize, setWindowSize] = useState(7);
   const [horizonDays, setHorizonDays] = useState(30);
   const [period, setPeriod] = useState('daily');
-  const [showFormulas, setShowFormulas] = useState(false); // Toggle modo académico / fórmulas
+  const [showGuide, setShowGuide] = useState(false); // Toggle guía de uso
 
   // Datos
   const [forecastData, setForecastData] = useState(null);
@@ -204,8 +204,25 @@ function PredictiveReportsTab() {
       ? `${historicPath} L ${historicPoints[historicPoints.length - 1].x} ${padTop + chartH} L ${historicPoints[0].x} ${padTop + chartH} Z`
       : '';
 
+    // Promedio histórico de días con venta > 0
+    const historicActuals = historicPoints.map(p => p.actual || 0).filter(v => v > 0);
+    const avgVal = historicActuals.length > 0
+      ? historicActuals.reduce((a, b) => a + b, 0) / historicActuals.length
+      : 0;
+    const avgY = getY(avgVal);
+
+    // Top 3 picos históricos para etiquetar
+    const top3Peaks = [...historicPoints]
+      .filter(p => (p.actual || 0) > 0)
+      .sort((a, b) => (b.actual || 0) - (a.actual || 0))
+      .slice(0, 3);
+
+    // Línea divisora HOY — buscar el índice donde empieza el forecast
+    const todayIdx = timeline.findIndex(d => d.type === 'FORECAST');
+    const todayX = todayIdx >= 0 ? getX(todayIdx) : (lastHistoricPoint?.x || null);
+
     return (
-      <div className="w-full overflow-x-auto">
+      <div className="w-full overflow-x-auto relative">
         <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-64 text-slate-400">
           <defs>
             <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">
@@ -217,6 +234,18 @@ function PredictiveReportsTab() {
               <stop offset="100%" stopColor="#a855f7" stopOpacity="0.0" />
             </linearGradient>
           </defs>
+
+          {/* Zona de proyección sombreada (fondo morado muy suave) */}
+          {todayX && (
+            <rect
+              x={todayX}
+              y={padTop}
+              width={svgWidth - padRight - todayX}
+              height={chartH}
+              fill="#a855f7"
+              fillOpacity="0.05"
+            />
+          )}
 
           {/* Líneas Guía Horizontales */}
           {[0, 0.25, 0.5, 0.75, 1].map((p, i) => {
@@ -232,6 +261,24 @@ function PredictiveReportsTab() {
             );
           })}
 
+          {/* Línea de Promedio Histórico (amarilla punteada) */}
+          {avgVal > 0 && (
+            <g>
+              <line
+                x1={padLeft} y1={avgY}
+                x2={svgWidth - padRight} y2={avgY}
+                stroke="#f59e0b"
+                strokeDasharray="6 3"
+                strokeOpacity="0.75"
+                strokeWidth="1.5"
+              />
+              <rect x={padLeft + 2} y={avgY - 10} width={70} height={13} rx="3" fill="#1e293b" fillOpacity="0.90" />
+              <text x={padLeft + 6} y={avgY - 3} fontSize="8" fill="#f59e0b" fontWeight="bold">
+                Prom: {Math.round(avgVal)} un/día
+              </text>
+            </g>
+          )}
+
           {/* Área y Línea Histórica */}
           {historicArea && <path d={historicArea} fill="url(#histGrad)" />}
           {historicPath && <path d={historicPath} fill="none" stroke="#06b6d4" strokeWidth="2.5" strokeLinecap="round" />}
@@ -241,7 +288,7 @@ function PredictiveReportsTab() {
             <path d={forecastPath} fill="none" stroke="#c084fc" strokeWidth="2.5" strokeDasharray="5 4" strokeLinecap="round" />
           )}
 
-          {/* Puntos de datos */}
+          {/* Puntos de datos históricos con tooltip nativo */}
           {historicPoints.map((p, i) => (
             <circle
               key={`hp-${i}`}
@@ -252,10 +299,11 @@ function PredictiveReportsTab() {
               stroke="#0f172a"
               strokeWidth="1.5"
             >
-              <title>{`${p.date}: ${p.actual || 0} unidades vendidas`}</title>
+              <title>{`${p.date} — ${p.actual || 0} unidades vendidas`}</title>
             </circle>
           ))}
 
+          {/* Puntos de proyección con tooltip */}
           {forecastPoints.map((p, i) => (
             <circle
               key={`fp-${i}`}
@@ -266,9 +314,59 @@ function PredictiveReportsTab() {
               stroke="#0f172a"
               strokeWidth="1.5"
             >
-              <title>{`Proyección ${p.date}: ~${p.forecast || 0} unidades estimadas/día`}</title>
+              <title>{`${p.date} — Estimado: ~${p.forecast || 0} unidades/día`}</title>
             </circle>
           ))}
+
+          {/* Etiquetas de los 3 picos más altos */}
+          {top3Peaks.map((p, i) => {
+            const labelY = p.y - 12;
+            const safeY = Math.max(padTop + 12, labelY);
+            return (
+              <g key={`peak-${i}`}>
+                <rect
+                  x={p.x - 15}
+                  y={safeY - 9}
+                  width={30}
+                  height={12}
+                  rx="3"
+                  fill="#0f172a"
+                  fillOpacity="0.90"
+                  stroke="#06b6d4"
+                  strokeOpacity="0.5"
+                  strokeWidth="0.8"
+                />
+                <text
+                  x={p.x}
+                  y={safeY - 3}
+                  textAnchor="middle"
+                  fontSize="8"
+                  fill="#67e8f9"
+                  fontWeight="bold"
+                >
+                  {p.actual}u
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Línea vertical HOY con etiqueta */}
+          {todayX && (
+            <g>
+              <line
+                x1={todayX} y1={padTop}
+                x2={todayX} y2={padTop + chartH}
+                stroke="#64748b"
+                strokeDasharray="4 3"
+                strokeWidth="1.5"
+                strokeOpacity="0.9"
+              />
+              <rect x={todayX - 16} y={padTop + 1} width={32} height={13} rx="3" fill="#1e293b" stroke="#475569" strokeWidth="0.8" />
+              <text x={todayX} y={padTop + 9} textAnchor="middle" fontSize="8" fill="#94a3b8" fontWeight="bold">
+                HOY
+              </text>
+            </g>
+          )}
 
           {/* Etiquetas Eje X */}
           {timeline.filter((_, i) => i % Math.ceil(timeline.length / 8) === 0 || i === timeline.length - 1).map((d, i) => {
@@ -290,6 +388,138 @@ function PredictiveReportsTab() {
 
   return (
     <div className="space-y-8 animate-fade-in">
+
+      {/* 0. Panel de Ayuda / Guía de Uso */}
+      <div className="bg-slate-900/50 border border-slate-700/60 rounded-2xl overflow-hidden shadow-lg">
+        {/* Cabecera del panel — siempre visible */}
+        <button
+          onClick={() => setShowGuide(v => !v)}
+          className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-slate-800/40 transition-colors group"
+        >
+          <div className="flex items-center gap-3">
+            {/* Icono info */}
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">¿Cómo usar esta sección?</p>
+              <p className="text-xs text-slate-400">Guía rápida para interpretar los resultados y configurar el sistema</p>
+            </div>
+          </div>
+          {/* Chevron */}
+          <svg
+            className={`w-4 h-4 text-slate-400 group-hover:text-cyan-400 transition-transform duration-200 flex-shrink-0 ${showGuide ? 'rotate-180' : ''}`}
+            fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* Contenido colapsable */}
+        {showGuide && (
+          <div className="px-5 pb-6 pt-1 border-t border-slate-800/60 space-y-5">
+
+            {/* ¿Qué hace esta sección? */}
+            <div className="space-y-1.5">
+              <p className="text-xs font-bold text-cyan-400 uppercase tracking-widest">¿Qué hace esta sección?</p>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                El sistema analiza el historial de ventas de cada producto para <span className="text-white font-semibold">predecir cuándo se va a agotar</span> y
+                calcularte exactamente <span className="text-white font-semibold">cuántas unidades debes pedir al proveedor</span>.
+                Así evitas quedarte sin stock o hacer pedidos de más.
+              </p>
+            </div>
+
+            <div className="h-px bg-slate-800/60" />
+
+            {/* Métodos de proyección */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-cyan-400 uppercase tracking-widest">Métodos de proyección</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* SES */}
+                <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0"></span>
+                    <p className="text-sm font-bold text-white">Inteligente <span className="text-slate-500 font-normal text-xs">(SES)</span></p>
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Aprende rápidamente de las <span className="text-slate-300">ventas más recientes</span>.
+                    Ideal cuando un producto tuvo un pico de ventas esta semana o hubo un cambio repentino en la demanda.
+                  </p>
+                </div>
+                {/* SMA */}
+                <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0"></span>
+                    <p className="text-sm font-bold text-white">Promedio Estable <span className="text-slate-500 font-normal text-xs">(SMA)</span></p>
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Calcula el <span className="text-slate-300">promedio de ventas de los últimos días</span>.
+                    Ideal para productos que siempre se venden de forma constante, sin subidas ni bajadas bruscas.
+                  </p>
+                </div>
+                {/* WMA */}
+                <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span>
+                    <p className="text-sm font-bold text-white">Ponderado <span className="text-slate-500 font-normal text-xs">(WMA)</span></p>
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Da <span className="text-slate-300">más importancia a las ventas recientes</span> pero sin ignorar el pasado.
+                    Una opción equilibrada entre los dos métodos anteriores.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="h-px bg-slate-800/60" />
+
+            {/* Opciones de configuración */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-cyan-400 uppercase tracking-widest">Opciones de configuración</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex gap-3 items-start">
+                  <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-200">Sensibilidad</p>
+                    <p className="text-xs text-slate-500 leading-relaxed">Qué tan rápido reacciona el sistema ante cambios en las ventas. "Conservador" es más suave; "Reactivo" responde más rápido a picos.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-200">Periodo de proyección</p>
+                    <p className="text-xs text-slate-500 leading-relaxed">Para cuántos días hacia adelante quieres planificar. Por ejemplo, 30 días significa que el sistema proyecta el consumo del próximo mes.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="h-px bg-slate-800/60" />
+
+            {/* Tabla de resultados */}
+            <div className="space-y-1.5">
+              <p className="text-xs font-bold text-cyan-400 uppercase tracking-widest">Tabla de reabastecimiento</p>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Muestra todos tus productos <span className="text-white font-semibold">ordenados del más urgente al menos urgente</span>.
+                La columna <span className="text-white font-semibold">"Sugerido a pedir"</span> te dice exactamente cuántas unidades debes comprar para cubrir el periodo seleccionado.
+                Los productos marcados en <span className="text-red-400 font-semibold">rojo</span> requieren atención inmediata; en <span className="text-amber-400 font-semibold">amarillo</span>, atención pronto; en <span className="text-emerald-400 font-semibold">verde</span>, están bien por ahora.
+              </p>
+            </div>
+
+          </div>
+        )}
+      </div>
+
       {/* 1. Barra de Control Amigable en Lenguaje Comercial */}
       <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-800/80 pb-4">
@@ -526,7 +756,7 @@ function PredictiveReportsTab() {
                 Ventas reales históricas conectadas con la estimación para los próximos {horizonDays} días.
               </p>
             </div>
-            <div className="flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-3 text-xs flex-wrap">
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-1 bg-cyan-400 rounded-full"></span>
                 <span className="text-slate-300 text-[11px]">Ventas Pasadas</span>
@@ -534,6 +764,14 @@ function PredictiveReportsTab() {
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-1 bg-purple-400 rounded-full border-t border-dashed"></span>
                 <span className="text-purple-300 text-[11px]">Ventas Estimadas</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-4 h-0 border border-dashed border-amber-400"></span>
+                <span className="text-amber-300 text-[11px]">Promedio diario</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-px h-3 border-l border-dashed border-slate-500"></span>
+                <span className="text-slate-400 text-[11px]">HOY</span>
               </div>
             </div>
           </div>
