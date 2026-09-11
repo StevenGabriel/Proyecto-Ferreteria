@@ -890,3 +890,22 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
     3. **Tabla de Productos / Ítems:** Soporta indistintamente `receiptData.detalles || receiptData.items || receiptData.productos`, mapeando correctamente `codigo`, `cantidad`/`quantity`, `unidad`/`unit`, `nombre`/`name`/`producto`, `precioUnitario`/`price` y `subtotal`.
     4. **Fechas e Identificadores:** Soporta `fechaEmision`/`time` y `numeroFactura`/`id`.
 * **Resultado:** Ahora tanto la impresión en hoja carta (**`Imprimir`**) como la impresión en rollo (**`Imprimir Ticket`**) reflejan con total fidelidad el nombre del cliente, su NIT/CI y todos los ítems adquiridos con sus cantidades y subtotales.
+
+### 106. Implementación de Pantalla de Apertura de Caja Registradora (`POSView.jsx`, `sales.js`, `api.js`)
+* **Requerimiento:** Al iniciar el día laboral o ingresar a **Vender / POS**, antes de habilitar las ventas se debe presentar la pantalla de **"Abrir caja registradora"** integrada en el diseño oscuro estándar del sistema (con `Sidebar` y `Topbar`), solicitando el efectivo inicial para luego habilitar el terminal POS completo.
+* **Solución Implementada:**
+  * **1. Verificación de Estado de Caja Registradora:**
+    * Consulta el estado de sesión de caja activa (`GET /sales/cash-register/status` y `localStorage`).
+    * Si la caja **no está abierta**, muestra la vista de apertura dentro del layout estándar oscuro con `Sidebar` y `Topbar`.
+  * **2. Interfaz de "Abrir caja registradora" (`src/pages/Sales/POSView.jsx`):**
+    * **Layout Estándar del Sistema:** Barra superior `Topbar` y menú lateral colapsable `Sidebar` con ítem `Vender` activo.
+    * **Título y Subtítulo:** `Abrir caja registradora` - *Ingrese el monto de efectivo inicial para iniciar el turno de ventas POS*.
+    * **Tarjeta Central:**
+      * Identificación del usuario responsable (`OSCAR EDGAR CLAROS`).
+      * Campo con prefijo `Bs.` para **`Efectivo inicial:*`** (`Ingresar cantidad`).
+      * Botón principal **`Abrir registro`**: Inicia la sesión de caja y abre de inmediato el terminal de ventas POS.
+    * **Botón `Mi último registro`:** Modal con el resumen detallado del arqueo/cierre anterior.
+  * **3. Terminal POS con Sesión Activa:**
+    * Al abrirse la caja, se carga el terminal POS con su barra de herramientas y el indicador `💵 Caja Inicial: Bs. XXX.XX`.
+  * **4. Backend (`backend/api/routes/sales.js`):**
+    * Endpoints `GET /sales/cash-register/status`, `POST /sales/cash-register/open`, `GET /sales/cash-register/last`, `POST /sales/cash-register/close`.

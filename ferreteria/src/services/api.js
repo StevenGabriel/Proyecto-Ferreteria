@@ -279,6 +279,27 @@ export const voidInvoice = async (id, data = {}) => {
   return response.data;
 };
 
+// API de Caja Registradora (Apertura, Cierre y Estado)
+export const getCashRegisterStatus = async () => {
+  const response = await api.get('/sales/cash-register/status');
+  return response.data;
+};
+
+export const openCashRegister = async (payload) => {
+  const response = await api.post('/sales/cash-register/open', payload);
+  return response.data;
+};
+
+export const getLastCashRegister = async () => {
+  const response = await api.get('/sales/cash-register/last');
+  return response.data;
+};
+
+export const closeCashRegister = async (payload) => {
+  const response = await api.post('/sales/cash-register/close', payload);
+  return response.data;
+};
+
 // API de Reportes Estadísticos y Análisis Predictivo
 export const getSalesPerformanceReport = async (params = {}) => {
   const response = await api.get('/reports/sales-performance', { params });

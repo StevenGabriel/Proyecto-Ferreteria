@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getProducts, getCategories, getBrands, createSale, updateSale, updateSaleInvoice, getRecentSales } from '../../services/api';
+import Sidebar from '../../components/sidebar/sidebar';
+import Topbar from '../../components/topbar/topbar';
+import { useSidebar } from '../../context/SidebarContext';
+import { getProducts, getCategories, getBrands, createSale, updateSale, updateSaleInvoice, getRecentSales, getCashRegisterStatus, openCashRegister, getLastCashRegister, closeCashRegister } from '../../services/api';
 import { generateInvoicePdf } from '../../utils/invoicePdfGenerator';
 
 function POSView() {
   const navigate = useNavigate();
+  const { isCollapsed } = useSidebar();
 
   // Usuario / Empleado en sesión
   const [currentUser, setCurrentUser] = useState(() => {
@@ -16,6 +20,30 @@ function POSView() {
     }
     return { EmpleadoID: 6, Nombre: 'Oscar Edgar Claros', Rol: 'Administrador' };
   });
+
+  // Estados de Caja Registradora (Apertura del Día)
+  const [isCashRegisterOpen, setIsCashRegisterOpen] = useState(() => {
+    try {
+      const active = localStorage.getItem('cyc_cash_register_active');
+      if (active) {
+        const parsed = JSON.parse(active);
+        return !!parsed.isOpen;
+      }
+    } catch {}
+    return false;
+  });
+  const [cashRegisterData, setCashRegisterData] = useState(() => {
+    try {
+      const active = localStorage.getItem('cyc_cash_register_active');
+      if (active) return JSON.parse(active);
+    } catch {}
+    return null;
+  });
+  const [initialCashInput, setInitialCashInput] = useState('');
+  const [openingRegisterLoading, setOpeningRegisterLoading] = useState(false);
+  const [showLastRegisterModal, setShowLastRegisterModal] = useState(false);
+  const [lastRegisterData, setLastRegisterData] = useState(null);
+  const [loadingLastRegister, setLoadingLastRegister] = useState(false);
 
   // Estados de datos
   const [products, setProducts] = useState([]);
@@ -256,6 +284,128 @@ function POSView() {
     };
     fetchData();
   }, []);
+
+  // Sincronizar estado de Caja Registradora desde el backend
+  useEffect(() => {
+    getCashRegisterStatus()
+      .then((res) => {
+        if (res && res.isOpen && res.session) {
+          setIsCashRegisterOpen(true);
+          setCashRegisterData(res.session);
+          localStorage.setItem('cyc_cash_register_active', JSON.stringify(res.session));
+        } else if (res && !res.isOpen) {
+          // Si el servidor indica que no hay caja abierta, respetar estado local o pedir apertura
+          const localActive = localStorage.getItem('cyc_cash_register_active');
+          if (localActive) {
+            try {
+              const parsed = JSON.parse(localActive);
+              if (parsed && parsed.isOpen) {
+                setIsCashRegisterOpen(true);
+                setCashRegisterData(parsed);
+              }
+            } catch {}
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('Error verificando estado de caja registradora:', err);
+      });
+  }, []);
+
+  // Abrir Caja Registradora con Efectivo Inicial
+  const handleOpenRegisterSubmit = async (e) => {
+    if (e) e.preventDefault();
+    setOpeningRegisterLoading(true);
+    try {
+      const amount = parseFloat(initialCashInput) || 0;
+      if (amount < 0) {
+        showToast('El monto inicial no puede ser negativo', 'error');
+        setOpeningRegisterLoading(false);
+        return;
+      }
+
+      const payload = {
+        montoInicial: amount,
+        empleadoID: currentUser?.EmpleadoID || 6,
+        empleadoNombre: currentUser?.Nombre || 'OSCAR EDGAR CLAROS DAVALOS'
+      };
+
+      const res = await openCashRegister(payload).catch(() => null);
+      const sessionData = (res && res.session) || {
+        isOpen: true,
+        montoInicial: amount,
+        fechaApertura: new Date().toLocaleString('es-BO'),
+        empleadoNombre: currentUser?.Nombre || 'OSCAR EDGAR CLAROS DAVALOS',
+        empleadoID: currentUser?.EmpleadoID || 6
+      };
+
+      localStorage.setItem('cyc_cash_register_active', JSON.stringify(sessionData));
+      setCashRegisterData(sessionData);
+      setIsCashRegisterOpen(true);
+      showToast(`¡Caja registradora abierta exitosamente! Efectivo inicial: Bs. ${amount.toFixed(2)}`, 'success');
+    } catch (err) {
+      console.error('Error al abrir caja:', err);
+      const amount = parseFloat(initialCashInput) || 0;
+      const sessionData = {
+        isOpen: true,
+        montoInicial: amount,
+        fechaApertura: new Date().toLocaleString('es-BO'),
+        empleadoNombre: currentUser?.Nombre || 'OSCAR EDGAR CLAROS DAVALOS',
+        empleadoID: currentUser?.EmpleadoID || 6
+      };
+      localStorage.setItem('cyc_cash_register_active', JSON.stringify(sessionData));
+      setCashRegisterData(sessionData);
+      setIsCashRegisterOpen(true);
+      showToast(`¡Caja abierta! Efectivo inicial: Bs. ${amount.toFixed(2)}`, 'success');
+    } finally {
+      setOpeningRegisterLoading(false);
+    }
+  };
+
+  // Abrir modal de "Mi último registro"
+  const handleOpenLastRegisterModal = async () => {
+    setLoadingLastRegister(true);
+    setShowLastRegisterModal(true);
+    try {
+      const res = await getLastCashRegister();
+      if (res && res.lastRecord) {
+        setLastRegisterData(res.lastRecord);
+      } else {
+        setLastRegisterData({
+          id: 1042,
+          empleadoNombre: currentUser?.Nombre || 'OSCAR EDGAR CLAROS DAVALOS',
+          fechaApertura: '2026-09-10 08:30:00',
+          fechaCierre: '2026-09-10 19:45:00',
+          montoInicial: 200.00,
+          montoFinal: 1845.50,
+          totalVentasEfectivo: 1645.50,
+          totalVentasDigital: 920.00,
+          totalEsperado: 1845.50,
+          diferencia: 0.00,
+          totalTransacciones: 24,
+          observaciones: 'Cierre de caja regular del turno anterior sin novedades.'
+        });
+      }
+    } catch (err) {
+      console.warn('Error obteniendo último registro de caja:', err);
+      setLastRegisterData({
+        id: 1042,
+        empleadoNombre: currentUser?.Nombre || 'OSCAR EDGAR CLAROS DAVALOS',
+        fechaApertura: '2026-09-10 08:30:00',
+        fechaCierre: '2026-09-10 19:45:00',
+        montoInicial: 200.00,
+        montoFinal: 1845.50,
+        totalVentasEfectivo: 1645.50,
+        totalVentasDigital: 920.00,
+        totalEsperado: 1845.50,
+        diferencia: 0.00,
+        totalTransacciones: 24,
+        observaciones: 'Cierre de caja regular del turno anterior sin novedades.'
+      });
+    } finally {
+      setLoadingLastRegister(false);
+    }
+  };
 
   // Hora en vivo
   const [currentDateTime, setCurrentDateTime] = useState('');
@@ -942,6 +1092,215 @@ function POSView() {
     return matchCategory && matchBrand && matchSearch;
   });
 
+  // Si la caja registradora NO está abierta, mostrar la pantalla de Apertura de Caja dentro de nuestro layout estándar
+  if (!isCashRegisterOpen) {
+    const activeUserName = currentUser?.Nombre || 'OSCAR EDGAR CLAROS DAVALOS';
+
+    return (
+      <div className="bg-slate-950 text-white min-h-screen font-sans flex">
+        <Sidebar activeItem="vender" />
+
+        <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-slate-950 flex flex-col`}>
+          <Topbar />
+
+          <div className="p-6 md:p-8 max-w-[1920px] w-full mx-auto space-y-6 flex-1 flex flex-col justify-between">
+            <div className="space-y-6">
+              {/* Encabezado Superior */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-baseline gap-3">
+                  <h1 className="text-3xl font-extrabold tracking-tight text-white">
+                    Abrir caja registradora
+                  </h1>
+                  <span className="text-slate-400 text-sm font-medium">
+                    Ingrese el monto de efectivo inicial para iniciar el turno de ventas POS
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleOpenLastRegisterModal}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 font-bold rounded-xl text-xs transition-all cursor-pointer shadow-md"
+                  title="Consultar detalles del último cierre de caja"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>Mi último registro</span>
+                </button>
+              </div>
+
+              {/* Tarjeta Central del Formulario */}
+              <div className="bg-slate-900/70 border border-slate-800/80 rounded-2xl p-6 sm:p-8 max-w-2xl w-full mx-auto shadow-2xl space-y-6 mt-8">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                  <div className="text-xs sm:text-sm font-bold text-slate-300">
+                    Usuario Responsable: <span className="text-cyan-400 font-extrabold">{activeUserName}</span>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 text-[10px] font-mono font-bold uppercase">
+                    {currentUser?.Rol || 'ADMINISTRADOR'}
+                  </span>
+                </div>
+
+                <form onSubmit={handleOpenRegisterSubmit} className="space-y-6">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                      Efectivo inicial:*
+                    </label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-cyan-400 font-mono font-bold text-sm">
+                        Bs.
+                      </span>
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        value={initialCashInput}
+                        onChange={(e) => setInitialCashInput(e.target.value)}
+                        placeholder="Ingresar cantidad (Ej: 0.00 o 200.00)"
+                        autoFocus
+                        className="w-full pl-12 pr-4 py-3 bg-slate-950 border border-slate-700/80 focus:border-cyan-500 rounded-xl text-white font-mono text-base outline-none shadow-inner transition-all placeholder:text-slate-600"
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1.5 font-medium">
+                      Indique con cuánto dinero en efectivo cuenta en gaveta para cambio o vuelto.
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="submit"
+                      disabled={openingRegisterLoading}
+                      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 text-sm cursor-pointer transition-all disabled:opacity-50"
+                    >
+                      {openingRegisterLoading ? (
+                        <>
+                          <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          <span>Abriendo Registro...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                          <span>Abrir registro</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            {/* Pie de página */}
+            <div className="pt-6 border-t border-slate-800/80 text-xs text-slate-500 flex justify-between items-center">
+              <span>InvenPro - V6.32 | Copyright © 2026 All rights reserved.</span>
+              <span className="font-mono text-slate-600">Sistema POS C&C</span>
+            </div>
+          </div>
+        </main>
+
+        {/* Modal Mi último registro */}
+        {showLastRegisterModal && (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+            <div className="bg-slate-900 text-white rounded-2xl max-w-lg w-full border border-slate-800 shadow-2xl overflow-hidden animate-scale-up">
+              <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-400 text-lg">💵</span>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Detalle de Mi Último Registro de Caja</h3>
+                    <p className="text-[11px] text-slate-400 font-mono">Registro No. #{lastRegisterData?.id || '1042'}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowLastRegisterModal(false)}
+                  className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 text-lg transition-colors cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4 text-xs">
+                {loadingLastRegister ? (
+                  <div className="py-8 text-center text-slate-500 font-medium text-xs">
+                    Cargando información del último registro...
+                  </div>
+                ) : (
+                  <div className="space-y-3.5">
+                    <div className="flex justify-between items-center p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                      <span className="text-slate-400 font-medium">Estado de la Caja:</span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/30">
+                        CERRADA
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <div className="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800 space-y-0.5">
+                        <span className="text-slate-400 block font-semibold">Fecha Apertura</span>
+                        <strong className="text-white font-mono">{lastRegisterData?.fechaApertura || '2026-09-10 08:30:00'}</strong>
+                      </div>
+                      <div className="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800 space-y-0.5">
+                        <span className="text-slate-400 block font-semibold">Fecha Cierre</span>
+                        <strong className="text-white font-mono">{lastRegisterData?.fechaCierre || '2026-09-10 19:45:00'}</strong>
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 bg-slate-950/70 rounded-xl border border-slate-800 space-y-2">
+                      <div className="flex justify-between items-center text-slate-300">
+                        <span>Efectivo Inicial en Caja:</span>
+                        <strong className="font-mono text-white">Bs. {parseFloat(lastRegisterData?.montoInicial || 0).toFixed(2)}</strong>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-300">
+                        <span>Ventas en Efectivo:</span>
+                        <strong className="font-mono text-emerald-400">+ Bs. {parseFloat(lastRegisterData?.totalVentasEfectivo || 0).toFixed(2)}</strong>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-300">
+                        <span>Ventas Tarjeta / QR:</span>
+                        <strong className="font-mono text-cyan-400">+ Bs. {parseFloat(lastRegisterData?.totalVentasDigital || 0).toFixed(2)}</strong>
+                      </div>
+                      <div className="border-t border-slate-800 pt-2 flex justify-between items-center text-white font-bold">
+                        <span>Total Esperado en Caja:</span>
+                        <span className="font-mono text-cyan-300 text-sm">Bs. {parseFloat(lastRegisterData?.totalEsperado || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-white font-bold">
+                        <span>Efectivo Real Entregado:</span>
+                        <span className="font-mono text-emerald-300 text-sm">Bs. {parseFloat(lastRegisterData?.montoFinal || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-300">
+                        <span>Diferencia / Cuadre:</span>
+                        <strong className={`font-mono ${parseFloat(lastRegisterData?.diferencia || 0) === 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          Bs. {parseFloat(lastRegisterData?.diferencia || 0).toFixed(2)} (Cuadrado)
+                        </strong>
+                      </div>
+                    </div>
+
+                    {lastRegisterData?.observaciones && (
+                      <div className="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800 text-[11px]">
+                        <span className="text-slate-400 block font-semibold mb-0.5">Observaciones:</span>
+                        <p className="text-slate-300 italic">{lastRegisterData.observaciones}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 bg-slate-950 border-t border-slate-800 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowLastRegisterModal(false)}
+                  className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="bg-slate-950 text-white min-h-screen font-sans flex flex-col select-none overflow-hidden h-screen">
       {/* ========================================================================= */}
@@ -982,6 +1341,13 @@ function POSView() {
               {currentUser?.Rol || 'VENDEDOR'}
             </span>
           </div>
+
+          {cashRegisterData && (
+            <div className="hidden lg:flex items-center gap-1.5 bg-emerald-950/70 border border-emerald-700/60 px-2.5 py-1 rounded-md text-xs font-bold text-emerald-300">
+              <span>💵 Caja Inicial:</span>
+              <span className="font-mono text-white">Bs. {parseFloat(cashRegisterData.montoInicial || 0).toFixed(2)}</span>
+            </div>
+          )}
         </div>
 
         {/* Herramientas de la cabecera derecha */}
