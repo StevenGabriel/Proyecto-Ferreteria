@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useSidebar } from '../../context/SidebarContext';
 
 function Sidebar({ activeItem }) {
   const { isCollapsed, toggleSidebar } = useSidebar();
+  const location = useLocation();
 
   // Inicializar el submenú de productos abierto si el elemento activo pertenece a él
   const isSubProductActive = ['productos-lista', 'productos-unidades', 'productos-categorias', 'productos-marcas', 'productos-almacenes', 'productos-ubicaciones'].includes(activeItem);
@@ -54,31 +55,31 @@ function Sidebar({ activeItem }) {
           {/* Botón para Contraer/Expandir */}
           <button
             onClick={toggleSidebar}
-            className={`text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800/80 transition-all outline-none ${
-              isCollapsed ? 'mt-2' : ''
-            }`}
-            title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
+            title={isCollapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'}
+            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              {isCollapsed ? (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
-              )}
+            <svg
+              className={`w-4 h-4 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             </svg>
           </button>
         </div>
 
         {/* Menú de Navegación */}
-        <nav className="p-3 space-y-1">
+        <nav className="p-3 space-y-1.5 overflow-y-auto max-h-[calc(100vh-140px)]">
           {/* Opción: Inicio */}
           <Link
-            to="/dashboard"
+            to="/home"
             title="Inicio"
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
               isCollapsed ? 'justify-center px-0' : ''
             } ${
-              activeItem === 'inicio'
+              activeItem === 'inicio' || location.pathname === '/home' || location.pathname === '/dashboard'
                 ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-md'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
@@ -89,7 +90,6 @@ function Sidebar({ activeItem }) {
             {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Inicio</span>}
           </Link>
 
-          {/* Opción: Productos (Colapsable / Desplegable) */}
           {/* Opción: Gestión de Usuarios / Empleados */}
           <Link
             to="/usuarios"
@@ -97,7 +97,7 @@ function Sidebar({ activeItem }) {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
               isCollapsed ? 'justify-center px-0' : ''
             } ${
-              activeItem === 'usuarios'
+              activeItem === 'usuarios' || location.pathname === '/usuarios' || location.pathname === '/empleados'
                 ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-md'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
@@ -115,7 +115,7 @@ function Sidebar({ activeItem }) {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
               isCollapsed ? 'justify-center px-0' : ''
             } ${
-              activeItem === 'clientes' || activeItem === 'contactos-clientes'
+              activeItem === 'clientes' || activeItem === 'contactos-clientes' || location.pathname === '/clientes'
                 ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-md'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
@@ -126,18 +126,23 @@ function Sidebar({ activeItem }) {
             {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Clientes</span>}
           </Link>
 
-          {/* Opción: Facturación SIAT */}
-          <button
-            title="Facturación SIAT"
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200 ${
+          {/* Opción: Facturación */}
+          <Link
+            to="/facturacion"
+            title="Facturación"
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
               isCollapsed ? 'justify-center px-0' : ''
+            } ${
+              activeItem === 'facturacion' || activeItem === 'facturas' || location.pathname.includes('factura')
+                ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
             <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
-            {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Facturación SIAT</span>}
-          </button>
+            {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Facturación</span>}
+          </Link>
 
           {/* Opción: Productos (Colapsable / Desplegable) */}
           <div>

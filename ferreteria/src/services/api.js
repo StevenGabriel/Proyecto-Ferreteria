@@ -259,8 +259,23 @@ export const updateSale = async (id, saleData) => {
   return response.data;
 };
 
+export const updateSaleInvoice = async (id, invoiceData) => {
+  const response = await api.patch(`/sales/${id}/invoice`, invoiceData);
+  return response.data;
+};
+
 export const getRecentSales = async () => {
   const response = await api.get('/sales/recent');
+  return response.data;
+};
+
+export const getInvoices = async (params = {}) => {
+  const response = await api.get('/sales/invoices', { params });
+  return response.data;
+};
+
+export const voidInvoice = async (id, data = {}) => {
+  const response = await api.patch(`/sales/${id}/anular`, data);
   return response.data;
 };
 

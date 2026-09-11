@@ -152,18 +152,18 @@ function PredictiveReportsTab() {
     const timeline = forecastData?.globalTimeline || [];
     if (timeline.length === 0) {
       return (
-        <div className="h-64 flex items-center justify-center text-slate-500 text-xs">
+        <div className="h-80 flex items-center justify-center text-slate-500 text-xs">
           Registra más ventas en el sistema para trazar la curva de demanda histórica y proyectada.
         </div>
       );
     }
 
-    const svgWidth = 800;
-    const svgHeight = 240;
-    const padLeft = 40;
-    const padRight = 30;
-    const padTop = 20;
-    const padBottom = 35;
+    const svgWidth = 860;
+    const svgHeight = 320;
+    const padLeft = 45;
+    const padRight = 35;
+    const padTop = 32;
+    const padBottom = 40;
 
     const chartW = svgWidth - padLeft - padRight;
     const chartH = svgHeight - padTop - padBottom;
@@ -211,11 +211,19 @@ function PredictiveReportsTab() {
       : 0;
     const avgY = getY(avgVal);
 
-    // Top 3 picos históricos para etiquetar
-    const top3Peaks = [...historicPoints]
+    // Top picos históricos filtrando los que estén demasiado pegados en X para evitar solapamiento
+    const sortedPeaks = [...historicPoints]
       .filter(p => (p.actual || 0) > 0)
-      .sort((a, b) => (b.actual || 0) - (a.actual || 0))
-      .slice(0, 3);
+      .sort((a, b) => (b.actual || 0) - (a.actual || 0));
+
+    const topPeaks = [];
+    for (const peak of sortedPeaks) {
+      if (topPeaks.length >= 3) break;
+      const isTooClose = topPeaks.some(p => Math.abs(p.x - peak.x) < 35);
+      if (!isTooClose) {
+        topPeaks.push(peak);
+      }
+    }
 
     // Línea divisora HOY — buscar el índice donde empieza el forecast
     const todayIdx = timeline.findIndex(d => d.type === 'FORECAST');
@@ -223,10 +231,10 @@ function PredictiveReportsTab() {
 
     return (
       <div className="w-full overflow-x-auto relative">
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-64 text-slate-400">
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-80 text-slate-400 select-none">
           <defs>
             <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.30" />
+              <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.35" />
               <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0" />
             </linearGradient>
             <linearGradient id="foreGrad" x1="0" y1="0" x2="0" y2="1">
@@ -235,7 +243,7 @@ function PredictiveReportsTab() {
             </linearGradient>
           </defs>
 
-          {/* Zona de proyección sombreada (fondo morado muy suave) */}
+          {/* Zona de proyección sombreada (fondo morado suave) */}
           {todayX && (
             <rect
               x={todayX}
@@ -243,7 +251,8 @@ function PredictiveReportsTab() {
               width={svgWidth - padRight - todayX}
               height={chartH}
               fill="#a855f7"
-              fillOpacity="0.05"
+              fillOpacity="0.07"
+              rx="4"
             />
           )}
 
@@ -253,27 +262,27 @@ function PredictiveReportsTab() {
             const val = Math.round(p * maxVal);
             return (
               <g key={i}>
-                <line x1={padLeft} y1={y} x2={svgWidth - padRight} y2={y} stroke="#334155" strokeDasharray="3 3" strokeOpacity="0.5" />
-                <text x={padLeft - 8} y={y + 4} textAnchor="end" fontSize="9" fill="#94a3b8" className="font-mono">
+                <line x1={padLeft} y1={y} x2={svgWidth - padRight} y2={y} stroke="#334155" strokeDasharray="3 3" strokeOpacity="0.6" />
+                <text x={padLeft - 10} y={y + 4} textAnchor="end" fontSize="11" fill="#94a3b8" className="font-mono font-medium">
                   {val}
                 </text>
               </g>
             );
           })}
 
-          {/* Línea de Promedio Histórico (amarilla punteada) */}
+          {/* Línea de Promedio Histórico (amarilla punteada con badge visible) */}
           {avgVal > 0 && (
             <g>
               <line
                 x1={padLeft} y1={avgY}
                 x2={svgWidth - padRight} y2={avgY}
                 stroke="#f59e0b"
-                strokeDasharray="6 3"
-                strokeOpacity="0.75"
-                strokeWidth="1.5"
+                strokeDasharray="6 4"
+                strokeOpacity="0.85"
+                strokeWidth="1.8"
               />
-              <rect x={padLeft + 2} y={avgY - 10} width={70} height={13} rx="3" fill="#1e293b" fillOpacity="0.90" />
-              <text x={padLeft + 6} y={avgY - 3} fontSize="8" fill="#f59e0b" fontWeight="bold">
+              <rect x={padLeft + 4} y={avgY - 12} width={105} height={18} rx="5" fill="#1e293b" stroke="#f59e0b" strokeOpacity="0.6" strokeWidth="1" />
+              <text x={padLeft + 10} y={avgY} fontSize="10" fill="#fcd34d" fontWeight="bold" dominantBaseline="middle">
                 Prom: {Math.round(avgVal)} un/día
               </text>
             </g>
@@ -281,11 +290,11 @@ function PredictiveReportsTab() {
 
           {/* Área y Línea Histórica */}
           {historicArea && <path d={historicArea} fill="url(#histGrad)" />}
-          {historicPath && <path d={historicPath} fill="none" stroke="#06b6d4" strokeWidth="2.5" strokeLinecap="round" />}
+          {historicPath && <path d={historicPath} fill="none" stroke="#06b6d4" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />}
 
           {/* Línea Proyectada Futura */}
           {forecastPath && (
-            <path d={forecastPath} fill="none" stroke="#c084fc" strokeWidth="2.5" strokeDasharray="5 4" strokeLinecap="round" />
+            <path d={forecastPath} fill="none" stroke="#c084fc" strokeWidth="3" strokeDasharray="6 5" strokeLinecap="round" strokeLinejoin="round" />
           )}
 
           {/* Puntos de datos históricos con tooltip nativo */}
@@ -294,12 +303,13 @@ function PredictiveReportsTab() {
               key={`hp-${i}`}
               cx={p.x}
               cy={p.y}
-              r={p.actual > 0 ? "3.5" : "2"}
+              r={p.actual > 0 ? "4" : "2.5"}
               fill={p.actual > 0 ? "#06b6d4" : "#475569"}
               stroke="#0f172a"
-              strokeWidth="1.5"
+              strokeWidth="2"
+              className="transition-transform hover:scale-125 cursor-pointer"
             >
-              <title>{`${p.date} — ${p.actual || 0} unidades vendidas`}</title>
+              <title>{`📅 Fecha: ${p.date}\n📦 Ventas reales: ${p.actual || 0} unidades`}</title>
             </circle>
           ))}
 
@@ -309,60 +319,60 @@ function PredictiveReportsTab() {
               key={`fp-${i}`}
               cx={p.x}
               cy={p.y}
-              r="3"
+              r="3.5"
               fill="#c084fc"
               stroke="#0f172a"
-              strokeWidth="1.5"
+              strokeWidth="2"
+              className="transition-transform hover:scale-125 cursor-pointer"
             >
-              <title>{`${p.date} — Estimado: ~${p.forecast || 0} unidades/día`}</title>
+              <title>{`📅 Fecha: ${p.date}\n🔮 Demanda estimada: ~${p.forecast || 0} unidades/día`}</title>
             </circle>
           ))}
 
-          {/* Etiquetas de los 3 picos más altos */}
-          {top3Peaks.map((p, i) => {
-            const labelY = p.y - 12;
-            const safeY = Math.max(padTop + 12, labelY);
+          {/* Etiquetas de los picos más altos (claras y sin solapamiento) */}
+          {topPeaks.map((p, i) => {
+            const labelY = p.y - 14;
+            const safeY = Math.max(padTop + 14, labelY);
             return (
               <g key={`peak-${i}`}>
                 <rect
-                  x={p.x - 15}
-                  y={safeY - 9}
-                  width={30}
-                  height={12}
-                  rx="3"
+                  x={p.x - 20}
+                  y={safeY - 12}
+                  width={40}
+                  height={17}
+                  rx="4"
                   fill="#0f172a"
-                  fillOpacity="0.90"
-                  stroke="#06b6d4"
-                  strokeOpacity="0.5"
-                  strokeWidth="0.8"
+                  stroke="#22d3ee"
+                  strokeOpacity="0.8"
+                  strokeWidth="1.2"
                 />
                 <text
                   x={p.x}
-                  y={safeY - 3}
+                  y={safeY - 1}
                   textAnchor="middle"
-                  fontSize="8"
+                  fontSize="10"
                   fill="#67e8f9"
                   fontWeight="bold"
                 >
-                  {p.actual}u
+                  {p.actual} un
                 </text>
               </g>
             );
           })}
 
-          {/* Línea vertical HOY con etiqueta */}
+          {/* Línea vertical HOY con badge destacado */}
           {todayX && (
             <g>
               <line
                 x1={todayX} y1={padTop}
                 x2={todayX} y2={padTop + chartH}
-                stroke="#64748b"
+                stroke="#94a3b8"
                 strokeDasharray="4 3"
-                strokeWidth="1.5"
-                strokeOpacity="0.9"
+                strokeWidth="2"
+                strokeOpacity="0.8"
               />
-              <rect x={todayX - 16} y={padTop + 1} width={32} height={13} rx="3" fill="#1e293b" stroke="#475569" strokeWidth="0.8" />
-              <text x={todayX} y={padTop + 9} textAnchor="middle" fontSize="8" fill="#94a3b8" fontWeight="bold">
+              <rect x={todayX - 22} y={padTop - 4} width={44} height={18} rx="4" fill="#1e293b" stroke="#38bdf8" strokeWidth="1" />
+              <text x={todayX} y={padTop + 8} textAnchor="middle" fontSize="10" fill="#38bdf8" fontWeight="extrabold">
                 HOY
               </text>
             </g>
@@ -373,7 +383,7 @@ function PredictiveReportsTab() {
             const idx = timeline.indexOf(d);
             const x = getX(idx);
             return (
-              <text key={i} x={x} y={svgHeight - 10} textAnchor="middle" fontSize="9" fill="#94a3b8" className="font-mono">
+              <text key={i} x={x} y={svgHeight - 12} textAnchor="middle" fontSize="11" fill="#94a3b8" className="font-mono font-medium">
                 {d.date ? d.date.slice(5) : ''}
               </text>
             );
@@ -1172,7 +1182,85 @@ function PredictiveReportsTab() {
                   </div>
                 </div>
 
-                {/* Tarjeta de Recomendación de Compra */}
+                {/* Tabla de Precisión Matemática y Comparativa de Modelos */}
+                {productDetailData?.models && (
+                  <div className="p-4 bg-slate-950/80 rounded-xl border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold text-slate-200 text-sm flex items-center gap-2">
+                        <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        <span>Evaluación de Precisión y Ajuste del Modelo:</span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold uppercase">
+                        Fiabilidad Óptima
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-slate-400">
+                      Comparativa de error retrospectivo entre los 3 métodos matemáticos evaluados sobre el historial de este producto:
+                    </p>
+
+                    <div className="overflow-x-auto rounded-lg border border-slate-800/80">
+                      <table className="w-full text-left text-[11px]">
+                        <thead className="bg-slate-900 text-slate-400 font-bold border-b border-slate-800">
+                          <tr>
+                            <th className="py-2 px-3">Método Evaluado</th>
+                            <th className="py-2 px-3 text-center">Venta Diaria Proyectada</th>
+                            <th className="py-2 px-3 text-center">Error Diario (MAD)</th>
+                            <th className="py-2 px-3 text-center">Desviación (RMSE)</th>
+                            <th className="py-2 px-3 text-center">Error % (MAPE)</th>
+                            <th className="py-2 px-3 text-center">Resultado</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/60 bg-slate-950/40">
+                          {[
+                            { key: 'SES', label: 'Inteligente (SES)', color: 'text-purple-300' },
+                            { key: 'SMA', label: 'Promedio Móvil (SMA)', color: 'text-cyan-300' },
+                            { key: 'WMA', label: 'Ponderado (WMA)', color: 'text-amber-300' }
+                          ].map(({ key, label, color }) => {
+                            const mData = productDetailData.models[key] || {};
+                            const isBest = selectedProduct.modelAccuracy?.bestModel === key;
+                            const isActive = model === key;
+
+                            return (
+                              <tr key={key} className={isBest ? 'bg-emerald-500/5' : ''}>
+                                <td className={`py-2 px-3 font-bold ${color}`}>
+                                  {label} {isActive && <span className="text-[10px] text-slate-400 font-normal">(Activo)</span>}
+                                </td>
+                                <td className="py-2 px-3 text-center font-mono font-bold text-slate-200">
+                                  ~{mData.nextRate ?? mData.rate ?? 0} {selectedProduct.Unidad}/d
+                                </td>
+                                <td className="py-2 px-3 text-center font-mono font-bold text-slate-300">
+                                  ± {mData.MAD ?? 0} unid
+                                </td>
+                                <td className="py-2 px-3 text-center font-mono text-slate-400">
+                                  {mData.RMSE ?? 0}
+                                </td>
+                                <td className="py-2 px-3 text-center font-mono font-bold text-slate-300">
+                                  {mData.MAPE ?? 0}%
+                                </td>
+                                <td className="py-2 px-3 text-center">
+                                  {isBest ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-extrabold text-[10px] border border-emerald-500/30">
+                                      ★ Menor Error
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-500 text-[10px]">Ajuste Válido</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <p className="text-[10px] text-slate-500 italic">
+                      * El sistema selecciona automáticamente el modelo con menor error absoluto (MAD) para minimizar desviaciones en el pedido de compra.
+                    </p>
+                  </div>
+                )}
                 <div className="p-4 bg-gradient-to-r from-purple-950/40 to-slate-950 rounded-xl border border-purple-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-purple-300 font-bold block text-[11px]">Recomendación de Reorden ({horizonDays} días):</span>

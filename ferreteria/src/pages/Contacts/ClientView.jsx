@@ -497,7 +497,7 @@ function ClientView() {
 
   const exportToCSV = () => {
     if (filteredClients.length === 0) return;
-    const headers = ['ID Contacto', 'Tipo', 'Nombre / Empresa', 'Razon Social Factura', 'Tipo Doc SIAT', 'NIT / CI', 'Movil', 'Email', 'Direccion'];
+    const headers = ['ID Contacto', 'Tipo', 'Nombre / Empresa', 'Razon Social Factura', 'Tipo Documento', 'NIT / CI', 'Movil', 'Email', 'Direccion'];
     const rows = filteredClients.map(c => [
       `"${c.CodigoContacto || ''}"`,
       `"${c.TipoContacto || 'Individual'}"`,
@@ -744,13 +744,13 @@ function ClientView() {
         </div>
       </div>
 
-      {/* SECCIÓN SIAT / FACTURACIÓN */}
+      {/* SECCIÓN FACTURACIÓN */}
       <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3">
         <h4 className="font-extrabold text-cyan-400 text-xs flex items-center gap-1.5 uppercase tracking-wide">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          Datos de Facturación SIAT
+          Datos de Facturación
         </h4>
 
         <div>
@@ -766,7 +766,7 @@ function ClientView() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-slate-300 font-bold mb-1">Tipo de Documento de Identidad (SIAT):</label>
+            <label className="block text-slate-300 font-bold mb-1">Tipo de Documento de Identidad:</label>
             <select
               value={formData.TipoDocumentoSIAT}
               onChange={(e) => setFormData({ ...formData, TipoDocumentoSIAT: e.target.value })}
@@ -882,7 +882,7 @@ function ClientView() {
                 Clientes
               </h1>
               <span className="text-slate-400 text-sm font-medium">
-                Administra tus Clientes y datos de Facturación SIAT
+                Administra tus Clientes y datos de Facturación
               </span>
             </div>
 
@@ -1342,7 +1342,7 @@ function ClientView() {
                   <span className="font-bold text-white uppercase">{selectedClient.RazonSocial || 'SIN NOMBRE'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block font-semibold">Tipo Documento SIAT:</span>
+                  <span className="text-slate-500 block font-semibold">Tipo Documento:</span>
                   <span className="font-semibold text-slate-300">{selectedClient.TipoDocumentoSIAT || 'NIT'}</span>
                 </div>
                 <div>

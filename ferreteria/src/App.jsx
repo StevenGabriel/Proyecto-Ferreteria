@@ -18,6 +18,7 @@ import WarehouseView from './pages/Warehouses/WarehouseView';
 import UserManagement from './pages/Users/UserManagement';
 import InventoryControl from './pages/Inventory/InventoryControl';
 import POSView from './pages/Sales/POSView';
+import InvoiceListView from './pages/Sales/InvoiceListView';
 import ClientView from './pages/Contacts/ClientView';
 import { SidebarProvider } from './context/SidebarContext';
 
@@ -46,6 +47,10 @@ function App() {
             {/* Gestión de Clientes para Ventas y Facturación */}
             <Route path="/clientes" element={<ClientView />} />
             <Route path="/contactos/clientes" element={<ClientView />} />
+
+            {/* Facturación Electrónica y Listado de Facturas */}
+            <Route path="/facturas" element={<InvoiceListView />} />
+            <Route path="/facturacion" element={<InvoiceListView />} />
 
             {/* Control de Inventario, Semáforo de Caducidad y Kardex (Objetivo 2) */}
             <Route path="/inventario" element={<InventoryControl />} />

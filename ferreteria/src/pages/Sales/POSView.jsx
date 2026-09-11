@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getProducts, getCategories, getBrands, createSale, updateSale, getRecentSales } from '../../services/api';
+import { getProducts, getCategories, getBrands, createSale, updateSale, updateSaleInvoice, getRecentSales } from '../../services/api';
+import { generateInvoicePdf } from '../../utils/invoicePdfGenerator';
 
 function POSView() {
   const navigate = useNavigate();
@@ -438,13 +439,13 @@ function POSView() {
 
     playCashSound();
 
-    const isNamed = selectedClient && selectedClient.id !== 1;
-    const clientName = isNamed ? selectedClient.name : 'SIN NOMBRE';
+    const isNamed = selectedClient && selectedClient.id !== 1 && selectedClient.name && !selectedClient.name.toLowerCase().includes('cliente general');
+    const clientName = isNamed ? selectedClient.name : 'CLIENTE GENERAL';
     const clientNit = selectedClient && selectedClient.nit !== '0' ? selectedClient.nit : '0';
 
     // Inicializar campos del modal de factura
     setInvoiceCustomerType(isNamed ? 'NORMAL' : 'SIN_NOMBRE');
-    setInvoiceRazonSocial(clientName);
+    setInvoiceRazonSocial(isNamed ? clientName : 'SIN NOMBRE');
     setInvoiceDocType(clientNit.length > 8 ? 'NIT' : 'CI');
     setInvoiceDocNumber(clientNit);
     setInvoiceComplemento('');
@@ -462,7 +463,7 @@ function POSView() {
     const salePayload = {
       EmpleadoID: currentUser?.EmpleadoID || 6,
       ClienteID: isNamed ? selectedClient.id : null,
-      clienteNombre: clientName,
+      clienteNombre: isNamed ? clientName : null,
       nit: clientNit,
       tipoDocumento: clientNit.length > 8 ? 'NIT' : 'CI',
       metodoPago: 'EFECTIVO',
@@ -567,18 +568,21 @@ function POSView() {
     }
   };
 
-  // Confirmar Factura (actualiza la venta con NIT/Razón Social y emite Factura SIAT)
-  const confirmInvoice = () => {
+  // Confirmar Factura (actualiza la venta con NIT/Razón Social y emite Factura)
+  const confirmInvoice = async () => {
     if (!lastSaleReceipt) {
       setShowCashModal(false);
       return;
     }
 
+    const finalClientName = invoiceRazonSocial.trim() || 'CLIENTE GENERAL';
+    const finalNit = invoiceDocNumber.trim() || '0';
+
     const updatedSale = {
       ...lastSaleReceipt,
       id: lastSaleReceipt.id.startsWith('FAC') ? lastSaleReceipt.id : lastSaleReceipt.id.replace('VNT', 'FAC'),
-      client: invoiceRazonSocial.trim() || 'SIN NOMBRE',
-      nit: invoiceDocNumber.trim() || '0',
+      client: finalClientName,
+      nit: finalNit,
       docType: invoiceDocType,
       complemento: invoiceComplemento,
       email: invoiceEmail,
@@ -592,6 +596,25 @@ function POSView() {
     setLastSaleReceipt(updatedSale);
     setRecentSales((prev) => prev.map((s) => (s.id === lastSaleReceipt.id || s.id === updatedSale.id ? updatedSale : s)));
 
+    // Sincronizar actualización de factura con la base de datos SQL Server
+    const rawId = (lastSaleReceipt.ventaID || lastSaleReceipt.id || '').toString().replace(/^[A-Z-]+/i, '');
+    if (rawId && !isNaN(parseInt(rawId))) {
+      try {
+        await updateSaleInvoice(rawId, {
+          razonSocial: finalClientName,
+          clienteNombre: finalClientName,
+          nit: finalNit,
+          tipoDocumento: invoiceDocType
+        });
+        // Refrescar lista de transacciones recientes desde la base de datos
+        getRecentSales().then((salesData) => {
+          if (Array.isArray(salesData)) setRecentSales(salesData);
+        }).catch(() => {});
+      } catch (err) {
+        console.warn('No se pudo sincronizar factura en base de datos:', err);
+      }
+    }
+
     setShowCashModal(false);
     setShowReceiptModal(true);
     showToast('¡Factura fiscal emitida con éxito!', 'success');
@@ -601,6 +624,20 @@ function POSView() {
   const handleCloseInvoiceModal = () => {
     setShowCashModal(false);
     showToast('Venta finalizada como comprobante de mostrador.', 'success');
+  };
+
+  // Descargar comprobante / factura en formato PDF oficial y abrirlo en visor
+  const handleDownloadReceipt = async () => {
+    if (!lastSaleReceipt) return;
+    try {
+      showToast('Generando PDF oficial...', 'info');
+      await generateInvoicePdf(lastSaleReceipt, { openInTab: true, download: true });
+      const invoiceNum = (lastSaleReceipt.id || '1').toString().replace(/^[A-Z-]+/i, '');
+      showToast(`PDF generado exitosamente (No. ${invoiceNum})`, 'success');
+    } catch (err) {
+      console.error('Error al generar PDF:', err);
+      showToast('Error al generar el archivo PDF', 'error');
+    }
   };
 
   // Abrir modal de transacciones recientes sincronizando con BD
@@ -1422,7 +1459,7 @@ function POSView() {
                 Datos de Cliente
               </h4>
 
-              {/* Radio buttons: Normal, Sin Nombre, Ventas Menores, Caso Especial */}
+              {/* Radio buttons: Normal, Sin Nombre */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-semibold text-slate-300">
                 <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-slate-800/60 transition-colors">
                   <input
@@ -1443,29 +1480,7 @@ function POSView() {
                     onChange={() => handleCustomerTypeChange('SIN_NOMBRE')}
                     className="accent-cyan-500 w-4 h-4 cursor-pointer"
                   />
-                  <span>Sin Nombre <span className="text-[10px] text-slate-400">(ventas menores o iguales a Bs1.000)</span></span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-slate-800/60 transition-colors">
-                  <input
-                    type="radio"
-                    name="customerType"
-                    checked={invoiceCustomerType === 'VENTAS_MENORES'}
-                    onChange={() => handleCustomerTypeChange('VENTAS_MENORES')}
-                    className="accent-cyan-500 w-4 h-4 cursor-pointer"
-                  />
-                  <span>Ventas Menores del Día</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-slate-800/60 transition-colors">
-                  <input
-                    type="radio"
-                    name="customerType"
-                    checked={invoiceCustomerType === 'CASO_ESPECIAL'}
-                    onChange={() => handleCustomerTypeChange('CASO_ESPECIAL')}
-                    className="accent-cyan-500 w-4 h-4 cursor-pointer"
-                  />
-                  <span>Caso Especial</span>
+                  <span>Sin Nombre <span className="text-[10px] text-slate-400">(ventas menores o iguales a Bs. 10.000)</span></span>
                 </label>
               </div>
 
@@ -1488,7 +1503,7 @@ function POSView() {
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                 <div className="sm:col-span-6">
                   <label className="block text-xs font-bold text-slate-400 mb-1">
-                    Tipo de Documento (SIAT) *
+                    Tipo de Documento *
                   </label>
                   <select
                     value={invoiceDocType}
@@ -1547,32 +1562,40 @@ function POSView() {
             </div>
 
             {/* SECCIÓN 2: RESUMEN DE FACTURA */}
-            <div className="space-y-2 pt-2 border-t border-slate-800">
-              <h4 className="text-center text-xs font-extrabold text-cyan-400 uppercase tracking-wider">
-                Resumen de Factura
-              </h4>
+            {(() => {
+              const modalSaleTotal = lastSaleReceipt?.total ?? finalTotal;
+              const modalSaleSubtotal = lastSaleReceipt?.subtotal ?? subtotalProducts;
+              const modalSaleDiscount = lastSaleReceipt?.discount ?? discount;
 
-              <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 divide-y divide-slate-800/80 text-xs">
-                <div className="flex justify-between py-1.5 text-slate-300">
-                  <span className="font-semibold">Subtotal:</span>
-                  <span className="font-mono font-bold text-white">Bs. {subtotalProducts.toFixed(2)}</span>
-                </div>
-                {discount > 0 && (
-                  <div className="flex justify-between py-1.5 text-rose-400">
-                    <span className="font-semibold">Descuento (-):</span>
-                    <span className="font-mono font-bold">-Bs. {discount.toFixed(2)}</span>
+              return (
+                <div className="space-y-2 pt-2 border-t border-slate-800">
+                  <h4 className="text-center text-xs font-extrabold text-cyan-400 uppercase tracking-wider">
+                    Resumen de Factura
+                  </h4>
+
+                  <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 divide-y divide-slate-800/80 text-xs">
+                    <div className="flex justify-between py-1.5 text-slate-300">
+                      <span className="font-semibold">Subtotal:</span>
+                      <span className="font-mono font-bold text-white">Bs. {modalSaleSubtotal.toFixed(2)}</span>
+                    </div>
+                    {modalSaleDiscount > 0 && (
+                      <div className="flex justify-between py-1.5 text-rose-400">
+                        <span className="font-semibold">Descuento (-):</span>
+                        <span className="font-mono font-bold">-Bs. {modalSaleDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between py-1.5 text-slate-300">
+                      <span className="font-semibold">Total Base Crédito Fiscal:</span>
+                      <span className="font-mono font-bold text-cyan-400">Bs. {modalSaleTotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between py-1.5 text-slate-400 text-[11px]">
+                      <span>Crédito fiscal (13% IVA):</span>
+                      <span className="font-mono font-bold text-emerald-400">Bs. {(modalSaleTotal * 0.13).toFixed(2)}</span>
+                    </div>
                   </div>
-                )}
-                <div className="flex justify-between py-1.5 text-slate-300">
-                  <span className="font-semibold">Total Base Crédito Fiscal:</span>
-                  <span className="font-mono font-bold text-cyan-400">Bs. {finalTotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between py-1.5 text-slate-400 text-[11px]">
-                  <span>Crédito fiscal (13% IVA):</span>
-                  <span className="font-mono font-bold text-emerald-400">Bs. {(finalTotal * 0.13).toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* SECCIÓN 3: MÉTODO DE PAGO */}
             <div className="space-y-3 pt-2 border-t border-slate-800">
@@ -1638,50 +1661,41 @@ function POSView() {
                 </label>
               </div>
 
-              {/* Si es EFECTIVO: Calculadora ágil de cambio y billetes */}
-              {invoicePaymentMethod === 'EFECTIVO' && (
-                <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 space-y-3">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-[11px] font-bold text-slate-400 mr-1">Billetes:</span>
-                    {[10, 20, 50, 100, 200].map((bill) => (
-                      <button
-                        key={bill}
-                        type="button"
-                        onClick={() => setReceivedCash(bill.toString())}
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-lg text-xs border border-slate-700 transition-all"
-                      >
-                        Bs. {bill}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => setReceivedCash(finalTotal.toFixed(2))}
-                      className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg text-xs transition-all"
-                    >
-                      Monto Exacto
-                    </button>
-                  </div>
+              {/* Si es EFECTIVO: Monto Recibido y Cambio / Vuelto exacto */}
+              {invoicePaymentMethod === 'EFECTIVO' && (() => {
+                const targetTotal = lastSaleReceipt?.total ?? finalTotal;
+                const recVal = parseFloat(receivedCash) || 0;
+                const changeVal = Math.max(0, recVal - targetTotal);
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-400 mb-1">Monto Recibido (Bs.):</label>
-                      <input
-                        type="number"
-                        step="0.10"
-                        value={receivedCash}
-                        onChange={(e) => setReceivedCash(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-base font-black text-white focus:outline-none focus:border-cyan-400 font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-400 mb-1">Cambio / Vuelto:</label>
-                      <div className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-base font-black text-emerald-400 font-mono">
-                        Bs. {Math.max(0, (parseFloat(receivedCash) || 0) - finalTotal).toFixed(2)}
+                return (
+                  <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 space-y-2">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 mb-1">Monto Recibido (Bs.):</label>
+                        <input
+                          type="number"
+                          step="0.10"
+                          value={receivedCash}
+                          onChange={(e) => setReceivedCash(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-base font-black text-white focus:outline-none focus:border-cyan-400 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 mb-1">Cambio / Vuelto:</label>
+                        <div className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-base font-black text-emerald-400 font-mono flex items-center justify-between">
+                          <span>Bs. {changeVal.toFixed(2)}</span>
+                          {recVal >= targetTotal && targetTotal > 0 && changeVal === 0 && (
+                            <span className="text-[10px] text-cyan-400 font-semibold px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20">
+                              Exacto
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             {/* BOTONES DE ACCIÓN: IMPRESIÓN, CERRAR, FACTURAR */}
@@ -1734,24 +1748,36 @@ function POSView() {
             <div className="text-center space-y-0.5 border-b border-slate-300 pb-3">
               <h2 className="font-extrabold text-base tracking-wider uppercase text-black">CASA Y CONSTRUCCION</h2>
               <p className="text-[10px] text-slate-600 font-medium">AV. BEIJING Y AV. TADEO AHENKE, COCHABAMBA, COCHABAMBA, 0000, Bolivia</p>
-              <p className="text-[10px] text-slate-600 font-medium">Móvil cliente: 78221469</p>
-              <h3 className="font-bold text-sm text-black pt-1">Recibo</h3>
+              <p className="text-[10px] text-slate-600 font-medium">NIT: 1028394021 • Teléfono: 78221469</p>
+              <h3 className="font-bold text-sm text-black pt-1 uppercase">
+                {lastSaleReceipt.isInvoice ? 'Factura Electrónica de Venta' : 'Recibo / Nota de Venta'}
+              </h3>
             </div>
 
-            {/* 2. Metadatos: Recibo No, Cliente, Fecha */}
+            {/* 2. Metadatos: Factura / Recibo No, Cliente, Fecha */}
             <div className="flex justify-between items-start text-[11px] pb-2 border-b border-slate-300 text-slate-800">
               <div className="space-y-0.5">
                 <p className="font-bold text-black text-xs">
-                  Recibo No. <span className="font-mono font-bold">{lastSaleReceipt.id}</span>
+                  {lastSaleReceipt.isInvoice ? 'Factura No.' : 'Recibo No.'} <span className="font-mono font-bold">{lastSaleReceipt.id}</span>
                 </p>
                 <p>
                   <span className="font-semibold">Cliente:</span> {lastSaleReceipt.client || 'SIN NOMBRE'}
-                  {lastSaleReceipt.nit && lastSaleReceipt.nit !== '0' ? ` (NIT: ${lastSaleReceipt.nit})` : ''}
+                  {lastSaleReceipt.nit && lastSaleReceipt.nit !== '0' ? ` (NIT/CI: ${lastSaleReceipt.nit})` : ''}
                 </p>
+                {lastSaleReceipt.email && (
+                  <p className="text-[10px] text-slate-600">
+                    <span className="font-semibold">Correo:</span> {lastSaleReceipt.email}
+                  </p>
+                )}
               </div>
               <div className="text-right font-mono text-[11px]">
                 <p><span className="font-semibold">Fecha:</span> {lastSaleReceipt.time}</p>
                 {lastSaleReceipt.empleado && <p className="text-slate-500 text-[10px]">Atendido por: {lastSaleReceipt.empleado}</p>}
+                {lastSaleReceipt.isInvoice && (
+                  <span className="inline-block mt-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold rounded">
+                    Factura Electrónica
+                  </span>
+                )}
               </div>
             </div>
 
@@ -1788,7 +1814,7 @@ function POSView() {
               {/* Izquierda: Pagos */}
               <div className="space-y-1">
                 <div className="flex justify-between text-slate-700">
-                  <span>Efectivo</span>
+                  <span>{lastSaleReceipt.paymentMethod || 'Efectivo'}</span>
                   <span className="font-mono font-semibold">Bs. {lastSaleReceipt.total.toFixed(2)}</span>
                   <span className="text-slate-500 text-[10px]">{lastSaleReceipt.time?.split(' ')[0] || ''}</span>
                 </div>
@@ -1796,6 +1822,11 @@ function POSView() {
                   <span>Total pagado</span>
                   <span className="font-mono">Bs. {lastSaleReceipt.total.toFixed(2)}</span>
                 </div>
+                {lastSaleReceipt.isInvoice && (
+                  <div className="text-[10px] text-slate-500 pt-1">
+                    Base Crédito Fiscal: <strong className="text-slate-800">Bs. {lastSaleReceipt.total.toFixed(2)}</strong>
+                  </div>
+                )}
               </div>
 
               {/* Derecha: Subtotal y Total */}
@@ -1818,21 +1849,34 @@ function POSView() {
             </div>
 
             {/* Botones de Acción en Pantalla (ocultos al imprimir) */}
-            <div className="flex gap-2 pt-4 no-print border-t border-slate-200">
+            <div className="grid grid-cols-3 gap-2 pt-4 no-print border-t border-slate-200">
               <button
                 type="button"
                 onClick={() => setShowReceiptModal(false)}
-                className="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition-colors"
+                className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition-colors cursor-pointer text-center"
               >
                 Cerrar
               </button>
               <button
                 type="button"
-                onClick={() => window.print()}
-                className="w-1/2 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-cyan-600/20 transition-all"
+                onClick={handleDownloadReceipt}
+                className="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+                title="Descargar comprobante oficial en PDF y abrir en visor"
               >
-                <span>🖨️</span>
-                <span>Imprimir Recibo</span>
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span>{lastSaleReceipt.isInvoice ? 'Descargar Factura (PDF)' : 'Descargar Recibo (PDF)'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-cyan-600/20 transition-all cursor-pointer"
+              >
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                <span>{lastSaleReceipt.isInvoice ? 'Imprimir Factura' : 'Imprimir Recibo'}</span>
               </button>
             </div>
           </div>
@@ -2266,9 +2310,9 @@ function POSView() {
                   </div>
                 ) : (
                   recentSales.map((s, idx) => {
-                    const saleNum = s.ventaID || s.id.replace('VNT-', '');
-                    const isNamed = s.client && s.client !== 'SIN NOMBRE';
-                    const clientDisplay = isNamed ? s.client : '';
+                    const saleNum = s.ventaID || s.id.toString().replace(/^[A-Z-]+/i, '');
+                    const isNamed = s.client && s.client.trim() !== '' && s.client !== 'SIN NOMBRE' && s.client !== 'CLIENTE PRUEBA' && !s.client.toLowerCase().includes('cliente general');
+                    const clientDisplay = isNamed ? s.client : 'CLIENTE GENERAL';
 
                     return (
                       <div
@@ -2281,9 +2325,9 @@ function POSView() {
                             {idx + 1}.
                           </span>
                           <div>
-                            <div className="font-extrabold text-white text-xs tracking-tight">
+                            <div className="font-extrabold text-white text-xs tracking-tight flex items-center gap-1.5 flex-wrap">
                               <span className="font-mono text-cyan-300">{saleNum}</span>
-                              <span className="ml-1 text-slate-300 uppercase">
+                              <span className={`text-[11px] uppercase font-bold px-1.5 py-0.2 rounded ${isNamed ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-500/30' : 'text-slate-400'}`}>
                                 ({clientDisplay})
                               </span>
                             </div>
@@ -2346,7 +2390,7 @@ function POSView() {
                             type="button"
                             onClick={() => handleInvoiceRecentSale(s)}
                             className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-emerald-500/70 text-emerald-400 hover:bg-emerald-500/10 font-bold text-[11px] transition-all"
-                            title="Emitir o actualizar datos de factura SIAT"
+                            title="Emitir o actualizar datos de factura"
                           >
                             <span>📄</span>
                             <span>Facturar</span>
@@ -2598,7 +2642,7 @@ function POSView() {
                 <label className="block text-slate-400 font-semibold mb-1">Razón Social para Facturación:</label>
                 <input
                   type="text"
-                  placeholder="Razón social que figurará en la factura SIAT"
+                  placeholder="Razón social que figurará en la factura"
                   value={newClientForm.RazonSocial}
                   onChange={(e) => setNewClientForm({ ...newClientForm, RazonSocial: e.target.value.toUpperCase() })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-500 font-bold uppercase"

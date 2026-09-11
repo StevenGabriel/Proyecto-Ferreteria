@@ -771,4 +771,122 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
     * **Sensibilidad y Periodo de proyección** → qué controla cada opción en términos prácticos.
     * **Tabla de reabastecimiento** → cómo leer las columnas y el código de colores (rojo/amarillo/verde).
   * Estilo consistente con el resto de la UI: `bg-slate-900/50 border-slate-700/60 rounded-2xl`, texto `text-cyan-400` para etiquetas y `text-slate-300/400` para descripciones.
-  * Build verificado correctamente tras los cambios.
+
+### 95. Gráfico Ampliado y Comparativa de Precisión en Detalle de Producto (`PredictiveReportsTab.jsx`)
+* **1. Mejoras en Gráfico SVG Principal:**
+  * Se incrementaron las dimensiones de altura del gráfico a `320px` (`h-80`) para mayor visibilidad y legibilidad.
+  * Se optimizaron las etiquetas de picos máximos con protección contra solapamiento en días contiguos.
+  * Se resaltaron los indicadores de `HOY` y `Promedio Diario` con tipografías y bordes contrastados.
+* **2. Tabla de Evaluación de Precisión y Ajuste de Modelo:**
+  * Se integró dentro del modal **"Ver Detalle"** de cada producto una tabla comparativa de los tres métodos evaluados (SES, SMA, WMA) mostrando sus métricas de error retrospectivo: **MAD** (Error diario), **RMSE** (Desviación cuadrática) y **MAPE** (Error porcentual).
+  * Se destaca con un badge `★ Menor Error` el método que obtuvo el mejor ajuste matemático para el artículo.
+* Build verificado exitosamente.
+
+### 96. Creación de Documento Explicativo de Usuario (`vista_predicciones.md`)
+* Se generó un documento completo en Markdown con el manual de usuario y guía operativa de la vista de Reportes y Análisis Predictivo.
+* Incluye:
+  * Explicación de KPIs principales (Demanda estimada, Presupuesto sugerido, Por agotarse pronto, Rentabilidad).
+  * Explicación de métodos de cálculo (SES, SMA, WMA) y sensibilidad (Cautelosa, Normal, Reactiva con ejemplo comercial).
+  * Guía de lectura del gráfico SVG interactivo (líneas, tooltips, etiquetas de `Prom: 12 un/día`, `HOY`, picos).
+  * Explicación detallada de la tabla de reabastecimiento y semáforo de criticidad de stock.
+  * Fundamento de métricas de precisión retrospectiva (MAD, RMSE, MAPE) y diferenciación con matrices de confusión.
+* Guardado en la raíz del proyecto como `c:\Proyeto Ferreteria\ferreteriaaa\vista_predicciones.md`.
+
+### 97. Modernización y Conexión de Datos Reales en Panel Operativo (`Home.jsx`)
+* **1. Eliminación de Tarjetas Estáticas / Hardcoded:**
+  * Se eliminaron las 8 tarjetas con valores inventados (ventas netas negativas, gastos fijos de Bs. 6,000, compras y devoluciones vacías).
+* **2. Cuatro KPIs Operativos Conectados a Base de Datos:**
+  * **Ventas Totales:** Total facturado real en Bs. de la base de datos con margen de ganancia real.
+  * **Transacciones:** Cantidad exacta de tickets cobrados y ticket promedio en Bs.
+  * **Alertas de Stock:** Conteo en tiempo real de productos en nivel crítico o menor a su stock mínimo.
+  * **Caducidad de Lotes (FEFO):** Conteo de lotes vencidos o próximos a expirar.
+* **3. Gráfico de Historial de Ventas 100% Dinámico:**
+  * Conectado a la API `getSalesPerformanceReport`, graficando los ingresos diarios reales, fechas dinámicas y tooltips interactivos con monto en Bs., número de tickets y unidades vendidas.
+* **4. Preservación de Tablas Operativas Críticas:**
+  * Se mantuvieron intactas las tablas de **Alerta de stock del producto** y **Alerta de vencimiento de lotes (FEFO)** con todas sus funciones de exportación (CSV, Excel, Impresión).
+* Build verificado exitosamente.
+
+### 98. Alineación Precisa de Fechas y Gráfico Ampliado en Inicio (`Home.jsx`)
+* **Problema:** Las fechas del eje X estaban en un contenedor HTML exterior separado (`justify-between`), lo que causaba un desfase visual entre el texto de la fecha y el punto exacto de la curva de ventas.
+* **Solución:**
+  * Se trasladaron las etiquetas de fechas del eje X **directamente al interior del SVG**, calculando su posición horizontal exactamente con la coordenada `x` de cada punto de venta.
+  * Se aumentó el tamaño del gráfico a `1100x320` (`h-80`) para que ocupe todo el ancho disponible y las curvas tengan mayor amplitud y resolución visual.
+  * Se optimizaron las líneas de cuadrícula y etiquetas de montos en Bs. (`k` para miles) para un acabado limpio y proporcional.
+* Build verificado exitosamente.
+
+### 99. Depuración de Opciones y Corrección de Cambio en Modal de Factura (`POSView.jsx`)
+* **1. Corrección del Error en Cálculo de Cambio / Vuelto:**
+  * **Causa:** Al presionar "Efectivo", el carrito de compras se vaciaba en memoria (`cart = []`) antes de abrir el modal, haciendo que el subtotal y total dentro del modal evaluaran temporalmente en `Bs. 0.00`. Al ingresar `Bs. 238.00` recibidos, el sistema restaba `238 - 0` calculando un cambio erróneo de `Bs. 238.00`.
+  * **Solución:** Se vinculó el resumen de factura y el cálculo de cambio al total del recibo activo (`lastSaleReceipt.total`), asegurando que si la venta es de `Bs. 238.00` y se reciben `Bs. 238.00`, el cambio sea exactamente `Bs. 0.00` (con indicador `Exacto`).
+* **2. Limpieza de Opciones No Utilizadas:**
+  * Se eliminaron las opciones de radio `Ventas Menores del Día` y `Caso Especial`, dejando únicamente `Normal` y `Sin Nombre (≤ Bs. 10.000)`.
+  * Se eliminaron los botones de billetes predefinidos (`Bs. 10`, `Bs. 20`, `Bs. 50`, `Bs. 100`, `Bs. 200`, `Monto Exacto`) dejando un campo de `Monto Recibido (Bs.)` ágil y limpio con cálculo automático del vuelto.
+* Build verificado exitosamente.
+
+### 101. Estandarización de Términos: Eliminación del Acrónimo "SIAT" en la Interfaz
+* **Motivo:** Debido a que el módulo de facturación opera bajo un flujo interno/simulado, se depuró el término tributario `"SIAT"` en todos los textos visibles al usuario para evitar confusiones operativas.
+* **Ajustes Realizados:**
+  * **Barra Lateral (`sidebar.jsx`):** Menú renombrado de `Facturación SIAT` a `Facturación`.
+  * **Punto de Venta (`POSView.jsx`):**
+    * Encabezado de comprobante actualizado a `FACTURA ELECTRÓNICA DE VENTA`.
+    * Insignia de estado cambiada de `SIAT En Línea` a `Factura Electrónica`.
+    * Selector y formularios ajustados de `Tipo de Documento (SIAT)` a `Tipo de Documento`.
+    * Tooltips y marcadores de posición depurados.
+  * **Gestión de Clientes (`ClientView.jsx`):**
+    * Subtítulo del módulo ajustado a `Administra tus Clientes y datos de Facturación`.
+    * Sección de formulario renombrada a `Datos de Facturación` y etiqueta a `Tipo de Documento de Identidad:`.
+### 102. Generación y Descarga Oficial en Formato PDF de Facturas y Recibos (`POSView.jsx`, `invoicePdfGenerator.js`)
+* **Requerimiento:** Generar directamente un documento en formato **`.pdf`** idéntico al estándar oficial de facturación boliviano (como en el visor de Acrobat/Chrome) al pulsar descargar.
+* **Solución Implementada:**
+  * **Integración de Librerías:** Se integraron `jspdf`, `jspdf-autotable` y `qrcode`.
+  * **Módulo Generador (`src/utils/invoicePdfGenerator.js`):**
+    * **Encabezado Comercial:** Casa Matriz, Punto de Venta, Dirección en Cochabamba, Teléfono y NIT.
+    * **Datos de Facturación:** Número correlativo de Factura/Recibo, Código Único de Autorización (CUF), Fecha y Hora.
+    * **Identificación del Cliente:** Nombre/Razón Social, NIT/CI/CEX y Código de Cliente.
+    * **Tabla de Ítems Estandarizada:** `CÓDIGO PRODUCTO/SERVICIO`, `CANTIDAD`, `UNIDAD MEDIDA`, `DESCRIPCIÓN`, `PRECIO UNITARIO`, `DESCUENTO` y `SUBTOTAL`.
+    * **Conversión a Literal:** Función `numeroALetras` para importes en texto legal (ej. *VEINTICINCO 00/100 BOLIVIANOS*).
+    * **Resumen de Importes:** Subtotal, Descuentos, Total, Monto Gift Card, Monto a Pagar e Importe Base Crédito Fiscal.
+    * **Pie de Página Legal y QR:** Leyendas obligatorias de Ley Nº 453 y generación dinámica de Código QR fiscal.
+  * **Acción en el POS:** Al hacer clic en **`Descargar Factura (PDF)`** o **`Descargar Recibo (PDF)`**, el sistema:
+    1. Guarda y descarga directamente el archivo `.pdf` (`Factura_Nro_XXX_YYYY-MM-DD.pdf`).
+    2. Abre instantáneamente el PDF en una nueva pestaña del navegador para visualizarlo en el lector PDF integrado o imprimirlo.
+### 103. Corrección en Asignación y Persistencia de Nombres de Clientes en Ventas (`POSView.jsx`, `sales.js`)
+* **Problema Identificado:**
+  * Al realizar una venta a un cliente con nombre (ej. "Pablo", "Constructora Los Andes"), en la ventana de **Transacciones Recientes** la venta figuraba como `(CLIENTE PRUEBA)` o con paréntesis vacíos `()`.
+  * **Causa Raíz:** En la base de datos SQL Server, el registro inicial `ClienteID = 1` tenía como nombre `"CLIENTE PRUEBA"`, y al no persistirse dinámicamente clientes nuevos o no sincronizarse el `ClienteID`/`clienteNombre` en `POST /sales` y `PATCH /sales/:id/invoice`, la consulta `GET /sales/recent` recurría a dicho registro o quedaba vacía.
+* **Solución Implementada:**
+  * **1. Resolución Dinámica de Clientes en Backend (`resolveOrCreateCliente`):**
+    * Si la venta incluye un cliente con nombre o NIT, el servidor busca coincidencias en la tabla `Personas`/`Clientes` o crea automáticamente el registro asociado dentro de la transacción ACID.
+### 104. Implementación del Módulo de Facturación (`InvoiceListView.jsx`, `sidebar.jsx`, `sales.js`)
+* **Requerimiento:** Crear el módulo de **Facturación** accesible desde el menú lateral con diseño idéntico al sistema de referencia, simplificando las acciones de cada factura estrictamente a: **`Imprimir`** (hoja carta/oficio oficial), **`Imprimir Ticket`** (rollo térmico de 80mm) y **`Anular`**.
+* **Solución Implementada:**
+  * **1. Vista Principal (`src/pages/Sales/InvoiceListView.jsx`):**
+    * **Cabecera y Métricas:** Total Facturado en Bs., Conteo de Facturas Emitidas y Anuladas en tiempo real.
+    * **Barra de Filtros y Búsqueda:** Filtro por rango de fechas (`Fecha Inicio` y `Fecha Fin`), buscador por texto (`Número de factura, Cliente, NIT/CI, CUF`) y filtro por estado (`Todas`, `Emitidas`, `Anuladas`).
+    * **Diseño de Fila / Tarjeta de Factura:**
+      * Visualización de `Venta: 👁️ Ver Detalle`, `ID`, badge de `Factura Nro`, `Cliente`, `Sucursal 0 | Punto Venta 0`, `Fecha emisión`, código `CUF` con botón para copiar, sector, impuesto `13% IVA`, monto total en Bs. e insignia de estado (`Emitida` / `Anulada`).
+      * **Botón `Imprimir` (Carta):** Genera e interactúa con el PDF oficial de tamaño Carta/Oficio con QR y formato fiscal boliviano.
+      * **Botón `Imprimir Ticket` (Térmico 80mm):** Genera e imprime el ticket adaptado a impresoras de rollo continuo con desglose de ítems, totales, literal y QR.
+      * **Botón `Anular`:** Modal de confirmación con selección de motivo de anulación.
+  * **2. Modales Interactivos:**
+    * Modal `Ver Detalle`: Desglose detallado de ítems, código, descripción, cantidades, precios unitarios y subtotales.
+    * Modal `Anular Factura`: Confirma y ejecuta la anulación registrando el motivo.
+  * **3. Backend (`backend/api/routes/sales.js`):**
+    * `GET /sales/invoices`: Endpoint con filtrado por fechas, texto y estado.
+    * `PATCH /sales/:id/anular`: Marca la venta/factura como anulada y revierte automáticamente las existencias al inventario de lotes (Kardex: `AJUSTE_INGRESO`).
+  * **4. Navegación y Rutas (`sidebar.jsx`, `App.jsx`):**
+    * Vinculado el botón **`Facturación`** del menú lateral hacia las rutas `/facturacion` y `/facturas` con resaltado de estado activo.
+* Build verificado exitosamente.
+
+### 105. Corrección de Mapeo de Datos en Factura Formato Carta / Oficio (`invoicePdfGenerator.js`)
+* **Problema Identificado:**
+  * Al presionar **`Imprimir Ticket`** en el módulo de facturación, los datos del cliente y la lista de productos se visualizaban correctamente.
+  * Sin embargo, al presionar **`Imprimir`** (hoja carta oficial), el documento PDF mostraba `"SIN NOMBRE"` en el campo *Nombre/Razón Social* y la tabla de productos aparecía vacía.
+  * **Causa Raíz:** En `generateInvoicePdf`, los nombres de propiedades leídos (`receiptData.client`, `receiptData.items`) no coincidían con el esquema de facturas retornado por el backend (`receiptData.cliente`, `receiptData.detalles`).
+* **Solución Implementada:**
+  * Se compatibilizó `generateInvoicePdf` en `src/utils/invoicePdfGenerator.js`:
+    1. **Identificación del Cliente:** Prioriza `receiptData.cliente || receiptData.client || receiptData.razonSocial || receiptData.nombreCliente`.
+    2. **Identificación Tributaria (NIT/CI):** Soporta `receiptData.nit || receiptData.documento || receiptData.nitCliente`.
+    3. **Tabla de Productos / Ítems:** Soporta indistintamente `receiptData.detalles || receiptData.items || receiptData.productos`, mapeando correctamente `codigo`, `cantidad`/`quantity`, `unidad`/`unit`, `nombre`/`name`/`producto`, `precioUnitario`/`price` y `subtotal`.
+    4. **Fechas e Identificadores:** Soporta `fechaEmision`/`time` y `numeroFactura`/`id`.
+* **Resultado:** Ahora tanto la impresión en hoja carta (**`Imprimir`**) como la impresión en rollo (**`Imprimir Ticket`**) reflejan con total fidelidad el nombre del cliente, su NIT/CI y todos los ítems adquiridos con sus cantidades y subtotales.
