@@ -909,3 +909,84 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
     * Al abrirse la caja, se carga el terminal POS con su barra de herramientas y el indicador `💵 Caja Inicial: Bs. XXX.XX`.
   * **4. Backend (`backend/api/routes/sales.js`):**
     * Endpoints `GET /sales/cash-register/status`, `POST /sales/cash-register/open`, `GET /sales/cash-register/last`, `POST /sales/cash-register/close`.
+
+### 107. Rediseño del Cierre de Caja Registradora (`POSView.jsx`) y Supresión de Gastos, Créditos y Pagos Externos
+* **Requerimiento:** 
+  1. Eliminar cualquier referencia a "Gastos" tanto en las tablas como en los cálculos de resumen y fórmulas.
+  2. Eliminar los campos innecesarios "Ventas a crédito" y "Pagos externos" de la tarjeta de resumen.
+  3. Alinear visualmente el modal de cierre de caja (`Registro actual`) a la línea de diseño oscura, elegante y corporativa del sistema (colores oscuros `slate-900`/`slate-950`, acentos `cyan-400`/`emerald-400`, bordes sutiles y tarjetas integradas).
+* **Solución Implementada:**
+  * **1. Eliminación de Rubros Innecesarios:**
+    * Se removió la columna de "Gastos" de la tabla de métodos de pago.
+    * Se eliminó el ítem "Gasto total" del bloque de KPIs.
+    * Se eliminaron las filas "Ventas a crédito" y "Pagos externos" de la tarjeta de resumen de cierre.
+    * Se actualizó la fórmula visual: `Total = Bs. {Apertura} + Bs. {Ventas} - Bs. {Reembolsos} = Bs. {Efectivo Esperado}`.
+    * Se ajustó el cálculo matemático en JavaScript: `expectedCash = Math.max(0, initialCash + cashSales - totalRefunds)`.
+  * **2. Adaptación a la Línea Visual del Sistema:**
+    * **Fondo y Contenedor:** Modal con fondo `bg-slate-900`, bordes `border-slate-800`, backdrop `backdrop-blur-md` y sombras profundas.
+    * **Tablas y Datos:** Tablas integradas con encabezados oscuros `bg-slate-950`, textos en `slate-300`, SKUs en `text-cyan-400`, totales en `text-emerald-400` y tipografía monospace.
+    * **Resumen Destacado:** Tarjeta con fondo esmeralda oscuro translúcido `bg-emerald-950/40 border border-emerald-500/30` y texto verde brillante `text-emerald-400` para el efectivo esperado.
+    * **Formulario e Inputs:** Campos oscuros `bg-slate-950 border border-slate-700` con focus iluminado en `cyan-400`.
+    * **Botones:** Botón primario en `bg-cyan-600 hover:bg-cyan-500` con sombra cyan y botón secundario `bg-slate-800`.
+
+### 108. Implementación del Módulo de "Aumento a Caja" / Ingreso de Efectivo (`POSView.jsx`, `sales.js`, `api.js`)
+* **Requerimiento:** Permitir que durante el turno de venta, ante la necesidad de dar cambio (por falta de billetes chicos o monedas), el cajero/administrador pueda registrar un aumento de efectivo en la caja registradora de manera ágil sin interrumpir la operación.
+* **Solución Implementada:**
+  * **1. Botón e Indicador en Cabecera del POS (`POSView.jsx`):**
+    * Se incorporó el botón verde esmeralda **`➕ Aumento a caja`** en la esquina superior derecha del POS (junto a la calculadora y al botón de cerrar caja).
+    * El badge de caja inicial (`💵 Caja Inicial`) muestra automáticamente los aumentos acumulados: `Bs. 200.00 (+50.00 aumento)`.
+  * **2. Ventana Modal de Ingreso de Efectivo:**
+    * Modal oscuro con campo numérico **`Monto a ingresar (Bs.):*`** con prefijo `Bs.` y selector rápido de motivo/observación (`Cambio para caja`).
+  * **3. Backend y Persistencia (`sales.js` y `api.js`):**
+    * Endpoint `POST /sales/cash-register/cash-in` para registrar cada ingreso con ID, monto, fecha/hora y usuario.
+    * Acumulación en la sesión activa y persistencia sincronizada en base de datos y `localStorage`.
+  * **4. Impacto Automático en el Arqueo de Cierre de Caja:**
+    * En el modal **Cerrar caja (`Registro actual`)**, se agrega la fila **`Aumentos de efectivo (Cambio en turno): +Bs. XX.XX`**.
+    * La fórmula y el cálculo del efectivo esperado se actualizan dinámicamente:
+      $$\text{Total} = \text{Apertura} + \text{Aumentos} + \text{Venta} - \text{Reembolso} = \text{Efectivo Esperado}$$
+
+### 109. Limpieza de Textos de Pie de Página en Apertura de Caja (`POSView.jsx`)
+* **Requerimiento:** Retirar los textos `InvenPro - V6.32 | Copyright © 2026 All rights reserved.` y `Sistema POS C&C` de la parte inferior de la vista de "Abrir caja registradora".
+* **Solución Implementada:**
+  * Se eliminó el bloque de pie de página innecesario en `POSView.jsx`, dejando la interfaz más limpia, minimalista y despejada.
+
+### 110. Aislamiento Estricto de Ventas y Productos por Turno de Caja Registradora (`POSView.jsx`, `sales.js`)
+* **Problema Identificado:**
+  * Si se abría y cerraba una caja, y posteriormente ese mismo día se volvía a abrir otra caja, el modal de cierre acumulaba erróneamente todas las ventas históricas/recientes del día en lugar de mostrar **únicamente** las ventas y productos vendidos durante esa sesión de caja en particular.
+* **Solución Implementada:**
+  * **1. Marcas Temporales e Identificadores de Sesión:**
+    * Al abrir la caja registradora (`POST /sales/cash-register/open` y `handleOpenRegisterSubmit`), se registra `openedAtTimestamp` y `fechaAperturaISO`.
+    * Cada venta realizada en el POS (`newSale`) vincula el identificador del turno activo `cajaSessionId`, su fecha `fechaVentaISO` y timestamp exacto.
+    * El endpoint backend `GET /sales/recent` devuelve `fechaVentaISO` y `timestamp` numérico.
+  * **2. Filtrado Estricto en el Arqueo (`handleOpenCloseRegisterModal`):**
+    * Se implementó un filtro que compara las transacciones contra el momento de apertura de la sesión activa (`saleTime >= sessionOpenedAt - 15000` o `sale.cajaSessionId === cashRegisterData.id`).
+    * Tanto los importes de venta (`cashSales`, `digitalSales`, `totalSales`), los reembolsos, como la tabla de **Detalles de los productos vendidos** ahora consideran exclusivamente las transacciones generadas en el turno actual.
+
+### 111. Corrección en Carga de Productos Vendidos y Persistencia de Turno (`POSView.jsx`)
+* **Problema Identificado:**
+  * Al realizar ventas en un turno activo y abrir la ventana de Cierre de Caja, la tabla mostraba *"No se registraron ventas de productos en este turno"* y los totales aparecían en 0.00.
+  * **Causas Raíz:**
+    1. Las ventas generadas en frontend (`newSale`) almacenaban los ítems únicamente bajo la propiedad `items: [...]`, mientras que el algoritmo de arqueo buscaba `s.detalles`, quedando los productos sin procesar.
+    2. Existían discrepancias de zona horaria entre timestamps de SQL Server y `Date.now()` en el navegador al comparar fechas en sesiones recién abiertas.
+* **Solución Implementada:**
+  * **1. Estructura Completa de Detalles:** `newSale` ahora genera la lista normalizada `detalles` (mapeando `ProductoID`, `codigo`, `producto`, `nombre`, `cantidad`, `precioUnitario` y `subtotal`).
+  * **2. Estado y Persistencia Dedicada de Turno (`currentShiftSales` / `cyc_current_shift_sales`):**
+    * Cada venta realizada en el turno activo se registra directamente en el estado de turno y en `localStorage`.
+    * Al abrir la caja se inicializa en `[]` y al cerrarla se purga de inmediato.
+  * **3. Agrupación Tolerante y Multi-Esquema:** El algoritmo de cierre ahora procesa tanto `s.detalles` como `s.items`, garantizando que la lista de productos y los totales en efectivo y digitales se calculen con 100% de precisión y fidelidad.
+
+### 112. Filtrado Estricto del Módulo de Facturación (`/facturacion`) y Exclusión de Ventas Mostrador (`sales.js`)
+* **Problema Identificado:**
+  * Al realizar una venta rápida a `Cliente General` (ticket de mostrador sin emisión de factura), esta aparecía incorrectamente en el listado oficial del módulo de **Facturación** (`/facturacion`).
+  * **Causa:** El endpoint backend `GET /sales/invoices` retornaba todas las filas de la tabla `Ventas` (`Venta.findAll()`), asumiendo erróneamente que toda venta era una factura emitida.
+* **Solución Implementada:**
+  * **1. Registro de Emisión de Facturas (`invoicedSalesSet`):**
+    * Se incorporó el control de emisión que registra únicamente las ventas que fueron explícitamente facturadas (`isInvoice: true` o mediante `PATCH /sales/:id/invoice` tras ingresar Razón Social y NIT).
+  * **2. Filtrado en `GET /sales/invoices`:**
+    * Ahora el listado oficial de facturas excluye las ventas mostrador de `Cliente General` / `Sin Factura` (con NIT 0) y muestra exclusivamente aquellas ventas que cuentan con factura fiscal emitida formalmente con NIT y Razón Social o registro de emisión.
+
+
+
+
+
+

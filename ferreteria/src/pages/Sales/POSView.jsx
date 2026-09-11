@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/sidebar/sidebar';
 import Topbar from '../../components/topbar/topbar';
 import { useSidebar } from '../../context/SidebarContext';
-import { getProducts, getCategories, getBrands, createSale, updateSale, updateSaleInvoice, getRecentSales, getCashRegisterStatus, openCashRegister, getLastCashRegister, closeCashRegister } from '../../services/api';
+import { getProducts, getCategories, getBrands, createSale, updateSale, updateSaleInvoice, getRecentSales, getCashRegisterStatus, openCashRegister, getLastCashRegister, closeCashRegister, addCashInflow } from '../../services/api';
 import { generateInvoicePdf } from '../../utils/invoicePdfGenerator';
 
 function POSView() {
@@ -43,7 +43,40 @@ function POSView() {
   const [openingRegisterLoading, setOpeningRegisterLoading] = useState(false);
   const [showLastRegisterModal, setShowLastRegisterModal] = useState(false);
   const [lastRegisterData, setLastRegisterData] = useState(null);
+
+  // Ventas del turno de caja activo (para aislamiento estricto de arqueo)
+  const [currentShiftSales, setCurrentShiftSales] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cyc_current_shift_sales');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
+
+  // Estados para Aumento a Caja / Ingreso de Efectivo
+  const [showCashInModal, setShowCashInModal] = useState(false);
+  const [cashInAmount, setCashInAmount] = useState('');
+  const [cashInReason, setCashInReason] = useState('Cambio para caja (monedas y billetes chicos)');
+  const [cashInLoading, setCashInLoading] = useState(false);
   const [loadingLastRegister, setLoadingLastRegister] = useState(false);
+
+  // Estados de Cierre de Caja Registradora
+  const [showCloseRegisterModal, setShowCloseRegisterModal] = useState(false);
+  const [closingRegisterLoading, setClosingRegisterLoading] = useState(false);
+  const [declaredCashInput, setDeclaredCashInput] = useState('');
+  const [closingNoteInput, setClosingNoteInput] = useState('');
+  const [closeRegisterStats, setCloseRegisterStats] = useState({
+    sessionStart: '',
+    sessionEnd: '',
+    initialCash: 0,
+    cashSales: 0,
+    digitalSales: 0,
+    totalSales: 0,
+    totalRefunds: 0,
+    totalExpenses: 0,
+    expectedCash: 0,
+    soldProducts: []
+  });
 
   // Estados de datos
   const [products, setProducts] = useState([]);
@@ -324,6 +357,7 @@ function POSView() {
         return;
       }
 
+      const now = new Date();
       const payload = {
         montoInicial: amount,
         empleadoID: currentUser?.EmpleadoID || 6,
@@ -332,28 +366,45 @@ function POSView() {
 
       const res = await openCashRegister(payload).catch(() => null);
       const sessionData = (res && res.session) || {
+        id: Date.now(),
         isOpen: true,
         montoInicial: amount,
-        fechaApertura: new Date().toLocaleString('es-BO'),
+        fechaApertura: now.toLocaleString('es-BO'),
+        fechaAperturaISO: now.toISOString(),
+        openedAtTimestamp: now.getTime(),
         empleadoNombre: currentUser?.Nombre || 'OSCAR EDGAR CLAROS DAVALOS',
         empleadoID: currentUser?.EmpleadoID || 6
       };
+      if (!sessionData.openedAtTimestamp) {
+        sessionData.openedAtTimestamp = now.getTime();
+      }
+      if (!sessionData.fechaAperturaISO) {
+        sessionData.fechaAperturaISO = now.toISOString();
+      }
 
       localStorage.setItem('cyc_cash_register_active', JSON.stringify(sessionData));
+      localStorage.setItem('cyc_current_shift_sales', JSON.stringify([]));
+      setCurrentShiftSales([]);
       setCashRegisterData(sessionData);
       setIsCashRegisterOpen(true);
       showToast(`¡Caja registradora abierta exitosamente! Efectivo inicial: Bs. ${amount.toFixed(2)}`, 'success');
     } catch (err) {
       console.error('Error al abrir caja:', err);
+      const now = new Date();
       const amount = parseFloat(initialCashInput) || 0;
       const sessionData = {
+        id: Date.now(),
         isOpen: true,
         montoInicial: amount,
-        fechaApertura: new Date().toLocaleString('es-BO'),
+        fechaApertura: now.toLocaleString('es-BO'),
+        fechaAperturaISO: now.toISOString(),
+        openedAtTimestamp: now.getTime(),
         empleadoNombre: currentUser?.Nombre || 'OSCAR EDGAR CLAROS DAVALOS',
         empleadoID: currentUser?.EmpleadoID || 6
       };
       localStorage.setItem('cyc_cash_register_active', JSON.stringify(sessionData));
+      localStorage.setItem('cyc_current_shift_sales', JSON.stringify([]));
+      setCurrentShiftSales([]);
       setCashRegisterData(sessionData);
       setIsCashRegisterOpen(true);
       showToast(`¡Caja abierta! Efectivo inicial: Bs. ${amount.toFixed(2)}`, 'success');
@@ -404,6 +455,216 @@ function POSView() {
       });
     } finally {
       setLoadingLastRegister(false);
+    }
+  };
+
+  // Registrar Aumento a Caja / Ingreso de Efectivo durante el turno
+  const handleAddCashInflow = async (e) => {
+    if (e) e.preventDefault();
+    const amount = parseFloat(cashInAmount);
+    if (isNaN(amount) || amount <= 0) {
+      showToast('Por favor ingrese un monto de aumento válido mayor a 0', 'error');
+      return;
+    }
+
+    setCashInLoading(true);
+    try {
+      const payload = {
+        monto: amount,
+        motivo: cashInReason || 'Aumento para cambio en caja',
+        empleadoNombre: currentUser?.Nombre || 'Oscar Edgar Claros Davalos'
+      };
+
+      await addCashInflow(payload).catch(() => null);
+      const newTotalAumentos = (parseFloat(cashRegisterData?.totalAumentos || 0) + amount);
+
+      const updatedRegData = {
+        ...(cashRegisterData || {}),
+        isOpen: true,
+        totalAumentos: newTotalAumentos
+      };
+
+      setCashRegisterData(updatedRegData);
+      localStorage.setItem('cyc_cash_register_active', JSON.stringify(updatedRegData));
+
+      showToast(`Aumento de Bs. ${amount.toFixed(2)} registrado correctamente en caja`, 'success');
+      setShowCashInModal(false);
+      setCashInAmount('');
+      setCashInReason('Cambio para caja (monedas y billetes chicos)');
+    } catch (err) {
+      console.error('Error registrando aumento de caja:', err);
+      showToast('Error al registrar el aumento de caja', 'error');
+    } finally {
+      setCashInLoading(false);
+    }
+  };
+
+  // Abrir modal de Cierre de Caja Registradora calculando métricas del turno
+  const handleOpenCloseRegisterModal = async () => {
+    try {
+      // 1. Obtener ventas del turno registradas en memoria / localStorage
+      let shiftSalesList = [];
+      try {
+        const savedShift = localStorage.getItem('cyc_current_shift_sales');
+        if (savedShift) {
+          const parsed = JSON.parse(savedShift);
+          if (Array.isArray(parsed) && parsed.length > 0) shiftSalesList = parsed;
+        }
+      } catch {}
+      if (shiftSalesList.length === 0 && Array.isArray(currentShiftSales) && currentShiftSales.length > 0) {
+        shiftSalesList = [...currentShiftSales];
+      }
+
+      // 2. Traer las ventas más recientes de BD
+      let salesList = recentSales;
+      try {
+        const latest = await getRecentSales();
+        if (Array.isArray(latest) && latest.length > 0) {
+          salesList = latest;
+          setRecentSales(latest);
+        }
+      } catch (e) {}
+
+      // Si shiftSalesList está vacío (ej: recarga de navegador), filtrar por fecha de apertura
+      if (shiftSalesList.length === 0 && Array.isArray(salesList)) {
+        const sessionOpenedAt = cashRegisterData?.openedAtTimestamp
+          || (cashRegisterData?.fechaAperturaISO ? new Date(cashRegisterData.fechaAperturaISO).getTime() : 0);
+
+        const filteredFromDb = salesList.filter((s) => {
+          if (s.cajaSessionId && cashRegisterData?.id && s.cajaSessionId === cashRegisterData.id) return true;
+          let saleTime = s.timestamp || (s.fechaVentaISO ? new Date(s.fechaVentaISO).getTime() : 0);
+          if (sessionOpenedAt && saleTime) {
+            return saleTime >= (sessionOpenedAt - 120000);
+          }
+          return false;
+        });
+
+        shiftSalesList = filteredFromDb.length > 0 ? filteredFromDb : salesList;
+      }
+
+      const initialCash = parseFloat(cashRegisterData?.montoInicial || 0);
+      const totalAumentos = parseFloat(cashRegisterData?.totalAumentos || 0);
+
+      // Agrupar ventas y productos ÚNICAMENTE del turno actual
+      let cashSales = 0;
+      let digitalSales = 0;
+      let totalRefunds = 0;
+      const productsMap = {};
+
+      shiftSalesList.forEach((s) => {
+        const saleTotal = parseFloat(s.total || 0);
+        if (s.estado === false || s.estadoRaw === false || s.estado === 'Anulada') {
+          totalRefunds += saleTotal;
+        } else {
+          if (s.metodoPago === 'TARJETA' || s.metodoPago === 'QR' || s.metodoPago === 'TRANSFERENCIA') {
+            digitalSales += saleTotal;
+          } else {
+            cashSales += saleTotal;
+          }
+
+          // Procesar detalles de productos (soportando s.detalles o s.items)
+          const itemsList = (s.detalles && Array.isArray(s.detalles) && s.detalles.length > 0)
+            ? s.detalles
+            : (s.items && Array.isArray(s.items) ? s.items : []);
+
+          itemsList.forEach((d, idx) => {
+            const key = d.ProductoID || d.codigo || d.code || d.nombre || d.name || d.producto || idx;
+            const skuVal = d.codigo || d.code || (d.ProductoID ? `TR-${d.ProductoID}` : `SKU-${1000 + idx}`);
+            const nameVal = (d.nombre || d.name || d.producto || 'PRODUCTO').toUpperCase();
+            const qtyVal = parseFloat(d.cantidad || d.quantity || 1);
+            const priceVal = parseFloat(d.precioUnitario || d.price || d.PrecioVenta || 0);
+            const subtotalVal = parseFloat(d.subtotal || (qtyVal * priceVal));
+
+            if (!productsMap[key]) {
+              productsMap[key] = {
+                sku: skuVal,
+                name: nameVal,
+                quantity: 0,
+                total: 0
+              };
+            }
+            productsMap[key].quantity += qtyVal;
+            productsMap[key].total += subtotalVal;
+          });
+        }
+      });
+
+      const totalSales = cashSales + digitalSales;
+      const expectedCash = Math.max(0, initialCash + totalAumentos + cashSales - totalRefunds);
+      const soldProducts = Object.values(productsMap);
+
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      const formatTimeAmPm = (d) => {
+        let hours = d.getHours();
+        const minutes = pad(d.getMinutes());
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12;
+        return `${pad(hours)}:${minutes} ${ampm}`;
+      };
+      const sessionEndStr = `${now.getDate()} ${months[now.getMonth()]}, ${now.getFullYear()} ${formatTimeAmPm(now)}`;
+      const sessionStartStr = cashRegisterData?.fechaApertura || `${now.getDate()} ${months[now.getMonth()]}, ${now.getFullYear()} 08:30 AM`;
+
+      setCloseRegisterStats({
+        sessionStart: sessionStartStr,
+        sessionEnd: sessionEndStr,
+        initialCash,
+        totalAumentos,
+        cashSales,
+        digitalSales,
+        totalSales,
+        totalRefunds,
+        expectedCash,
+        soldProducts
+      });
+
+      setDeclaredCashInput(expectedCash.toFixed(2));
+      setClosingNoteInput('');
+      setShowCloseRegisterModal(true);
+    } catch (err) {
+      console.error('Error preparando cierre de caja:', err);
+      showToast('Error al calcular el balance de cierre', 'error');
+    }
+  };
+
+  // Confirmar Cierre de Registro y volver a la pantalla de Apertura
+  const handleConfirmCloseRegister = async (e) => {
+    if (e) e.preventDefault();
+    setClosingRegisterLoading(true);
+    try {
+      const finalAmount = parseFloat(declaredCashInput) || closeRegisterStats.expectedCash;
+      const payload = {
+        montoFinal: finalAmount,
+        totalVentasEfectivo: closeRegisterStats.cashSales,
+        totalVentasDigital: closeRegisterStats.digitalSales,
+        totalAumentos: closeRegisterStats.totalAumentos || 0,
+        observaciones: closingNoteInput.trim() || 'Cierre de caja regular del turno'
+      };
+
+      await closeCashRegister(payload).catch(() => null);
+
+      // Limpiar sesión activa y ventas del turno en localStorage
+      localStorage.removeItem('cyc_cash_register_active');
+      localStorage.removeItem('cyc_current_shift_sales');
+      setCurrentShiftSales([]);
+      setIsCashRegisterOpen(false);
+      setCashRegisterData(null);
+      setShowCloseRegisterModal(false);
+      setInitialCashInput('');
+      showToast('¡Caja registradora cerrada exitosamente! Sesión finalizada.', 'success');
+    } catch (err) {
+      console.error('Error al cerrar caja:', err);
+      localStorage.removeItem('cyc_cash_register_active');
+      localStorage.removeItem('cyc_current_shift_sales');
+      setCurrentShiftSales([]);
+      setIsCashRegisterOpen(false);
+      setCashRegisterData(null);
+      setShowCloseRegisterModal(false);
+      setInitialCashInput('');
+      showToast('Caja cerrada exitosamente.', 'info');
+    } finally {
+      setClosingRegisterLoading(false);
     }
   };
 
@@ -650,8 +911,22 @@ function POSView() {
     }
 
     // Registrar la venta en memoria para recibo y vista
+    const nowTime = Date.now();
+    const formattedDetalles = cart.map((c, idx) => ({
+      ProductoID: c.ProductoID || idx,
+      codigo: c.code || c.codigo || (c.ProductoID ? `TR-${c.ProductoID}` : `SKU-${1000 + idx}`),
+      producto: c.name || c.producto || 'PRODUCTO',
+      nombre: c.name || c.producto || 'PRODUCTO',
+      cantidad: parseFloat(c.quantity || 1),
+      precioUnitario: parseFloat(c.price || c.PrecioVenta || 0),
+      subtotal: parseFloat(c.subtotal || (parseFloat(c.quantity || 1) * parseFloat(c.price || c.PrecioVenta || 0)))
+    }));
+
     const newSale = {
       id: serverDocId,
+      cajaSessionId: cashRegisterData?.id || nowTime,
+      timestamp: nowTime,
+      fechaVentaISO: new Date().toISOString(),
       client: clientName,
       nit: clientNit,
       docType: clientNit.length > 8 ? 'NIT' : 'CI',
@@ -659,6 +934,7 @@ function POSView() {
       email: selectedClient?.email && selectedClient.email !== '-' ? selectedClient.email : '',
       customerType: isNamed ? 'NORMAL' : 'SIN_NOMBRE',
       items: [...cart],
+      detalles: formattedDetalles,
       totalItemsCount: totalQuantity,
       subtotal: subtotalProducts,
       discount,
@@ -675,6 +951,15 @@ function POSView() {
 
     setLastSaleReceipt(newSale);
     setRecentSales((prev) => [newSale, ...prev.filter((s) => s.id !== newSale.id)]);
+
+    // Registrar en las ventas del turno de caja activo
+    setCurrentShiftSales((prev) => {
+      const updated = [newSale, ...prev.filter((s) => s.id !== newSale.id)];
+      try {
+        localStorage.setItem('cyc_current_shift_sales', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
 
     // Limpiar ticket activo y salir del modo edición
     setCart([]);
@@ -745,6 +1030,13 @@ function POSView() {
 
     setLastSaleReceipt(updatedSale);
     setRecentSales((prev) => prev.map((s) => (s.id === lastSaleReceipt.id || s.id === updatedSale.id ? updatedSale : s)));
+    setCurrentShiftSales((prev) => {
+      const updated = prev.map((s) => (s.id === lastSaleReceipt.id || s.id === updatedSale.id ? updatedSale : s));
+      try {
+        localStorage.setItem('cyc_current_shift_sales', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
 
     // Sincronizar actualización de factura con la base de datos SQL Server
     const rawId = (lastSaleReceipt.ventaID || lastSaleReceipt.id || '').toString().replace(/^[A-Z-]+/i, '');
@@ -1192,11 +1484,6 @@ function POSView() {
               </div>
             </div>
 
-            {/* Pie de página */}
-            <div className="pt-6 border-t border-slate-800/80 text-xs text-slate-500 flex justify-between items-center">
-              <span>InvenPro - V6.32 | Copyright © 2026 All rights reserved.</span>
-              <span className="font-mono text-slate-600">Sistema POS C&C</span>
-            </div>
           </div>
         </main>
 
@@ -1346,12 +1633,30 @@ function POSView() {
             <div className="hidden lg:flex items-center gap-1.5 bg-emerald-950/70 border border-emerald-700/60 px-2.5 py-1 rounded-md text-xs font-bold text-emerald-300">
               <span>💵 Caja Inicial:</span>
               <span className="font-mono text-white">Bs. {parseFloat(cashRegisterData.montoInicial || 0).toFixed(2)}</span>
+              {parseFloat(cashRegisterData.totalAumentos || 0) > 0 && (
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded font-mono ml-1" title="Aumentos de cambio acumulados en el turno">
+                  +{parseFloat(cashRegisterData.totalAumentos).toFixed(2)} aumento
+                </span>
+              )}
             </div>
           )}
         </div>
 
         {/* Herramientas de la cabecera derecha */}
         <div className="flex items-center gap-1.5">
+          {/* Botón Aumento a Caja (Ingreso de Efectivo / Cambio) */}
+          <button
+            type="button"
+            onClick={() => setShowCashInModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white rounded-lg text-xs font-bold transition-all shadow-md shadow-emerald-700/20 cursor-pointer border border-emerald-600 mr-1"
+            title="Ingresar aumento de efectivo o cambio a la caja"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Aumento a caja</span>
+          </button>
+
           <button
             onClick={() => setShowCalculatorModal(true)}
             className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all border border-slate-700"
@@ -1376,6 +1681,19 @@ function POSView() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
             </svg>
+          </button>
+
+          {/* Botón Cerrar Caja Registradora */}
+          <button
+            type="button"
+            onClick={handleOpenCloseRegisterModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white rounded-lg text-xs font-bold transition-all shadow-md shadow-rose-600/20 cursor-pointer border border-rose-500 ml-1"
+            title="Cerrar caja registradora del turno"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span>Cerrar caja</span>
           </button>
         </div>
       </header>
@@ -3082,6 +3400,349 @@ function POSView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: AUMENTO A CAJA / INGRESO DE EFECTIVO PARA CAMBIO                  */}
+      {/* ========================================================================= */}
+      {showCashInModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 text-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-scale-up">
+            {/* Cabecera */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-tight">Aumento a caja</h3>
+                  <p className="text-[11px] text-slate-400">Ingreso de efectivo o cambio durante el turno</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCashInModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors text-base cursor-pointer"
+                title="Cerrar ventana"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Info rápida del turno */}
+            <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs font-semibold">
+              <span className="text-slate-400">Caja inicial actual:</span>
+              <span className="font-mono text-white font-bold">Bs. {parseFloat(cashRegisterData?.montoInicial || 0).toFixed(2)}</span>
+            </div>
+
+            {/* Formulario */}
+            <form onSubmit={handleAddCashInflow} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  Monto a ingresar (Bs.):*
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-2.5 text-emerald-400 font-mono font-bold text-sm">Bs.</span>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0.10"
+                    required
+                    autoFocus
+                    placeholder="0.00"
+                    value={cashInAmount}
+                    onChange={(e) => setCashInAmount(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-12 pr-4 py-2.5 text-base text-white font-mono font-bold focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 shadow-inner"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  Motivo / Observación:
+                </label>
+                <textarea
+                  rows="2"
+                  value={cashInReason}
+                  onChange={(e) => setCashInReason(e.target.value)}
+                  placeholder="Ej: Billetes de 10 y 20 Bs, monedas para dar cambio..."
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 shadow-inner resize-none"
+                ></textarea>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowCashInModal(false)}
+                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold rounded-xl border border-slate-700 transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={cashInLoading}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50 border border-emerald-500"
+                >
+                  {cashInLoading ? (
+                    <>
+                      <svg className="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <span>Guardar aumento</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: REGISTRO ACTUAL / CIERRE DE CAJA REGISTRADORA                      */}
+      {/* ========================================================================= */}
+      {showCloseRegisterModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-slate-900 text-slate-100 rounded-2xl max-w-4xl w-full border border-slate-800 shadow-2xl overflow-hidden animate-scale-up my-auto max-h-[92vh] flex flex-col">
+            {/* 1. Encabezado del Modal */}
+            <div className="p-4 sm:p-5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
+                  Registro actual ( {closeRegisterStats.sessionStart} - {closeRegisterStats.sessionEnd} )
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCloseRegisterModal(false)}
+                className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors text-lg cursor-pointer"
+                title="Cerrar ventana"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* 2. Contenido Scrollable */}
+            <div className="p-5 sm:p-7 overflow-y-auto space-y-6 flex-1 text-xs text-slate-300">
+              {/* Tabla de Métodos de Pago */}
+              <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950/40">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+                      <th className="py-2.5 px-4">Método de pago</th>
+                      <th className="py-2.5 px-4 text-right">Monto registrado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 font-medium text-slate-300">
+                    <tr>
+                      <td className="py-2.5 px-4 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                        <span>Efectivo inicial (Apertura):</span>
+                      </td>
+                      <td className="py-2.5 px-4 text-right font-mono font-bold text-cyan-400">
+                        Bs. {closeRegisterStats.initialCash.toFixed(2)}
+                      </td>
+                    </tr>
+                    {parseFloat(closeRegisterStats.totalAumentos || 0) > 0 && (
+                      <tr>
+                        <td className="py-2.5 px-4 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                          <span>Aumentos de efectivo (Cambio en turno):</span>
+                        </td>
+                        <td className="py-2.5 px-4 text-right font-mono font-bold text-emerald-400">
+                          +Bs. {parseFloat(closeRegisterStats.totalAumentos).toFixed(2)}
+                        </td>
+                      </tr>
+                    )}
+                    <tr>
+                      <td className="py-2.5 px-4 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span>Pago en efectivo (Ventas):</span>
+                      </td>
+                      <td className="py-2.5 px-4 text-right font-mono font-bold text-emerald-400">
+                        Bs. {closeRegisterStats.cashSales.toFixed(2)}
+                      </td>
+                    </tr>
+                    {closeRegisterStats.digitalSales > 0 && (
+                      <tr>
+                        <td className="py-2.5 px-4 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
+                          <span>Pagos digitales (Tarjeta / QR / Transferencia):</span>
+                        </td>
+                        <td className="py-2.5 px-4 text-right font-mono font-bold text-indigo-400">
+                          Bs. {closeRegisterStats.digitalSales.toFixed(2)}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Bloque de KPIs y Resumen Financiero */}
+              <div className="space-y-2 text-xs">
+                <div className="bg-slate-800/40 border border-slate-700/60 rounded-xl p-3 flex justify-between items-center text-slate-200 font-semibold">
+                  <span className="flex items-center gap-1.5">
+                    <span>Ventas totales del turno</span>
+                    <span className="text-[10px] text-cyan-400">ⓘ</span>
+                  </span>
+                  <span className="font-mono font-bold text-white text-sm">Bs. {closeRegisterStats.totalSales.toFixed(2)}</span>
+                </div>
+
+                {closeRegisterStats.totalRefunds > 0 && (
+                  <div className="flex justify-between items-center py-2 px-3 bg-rose-950/40 text-rose-300 rounded-xl border border-rose-900/50 font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <span>Reembolso total (Anulaciones)</span>
+                      <span className="text-[10px] text-rose-400">ⓘ</span>
+                    </span>
+                    <div className="text-right">
+                      <span className="font-mono font-bold text-rose-400">Bs. {closeRegisterStats.totalRefunds.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Resumen Destacado en Verde Corporativo */}
+                <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-4 space-y-2 text-slate-200 text-xs font-semibold">
+                  <div className="flex justify-between items-center py-0.5">
+                    <span className="text-slate-300">Efectivo inicial + aumentos + ventas:</span>
+                    <span className="font-mono font-bold text-white">
+                      Bs. {(closeRegisterStats.initialCash + (parseFloat(closeRegisterStats.totalAumentos || 0)) + closeRegisterStats.cashSales).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-0.5">
+                    <span className="text-slate-300">Ventas totales del turno:</span>
+                    <span className="font-mono font-bold text-white">Bs. {closeRegisterStats.totalSales.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-emerald-500/20 text-white font-black text-sm">
+                    <span className="text-emerald-300">Efectivo esperado de cierre:</span>
+                    <span className="font-mono text-emerald-400 text-base font-extrabold">Bs. {closeRegisterStats.expectedCash.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-400 pt-1 font-mono">
+                  Total = Bs. {closeRegisterStats.initialCash.toFixed(2)} (Apertura) {parseFloat(closeRegisterStats.totalAumentos || 0) > 0 ? `+ Bs. ${parseFloat(closeRegisterStats.totalAumentos).toFixed(2)} (Aumentos) ` : ''}+ Bs. {closeRegisterStats.cashSales.toFixed(2)} (Venta) {closeRegisterStats.totalRefunds > 0 ? `- Bs. ${closeRegisterStats.totalRefunds.toFixed(2)} (Reembolso)` : ''} = Bs. {closeRegisterStats.expectedCash.toFixed(2)}
+                </p>
+              </div>
+
+              {/* 3. Tabla de Productos Vendidos en el Turno */}
+              <div className="space-y-3 pt-2">
+                <h3 className="text-sm font-bold text-white border-b border-slate-800 pb-2 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                  <span>Detalles de los productos vendidos</span>
+                </h3>
+
+                <div className="border border-slate-800 rounded-xl overflow-hidden max-h-56 overflow-y-auto bg-slate-950/40">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800 sticky top-0">
+                        <th className="py-2.5 px-3 w-10 text-center">#</th>
+                        <th className="py-2.5 px-3">SKU</th>
+                        <th className="py-2.5 px-3">Producto</th>
+                        <th className="py-2.5 px-3 text-right">Cantidad</th>
+                        <th className="py-2.5 px-3 text-right">Cantidad total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 font-medium text-slate-300">
+                      {closeRegisterStats.soldProducts.length === 0 ? (
+                        <tr>
+                          <td colSpan="5" className="py-6 text-center text-slate-500 italic">
+                            No se registraron ventas de productos en este turno.
+                          </td>
+                        </tr>
+                      ) : (
+                        closeRegisterStats.soldProducts.map((p, idx) => (
+                          <tr key={idx} className="hover:bg-slate-800/40 transition-colors">
+                            <td className="py-2 px-3 text-center text-slate-500 font-mono">{idx + 1}.</td>
+                            <td className="py-2 px-3 font-mono font-semibold text-cyan-400">{p.sku}</td>
+                            <td className="py-2 px-3 font-semibold text-slate-200 uppercase">{p.name}</td>
+                            <td className="py-2 px-3 text-right font-mono font-bold text-slate-300">{p.quantity.toFixed(2)}</td>
+                            <td className="py-2 px-3 text-right font-mono font-bold text-emerald-400">Bs. {p.total.toFixed(2)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 4. Formulario de Cierre de Turno */}
+              <form onSubmit={handleConfirmCloseRegister} className="space-y-4 pt-2 border-t border-slate-800">
+                {/* Campo Efectivo Real Declarado */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Efectivo real declarado:*
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    value={declaredCashInput}
+                    onChange={(e) => setDeclaredCashInput(e.target.value)}
+                    placeholder="Monto en efectivo contado en gaveta"
+                    className="w-full sm:w-80 px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white font-mono font-bold focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 shadow-inner"
+                  />
+                </div>
+
+                {/* Nota de Cierre */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Nota de cierre:
+                  </label>
+                  <textarea
+                    rows="3"
+                    value={closingNoteInput}
+                    onChange={(e) => setClosingNoteInput(e.target.value)}
+                    placeholder="Observaciones de cierre de turno (opcional)"
+                    className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 shadow-inner resize-none"
+                  ></textarea>
+                </div>
+
+                {/* Info de Operador */}
+                <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 text-[11px] text-slate-400 font-medium space-y-1">
+                  <p><strong className="text-slate-300">Usuario:</strong> <span className="text-white font-semibold">Sr. {currentUser?.Nombre || 'OSCAR EDGAR CLAROS DAVALOS'}</span></p>
+                  <p><strong className="text-slate-300">Email:</strong> <span>{currentUser?.Email || 'oscarclarosdavalos@gmail.com'}</span></p>
+                  <p><strong className="text-slate-300">Ubicación comercial:</strong> <span className="text-cyan-400 font-bold">CASA Y CONSTRUCCION (SUCURSAL CENTRAL)</span></p>
+                </div>
+
+                {/* Botones de Acción */}
+                <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowCloseRegisterModal(false)}
+                    className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs rounded-xl border border-slate-700 transition-colors cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={closingRegisterLoading}
+                    className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-cyan-600/25 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50 border border-cyan-500"
+                  >
+                    {closingRegisterLoading ? (
+                      <>
+                        <svg className="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span>Cerrando Registro...</span>
+                      </>
+                    ) : (
+                      <span>Cerrar registro</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

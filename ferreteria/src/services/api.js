@@ -295,6 +295,11 @@ export const getLastCashRegister = async () => {
   return response.data;
 };
 
+export const addCashInflow = async (payload) => {
+  const response = await api.post('/sales/cash-register/cash-in', payload);
+  return response.data;
+};
+
 export const closeCashRegister = async (payload) => {
   const response = await api.post('/sales/cash-register/close', payload);
   return response.data;
