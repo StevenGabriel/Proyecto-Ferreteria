@@ -16,6 +16,8 @@ function RegisterClie() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [registeredClientInfo, setRegisteredClientInfo] = useState(null);
 
   // Cálculo de Seguridad de la Contraseña
   const getPasswordStrength = (pass) => {
@@ -89,8 +91,12 @@ function RegisterClie() {
         localStorage.setItem("cyc_user_session", JSON.stringify(res.user));
       }
 
-      alert("¡Cuenta de cliente creada exitosamente! Bienvenido a C&C Ferretería.");
-      navigate("/login");
+      setRegisteredClientInfo({
+        nombreCompleto: `${nombre.trim()} ${primerApellido.trim()} ${segundoApellido.trim()}`.trim(),
+        correo: correo.trim().toLowerCase(),
+        ciNit: ciNit.trim() || "No especificado"
+      });
+      setShowSuccessModal(true);
     } catch (err) {
       console.error("Error al registrar cliente:", err);
       const msg = err.response?.data?.message || "Error al procesar el registro.";
@@ -374,6 +380,73 @@ function RegisterClie() {
           </div>
         </div>
       </div>
+
+      {/* MODAL DE ÉXITO EN EL REGISTRO */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/85 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md bg-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-emerald-950/40 text-center space-y-6 relative animate-fade-in">
+            
+            {/* Resplandor decorativo de fondo */}
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-36 h-36 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none"></div>
+
+            {/* Icono de Éxito */}
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center text-3xl font-black mx-auto shadow-lg shadow-emerald-500/30 ring-4 ring-emerald-500/20">
+              ✓
+            </div>
+
+            {/* Títulos */}
+            <div className="space-y-1.5">
+              <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full text-[10px] font-extrabold uppercase tracking-wider inline-block">
+                ¡Registro Completado con Éxito!
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                ¡Bienvenido a C&C Ferretería!
+              </h2>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Tu cuenta de cliente ha sido creada y configurada correctamente en nuestra plataforma.
+              </p>
+            </div>
+
+            {/* Ficha Resumen de la Cuenta */}
+            {registeredClientInfo && (
+              <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 text-left space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400">Cliente:</span>
+                  <span className="font-bold text-white truncate max-w-[200px]">
+                    {registeredClientInfo.nombreCompleto}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400">Correo de Acceso:</span>
+                  <span className="font-mono text-cyan-400 truncate max-w-[200px]">
+                    {registeredClientInfo.correo}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400">CI / NIT:</span>
+                  <span className="font-mono text-slate-300">
+                    {registeredClientInfo.ciNit}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Botón de Acción Principal */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => navigate("/login")}
+                className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold rounded-2xl shadow-lg shadow-emerald-500/25 transition-all text-xs flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+              >
+                <span>Iniciar Sesión Ahora</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

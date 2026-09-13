@@ -27,6 +27,11 @@ function UserManagement() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
+  // Modal de Confirmación de Estado (Activar / Suspender)
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [targetEmployee, setTargetEmployee] = useState(null);
+  const [statusActionLoading, setStatusActionLoading] = useState(false);
+
   // Estado del formulario de creación
   const [formData, setFormData] = useState({
     nombre: "",
@@ -155,18 +160,29 @@ function UserManagement() {
     }
   };
 
-  // Alternar Estado Activo / Inactivo
-  const handleToggleStatus = async (emp) => {
-    const action = emp.estado ? "suspender" : "activar";
-    if (!window.confirm(`¿Estás seguro de ${action} el acceso de ${emp.Persona?.Nombre}?`)) return;
+  // Abrir Modal de Confirmación para Activar / Suspender Operador
+  const handleOpenStatusModal = (emp) => {
+    setTargetEmployee(emp);
+    setIsStatusModalOpen(true);
+  };
+
+  // Confirmar y Ejecutar Cambio de Estado
+  const handleConfirmStatusToggle = async () => {
+    if (!targetEmployee) return;
 
     try {
-      const res = await toggleEmployeeStatus(emp.EmpleadoID);
-      showToast(res.message);
+      setStatusActionLoading(true);
+      const res = await toggleEmployeeStatus(targetEmployee.EmpleadoID);
+      const actionText = targetEmployee.estado ? "suspendido" : "activado";
+      showToast(res.message || `Acceso ${actionText} exitosamente.`, "success");
+      setIsStatusModalOpen(false);
+      setTargetEmployee(null);
       fetchEmployees();
     } catch (err) {
       console.error("Error al cambiar estado:", err);
-      showToast("No se pudo cambiar el estado.", "error");
+      showToast(err.response?.data?.message || "No se pudo cambiar el estado del operador.", "error");
+    } finally {
+      setStatusActionLoading(false);
     }
   };
 
@@ -522,11 +538,11 @@ function UserManagement() {
 
                               {/* Botón Activar/Suspender */}
                               <button
-                                onClick={() => handleToggleStatus(emp)}
-                                className={`p-1.5 rounded-lg transition-colors ${
+                                onClick={() => handleOpenStatusModal(emp)}
+                                className={`p-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
                                   emp.estado
-                                    ? "bg-rose-500/10 hover:bg-rose-500/20 text-rose-400"
-                                    : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400"
+                                    ? "bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:scale-105"
+                                    : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:scale-105"
                                 }`}
                                 title={emp.estado ? "Suspender Acceso" : "Activar Acceso"}
                               >
@@ -937,6 +953,144 @@ function UserManagement() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: CONFIRMACIÓN DE ACTIVAR / SUSPENDER OPERADOR */}
+      {isStatusModalOpen && targetEmployee && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div
+            className={`w-full max-w-md bg-slate-900 border ${
+              targetEmployee.estado ? "border-rose-500/30 shadow-rose-950/40" : "border-emerald-500/30 shadow-emerald-950/40"
+            } rounded-3xl p-6 sm:p-7 shadow-2xl relative space-y-5 animate-fade-in`}
+          >
+            {/* Encabezado del Modal con Icono Distintivo */}
+            <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 ${
+                    targetEmployee.estado
+                      ? "bg-rose-500/10 border border-rose-500/30 text-rose-400"
+                      : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+                  }`}
+                >
+                  {targetEmployee.estado ? (
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-white">
+                    {targetEmployee.estado ? "¿Suspender Acceso del Operador?" : "¿Activar Acceso del Operador?"}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {targetEmployee.estado
+                      ? "Inhabilitar temporalmente el inicio de sesión."
+                      : "Habilitar credenciales y permisos en el sistema."}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!statusActionLoading) {
+                    setIsStatusModalOpen(false);
+                    setTargetEmployee(null);
+                  }
+                }}
+                className="text-slate-400 hover:text-white p-1 rounded-lg text-lg font-bold transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Ficha de Información del Operador */}
+            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white font-extrabold text-sm flex items-center justify-center shrink-0 shadow-sm">
+                  {targetEmployee.Persona?.Nombre ? targetEmployee.Persona.Nombre.charAt(0).toUpperCase() : "U"}
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">
+                    {`${targetEmployee.Persona?.Nombre || ""} ${targetEmployee.Persona?.PrimerApellido || ""} ${targetEmployee.Persona?.SegundoApellido || ""}`.trim() || "Operador"}
+                  </h4>
+                  <p className="text-[11px] font-mono text-cyan-400">
+                    {targetEmployee.CuentaUsuario?.Correo || "Sin correo"}
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-mono">
+                    CI: {targetEmployee.Persona?.CI_NIT || "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                {renderRoleBadge(targetEmployee.CuentaUsuario?.Rol)}
+              </div>
+            </div>
+
+            {/* Mensaje Explicativo / Contextual */}
+            <div
+              className={`p-3.5 rounded-2xl border text-xs leading-relaxed ${
+                targetEmployee.estado
+                  ? "bg-rose-500/10 border-rose-500/20 text-rose-200"
+                  : "bg-emerald-500/10 border-emerald-500/20 text-emerald-200"
+              }`}
+            >
+              <div className="flex items-start gap-2.5">
+                <span className="text-sm font-bold shrink-0 mt-0.5">
+                  {targetEmployee.estado ? "⛔" : "✅"}
+                </span>
+                <p>
+                  {targetEmployee.estado
+                    ? "Al suspender la cuenta, el operador no podrá ingresar al POS, realizar ventas ni acceder a los módulos hasta que sea reactivado por un administrador."
+                    : "Al activar la cuenta, el operador podrá iniciar sesión inmediatamente con sus credenciales y desempeñar las funciones de su rol asignado."}
+                </p>
+              </div>
+            </div>
+
+            {/* Botones de Acción */}
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                disabled={statusActionLoading}
+                onClick={() => {
+                  setIsStatusModalOpen(false);
+                  setTargetEmployee(null);
+                }}
+                className="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                disabled={statusActionLoading}
+                onClick={handleConfirmStatusToggle}
+                className={`w-1/2 py-2.5 font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer disabled:opacity-50 ${
+                  targetEmployee.estado
+                    ? "bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-rose-600/25"
+                    : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/25"
+                }`}
+              >
+                {statusActionLoading ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Procesando...</span>
+                  </>
+                ) : (
+                  <span>
+                    {targetEmployee.estado ? "Confirmar Suspensión" : "Confirmar Activación"}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

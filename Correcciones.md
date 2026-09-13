@@ -985,6 +985,54 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
   * **2. Filtrado en `GET /sales/invoices`:**
     * Ahora el listado oficial de facturas excluye las ventas mostrador de `Cliente General` / `Sin Factura` (con NIT 0) y muestra exclusivamente aquellas ventas que cuentan con factura fiscal emitida formalmente con NIT y Razón Social o registro de emisión.
 
+### 113. Rediseño del Modal de Confirmación para Activar / Suspender Operadores (`UserManagement.jsx`)
+* **Problema Identificado:**
+  * Al hacer clic en el botón de activar o suspender un usuario/operador en la vista de **Gestión de Usuarios y Roles** (`/usuarios`), se desplegaba el cuadro de diálogo nativo del navegador (`window.confirm`), lo cual rompía la identidad visual oscura, fluida y profesional del sistema.
+* **Solución Implementada:**
+  * **1. Eliminación de `window.confirm`:** Se retiró el diálogo nativo del navegador en `UserManagement.jsx`.
+  * **2. Nuevo Modal de Confirmación Estilizado:**
+    * Diseñado en concordancia con el sistema visual del proyecto (tema *dark slate*, efectos de *backdrop-blur*, bordes con resplandor contextual y tipografía moderna).
+    * **Contexto Dinámico de Suspensión:** Encabezado con badge de advertencia en tono rojo/rosa (`rose-500`), descripción de impacto sobre el inicio de sesión y botón degradado *"Confirmar Suspensión"*.
+    * **Contexto Dinámico de Activación:** Encabezado con badge de verificación en tono verde esmeralda (`emerald-500`), explicación de reanudación inmediata de credenciales y botón degradado *"Confirmar Activación"*.
+    * **Ficha del Operador:** Presenta el avatar con inicial, nombre completo, CI/NIT, correo electrónico institucional y badge del rol asignado (Administrador / Vendedor).
+### 114. Redirección Inmediata a la Página de Inicio al Iniciar Sesión de Vendedor (`Login.jsx`)
+* **Problema Identificado:**
+  * Al iniciar sesión con credenciales de un usuario con rol **Vendedor** o **Cajero**, el enrutador condicional de `Login.jsx` no reconocía explícitamente dicho rol dentro del bloque de operadores internos y lo redirigía por descarte a la ruta raíz `/` (Catálogo de Clientes).
+* **Solución Implementada:**
+  * Se actualizó la lógica de enrutamiento en [**`Login.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Auth/Login.jsx):
+    * Ahora, cualquier usuario de la empresa (sea **Administrador**, **Vendedor**, **Cajero** u **Operador**) es redirigido automáticamente a la página de **Inicio** (`/home` / `/dashboard`).
+    * Únicamente los usuarios con rol explícito de cliente son dirigidos al catálogo de compras (`/`).
+
+### 115. Adaptación Dinámica del Menú Lateral por Roles RBAC (`sidebar.jsx`)
+* **Problema Identificado:**
+  * El menú lateral mostraba todas las opciones del sistema (incluida la administración de usuarios y la configuración de productos/almacén) a cualquier usuario sin distinguir si se trataba de un **Administrador** o de un **Vendedor**.
+* **Solución Implementada:**
+  * Se implementó el filtrado dinámico en [**`sidebar.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/sidebar/sidebar.jsx) basado en `currentUser.Rol`:
+    * **Vista para Vendedor:** Muestra exclusivamente las 4 opciones esenciales:
+      1. **Inicio** (`/home`)
+      2. **Clientes** (`/clientes`)
+      3. **Facturación** (`/facturacion`)
+      4. **Vender** (`/vender` - POS)
+    * **Vista para Administrador:** Mantiene acceso completo a todas las opciones (Inicio, Gestión de Usuarios, Clientes, Facturación, Productos con submenús y Vender).
+    * El encabezado superior del menú ahora muestra dinámicamente *"Panel Administrador"* o *"Panel Vendedor"*.
+
+### 116. Simplificación del Menú Desplegable de Perfil (`topbar.jsx`)
+* **Problema Identificado:**
+  * Al hacer clic en el nombre/avatar del operador en la esquina superior derecha, se desplegaban accesos directos hacia *"Ver Tienda / Catálogo"* y *"Lista de Productos"*, lo cual resultaba innecesario y contraproducente para el perfil del vendedor.
+* **Solución Implementada:**
+  * Se removieron los enlaces de navegación rápida en [**`topbar.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/topbar/topbar.jsx).
+  * Ahora el menú desplegable del perfil muestra únicamente la tarjeta informativa del operador (Nombre completo, Correo electrónico, Badge de Rol) y el botón directo de **"Cerrar Sesión"**.
+
+### 117. Rediseño del Mensaje de Éxito al Crear Cuenta de Cliente (`RegisterClie.jsx`)
+* **Problema Identificado:**
+  * Al completar el formulario de registro de un nuevo cliente (`/registerClie`), se disparaba la alerta nativa del navegador (`window.alert`), rompiendo la estética visual oscura y profesional del sistema.
+* **Solución Implementada:**
+  * Se eliminó el `window.alert` en [**`RegisterClie.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/RegisterClie.jsx) y se implementó un **Modal de Bienvenida y Confirmación Estilizado**:
+    * **Diseño Visual:** Fondo con desenfoque de cristal (*backdrop-blur*), resplandor esmeralda suave y bordes modernos.
+    * **Ficha Informativa:** Muestra el nombre completo del cliente recién registrado, correo de acceso y CI/NIT.
+    * **Llamado a la Acción:** Botón degradado *"Iniciar Sesión Ahora"* que redirige de forma fluida a la vista de Login.
+
+
 
 
 

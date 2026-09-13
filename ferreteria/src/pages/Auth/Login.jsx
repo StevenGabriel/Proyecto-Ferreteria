@@ -29,14 +29,15 @@ function Login() {
 
         // Enrutamiento inteligente según el rol del usuario
         const role = (res.user.Rol || "").toLowerCase();
-        if (role === "administrador" || role === "admin" || role === "empleado" || role === "operador") {
-          navigate("/dashboard");
-        } else {
+        if (role === "cliente") {
           // Clientes van al catálogo de compras
           navigate("/");
+        } else {
+          // Administradores, Vendedores, Cajeros y Operadores van a la página de inicio
+          navigate("/home");
         }
       } else {
-        navigate("/");
+        navigate("/home");
       }
     } catch (err) {
       console.error("Error al iniciar sesión:", err);
