@@ -103,25 +103,33 @@ function POSView() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((c, i) => ({
-            id: c.id || c.ClienteID || i + 1,
-            name: c.name || c.Nombre || 'Cliente General',
-            nit: c.nit || c.NIT || '0',
-            phone: c.phone || c.Telefono || '-',
-            email: c.email || c.Email || '',
-            address: c.address || c.Direccion || ''
-          }));
+          return parsed.map((c, i) => {
+            const nivel = c.NivelLealtad || (c.DescuentoPorcentaje >= 10 ? 'Mayorista' : c.DescuentoPorcentaje >= 6 ? 'Constructor' : c.DescuentoPorcentaje >= 3 ? 'Frecuente' : 'Estandar');
+            const descPct = c.DescuentoPorcentaje !== undefined ? parseFloat(c.DescuentoPorcentaje) : (nivel === 'Mayorista' ? 10 : nivel === 'Constructor' ? 6 : nivel === 'Frecuente' ? 3 : 0);
+
+            return {
+              id: c.id || c.ClienteID || i + 1,
+              name: c.name || c.Nombre || 'Cliente General',
+              nit: c.nit || c.NIT || '0',
+              phone: c.phone || c.Telefono || '-',
+              email: c.email || c.Email || '',
+              address: c.address || c.Direccion || '',
+              NivelLealtad: nivel,
+              DescuentoPorcentaje: descPct,
+              TotalComprasAcumulado: parseFloat(c.TotalComprasAcumulado || c.totalCompras || 0)
+            };
+          });
         }
       }
     } catch {}
     return [
-      { id: 1, name: 'Cliente General (Sin Factura)', nit: '0', phone: '-', email: '', address: 'Ventas en Mostrador' },
-      { id: 2, name: 'Constructora Los Andes S.R.L.', nit: '4839201018', phone: '76543210', email: 'contacto@losandes.com', address: 'Av. Blanco Galindo Km 4' },
-      { id: 3, name: 'Carlos Mendoza Ramos', nit: '5948302', phone: '68920192', email: 'carlos.mendoza@gmail.com', address: 'Zona Norte' },
-      { id: 4, name: 'Ingeniería & Proyectos C&C', nit: '1029384019', phone: '71239847', email: 'proyectos@cyc.com', address: 'Calle Heroínas #450' }
+      { id: 1, name: 'Cliente General (Sin Factura)', nit: '0', phone: '-', email: '', address: 'Ventas en Mostrador', NivelLealtad: 'Estandar', DescuentoPorcentaje: 0, TotalComprasAcumulado: 0 },
+      { id: 2, name: 'Constructora Los Andes S.R.L.', nit: '4839201018', phone: '76543210', email: 'contacto@losandes.com', address: 'Av. Blanco Galindo Km 4', NivelLealtad: 'Mayorista', DescuentoPorcentaje: 10, TotalComprasAcumulado: 8500 },
+      { id: 3, name: 'Carlos Mendoza Ramos', nit: '5948302', phone: '68920192', email: 'carlos.mendoza@gmail.com', address: 'Zona Norte', NivelLealtad: 'Frecuente', DescuentoPorcentaje: 3, TotalComprasAcumulado: 1850 },
+      { id: 4, name: 'Ingeniería & Proyectos C&C', nit: '1029384019', phone: '71239847', email: 'proyectos@cyc.com', address: 'Calle Heroínas #450', NivelLealtad: 'Constructor', DescuentoPorcentaje: 6, TotalComprasAcumulado: 4920 }
     ];
   });
-  const [selectedClient, setSelectedClient] = useState(() => clients[0] || { id: 1, name: 'Cliente General (Sin Factura)', nit: '0' });
+  const [selectedClient, setSelectedClient] = useState(() => clients[0] || { id: 1, name: 'Cliente General (Sin Factura)', nit: '0', NivelLealtad: 'Estandar', DescuentoPorcentaje: 0 });
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [newClientForm, setNewClientForm] = useState({
     TipoContacto: 'Individual',
@@ -133,7 +141,9 @@ function POSView() {
     nit: '',
     phone: '0',
     email: '',
-    address: ''
+    address: '',
+    NivelLealtad: 'Estandar',
+    DescuentoPorcentaje: 0
   });
 
   // Guardar nuevo cliente rápido desde POS
@@ -154,6 +164,9 @@ function POSView() {
     const resolvedPhone = newClientForm.phone.trim() || '0';
     const newId = Date.now();
     const contactCode = `CO0${462 + clients.length}`;
+    const tier = newClientForm.NivelLealtad || 'Estandar';
+    const tierDiscount = tier === 'Mayorista' ? 15 : tier === 'Constructor' ? 10 : tier === 'Frecuente' ? 5 : 0;
+    const finalDescPct = newClientForm.DescuentoPorcentaje !== undefined ? parseFloat(newClientForm.DescuentoPorcentaje) : tierDiscount;
 
     const created = {
       id: newId,
@@ -174,12 +187,16 @@ function POSView() {
       Email: newClientForm.email.trim() || '',
       address: newClientForm.address.trim() || '',
       Direccion: newClientForm.address.trim() || '',
+      NivelLealtad: tier,
+      DescuentoPorcentaje: finalDescPct,
+      TotalComprasAcumulado: 0,
       createdAt: new Date().toISOString()
     };
 
     const updated = [created, ...clients];
     setClients(updated);
     setSelectedClient(created);
+    setManualDiscount(null);
     try {
       localStorage.setItem('cyc_pos_clients', JSON.stringify(updated));
     } catch {}
@@ -202,13 +219,15 @@ function POSView() {
       nit: '',
       phone: '0',
       email: '',
-      address: ''
+      address: '',
+      NivelLealtad: 'Estandar',
+      DescuentoPorcentaje: 0
     });
-    showToast(`Cliente "${created.name}" registrado y seleccionado para la venta`, 'success');
+    showToast(`Cliente "${created.name}" registrado (${tier} - ${finalDescPct}% Dcto)`, 'success');
   };
 
-  // Descuentos
-  const [discount, setDiscount] = useState(0);
+  // Descuentos (Manual o Automático por Lealtad)
+  const [manualDiscount, setManualDiscount] = useState(null);
 
   // Estados para el Modal "Datos para Factura"
   const [invoiceCustomerType, setInvoiceCustomerType] = useState('SIN_NOMBRE'); // 'NORMAL' | 'SIN_NOMBRE' | 'VENTAS_MENORES' | 'CASO_ESPECIAL'
@@ -826,16 +845,19 @@ function POSView() {
   // Confirmar vaciado del ticket
   const handleConfirmClearCart = () => {
     setCart([]);
-    setDiscount(0);
+    setManualDiscount(null);
     setEditingSaleId(null);
     setShowCancelConfirmModal(false);
     showToast('Venta cancelada y ticket vaciado', 'info');
   };
 
-  // Cálculos de Totales
+  // Cálculos de Totales y Descuento por Nivel de Lealtad
   const subtotalProducts = cart.reduce((acc, item) => acc + item.subtotal, 0);
   const totalQuantity = cart.reduce((acc, item) => acc + item.quantity, 0);
-  const finalTotal = Math.max(0, subtotalProducts - discount);
+  const loyaltyDiscountPercent = parseFloat(selectedClient?.DescuentoPorcentaje || 0);
+  const loyaltyDiscountAmount = (subtotalProducts * loyaltyDiscountPercent) / 100;
+  const effectiveDiscount = manualDiscount !== null ? manualDiscount : loyaltyDiscountAmount;
+  const finalTotal = Math.max(0, subtotalProducts - effectiveDiscount);
 
   // Al presionar el botón "Efectivo":
   // 1. Registra inmediatamente la venta en la Base de Datos (MSSQL) con deducción FIFO de Lotes y Kardex
@@ -879,7 +901,7 @@ function POSView() {
       tipoDocumento: clientNit.length > 8 ? 'NIT' : 'CI',
       metodoPago: 'EFECTIVO',
       montoRecibido: finalTotal,
-      descuento: discount,
+      descuento: effectiveDiscount,
       isInvoice: false,
       items: itemsPayload
     };
@@ -1740,15 +1762,22 @@ function POSView() {
                 value={selectedClient.id}
                 onChange={(e) => {
                   const target = clients.find((c) => c.id === parseInt(e.target.value));
-                  if (target) setSelectedClient(target);
+                  if (target) {
+                    setSelectedClient(target);
+                    setManualDiscount(null);
+                  }
                 }}
                 className="flex-1 bg-slate-800/90 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-bold focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
               >
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} {c.nit !== '0' ? `(NIT: ${c.nit})` : ''}
-                  </option>
-                ))}
+                {clients.map((c) => {
+                  const tierBadge = c.NivelLealtad === 'Mayorista' ? '💎 Diamante' : c.NivelLealtad === 'Constructor' ? '🥇 Oro' : c.NivelLealtad === 'Frecuente' ? '🥈 Plata' : '🥉 Bronce';
+                  const pct = c.DescuentoPorcentaje ? ` (${c.DescuentoPorcentaje}% Dcto)` : '';
+                  return (
+                    <option key={c.id} value={c.id}>
+                      {tierBadge} - {c.name} {c.nit !== '0' ? `(NIT: ${c.nit})` : ''} {pct}
+                    </option>
+                  );
+                })}
               </select>
 
               <button
@@ -1759,6 +1788,26 @@ function POSView() {
                 +
               </button>
             </div>
+
+            {/* Insignia de Fidelidad / Lealtad del Cliente Seleccionado */}
+            {selectedClient && selectedClient.id !== 1 && (
+              <div className="flex items-center justify-between px-3 py-1.5 bg-slate-950/90 rounded-xl border border-amber-500/30 text-[11px] animate-fade-in">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold text-amber-400">
+                    {selectedClient.NivelLealtad === 'Mayorista' ? '💎 Diamante' : selectedClient.NivelLealtad === 'Constructor' ? '🥇 Oro' : selectedClient.NivelLealtad === 'Frecuente' ? '🥈 Plata' : '🥉 Bronce'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {loyaltyDiscountPercent > 0 ? (
+                    <span className="text-emerald-400 font-extrabold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg">
+                      {loyaltyDiscountPercent}% Dcto. Automático (-Bs. {loyaltyDiscountAmount.toFixed(2)})
+                    </span>
+                  ) : (
+                    <span className="text-slate-500 font-semibold">Precios regulares</span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Fila 2: Buscador / Escáner de Código de Barras */}
             <form onSubmit={handleBarcodeSubmit} className="flex items-center gap-2">
@@ -1886,21 +1935,25 @@ function POSView() {
           <div className="p-3 border-t border-slate-800 bg-slate-900/90 space-y-2 text-xs">
             <div className="flex justify-between items-center text-slate-400 font-semibold">
               <span>Productos: {totalQuantity.toFixed(2)}</span>
-              <span className="text-sm font-bold text-white">Subtotal: Bs. {subtotalProducts.toFixed(2)}</span>
+              <span className="text-sm font-bold text-white font-mono">Subtotal: Bs. {subtotalProducts.toFixed(2)}</span>
             </div>
 
-            {/* Modificador: Descuento */}
-            <div className="pt-1 border-t border-slate-800/60 text-[11px]">
-              <button
-                onClick={() => {
-                  const val = prompt('Ingresar Descuento (-):', discount.toString());
-                  if (val !== null) setDiscount(parseFloat(val) || 0);
-                }}
-                className="w-full flex items-center justify-between px-3 py-1.5 bg-slate-800 rounded-lg border border-slate-700 hover:border-slate-600 text-slate-300 transition-colors"
-              >
-                <span>Descuento Aplicado (-):</span>
-                <b className="text-rose-400 font-extrabold">Bs. {discount.toFixed(2)} ✎</b>
-              </button>
+            {/* Modificador: Descuento por Lealtad y Total con Descuento (Solo Lectura) */}
+            <div className="pt-1 border-t border-slate-800/60 space-y-1.5 text-[11px]">
+              {loyaltyDiscountPercent > 0 && (
+                <div className="flex items-center justify-between text-amber-400 px-2 py-1 font-semibold bg-amber-500/5 rounded-lg border border-amber-500/20">
+                  <span className="flex items-center gap-1">
+                    <span>👑 Lealtad {selectedClient?.NivelLealtad === 'Mayorista' ? 'Diamante' : selectedClient?.NivelLealtad === 'Constructor' ? 'Oro' : selectedClient?.NivelLealtad === 'Frecuente' ? 'Plata' : 'Bronce'} ({loyaltyDiscountPercent}%):</span>
+                  </span>
+                  <span className="font-mono font-bold">-Bs. {effectiveDiscount.toFixed(2)}</span>
+                </div>
+              )}
+
+              {/* Fila del Total con Descuento Aplicado (Informativo No Editable) */}
+              <div className="w-full flex items-center justify-between px-3 py-1.5 bg-slate-800/90 rounded-lg border border-slate-700 text-slate-300">
+                <span className="font-bold text-cyan-300">Total con Descuento:</span>
+                <b className="text-cyan-400 font-black font-mono text-xs">Bs. {finalTotal.toFixed(2)}</b>
+              </div>
             </div>
           </div>
         </div>

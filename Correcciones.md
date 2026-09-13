@@ -1032,9 +1032,142 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
     * **Ficha Informativa:** Muestra el nombre completo del cliente recién registrado, correo de acceso y CI/NIT.
     * **Llamado a la Acción:** Botón degradado *"Iniciar Sesión Ahora"* que redirige de forma fluida a la vista de Login.
 
+### 118. Ciclo de Vida Completo y Vinculación/Reversión de Roles RBAC (`employees.js` y `UserManagement.jsx`)
+* **Problema Identificado:**
+  * Si un cliente existente era contratado como vendedor, el sistema rechazaba su registro por duplicidad de correo. Asimismo, no existía un mecanismo para revertir el rol de un vendedor a cliente cuando concluía su relación laboral.
+* **Solución Implementada:**
+  * **1. Promoción Inteligente de Cuenta (`POST /employees`):**
+    * Si el administrador ingresa el correo de un cliente existente, el backend detecta su cuenta, actualiza sus datos personales (`Persona`), crea su registro de `Empleado`, actualiza su rol a `Vendedor` (o `Administrador`) y le asigna su `EmpleadoID` sin requerir otro correo electrónico.
+  * **2. Reversión Fluida a Cliente (`PUT /employees/:id`):**
+    * El administrador puede editar el rol del operador y seleccionar `"Cliente (Revertir acceso a cliente de tienda)"`.
+    * El backend desactiva el acceso a caja del empleado, asegura la vinculación con su ficha de `Cliente` y actualiza `CuentaUsuario.Rol = 'Cliente'`.
+    * Al iniciar sesión con sus mismas credenciales, el sistema lo redirigirá exclusivamente al catálogo de compras de la tienda (`/`).
+  * **3. UI Adaptativa en Gestión de Usuarios:**
+    * Se incorporó el badge de rol `Cliente (Revertido)` y se habilitó la opción en el filtro y modal de edición con advertencias contextuales.
 
+### 119. Ocultamiento de Stock Numérico y Control Estricto de Disponibilidad en Catálogo de Clientes (`ClientCatalog.jsx`)
+* **Problema Identificado:**
+  * En la vista pública/cliente del catálogo (`ClientCatalog.jsx`), se mostraba el número exacto de existencias disponibles (ej: `5 unid. disp.`), lo cual exponía información interna de inventario.
+  * El cliente podía ingresar cantidades superiores al stock disponible en el carrito o en los selectores numéricos.
+* **Solución Implementada:**
+  * **1. Ocultamiento de Cantidades Numéricas:**
+    * Se reemplazó el conteo numérico de stock en las tarjetas del catálogo y en el modal de **Vista Rápida** por insignias elegantes de estado: **`Disponible`** (verde esmeralda) o **`Agotado`** (rojo carmesí).
+  * **2. Bloqueo y Toque Límite en el Carrito (Stock Capping):**
+    * En `addToCart`: si el cliente intenta agregar más unidades que las existentes en bodega (o ya tiene el máximo en su carrito), el sistema bloquea la adición excedente, limita la cantidad exactamente al stock disponible y notifica al usuario con un mensaje flotante amigable (`Has alcanzado el límite disponible para...`).
+    * En `updateCartQuantity`: al presionar `+` en el carrito lateral, el botón se deshabilita automáticamente cuando se alcanza el stock máximo disponible y notifica el tope.
+    * En el selector numérico de las tarjetas: los botones `+` y el campo de entrada impiden seleccionar más allá de la cantidad máxima en inventario.
 
+### 120. Configuración del Número de Contacto y Checkout por WhatsApp (`ClientCatalog.jsx`)
+* **Problema Identificado:**
+  * El botón *"Enviar Pedido por WhatsApp"* en el carrito y el acceso de contacto en la cabecera utilizaban un número ficticio por defecto.
+* **Solución Implementada:**
+  * Se configuró el número oficial de atención de la ferretería **`+591 67524675`** (`https://wa.me/59167524675`) en [**`ClientCatalog.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx).
+  * Al hacer clic en **"Enviar Pedido por WhatsApp"**, el cliente abrirá automáticamente una conversación de WhatsApp dirigida al **67524675** con el desglose detallado de su pedido (nombres de productos, cantidades, precios unitarios, subtotales y total a pagar).
 
+### 121. Implementación del Programa de Lealtad e Incentivos Híbrido (Niveles VIP + Descuento Directo)
+* **Objetivo:**
+  * Diseñar y poner en práctica el programa de incentivos para fidelizar clientes regulares, maestros constructores y mayoristas mediante descuentos automáticos por niveles y acumulación de compras.
+* **Arquitectura de Niveles de Lealtad:**
+  * 🥉 **Estándar (Bronce):** 0% de descuento (clientes ocasionales y nuevos registros).
+  * 🥈 **Cliente Frecuente (Plata):** 5% de descuento automático al superar **Bs. 1,000** en compras acumuladas.
+  * 🥇 **Constructor / VIP (Oro):** 10% de descuento preferencial (maestros de obra, contratistas o compras acumuladas $\ge$ **Bs. 3,500**).
+  * 💎 **Mayorista / Aliado (Platino):** 15% de descuento corporativo asignado para compras de gran escala.
+* **Solución Implementada:**
+  * **1. Base de Datos y Modelos (`backend/api/models/client.js`):**
+    * Se incorporaron los campos `NivelLealtad` (`ENUM('Estandar', 'Frecuente', 'Constructor', 'Mayorista')`), `DescuentoPorcentaje` (`DECIMAL(5,2)`) y `TotalComprasAcumulado` (`DECIMAL(12,2)`).
+  * **2. Acumulación y Ascenso Automático en Ventas (`backend/api/routes/sales.js` y `auth.js`):**
+    * Cada vez que se procesa una venta en el POS vinculada a un cliente, el backend acumula el importe total de la venta en `TotalComprasAcumulado` dentro de la transacción ACID.
+    * Si las compras acumuladas superan los umbrales (Bs. 1,000 o Bs. 3,500), el cliente es promovido de nivel automáticamente.
+    * En el inicio de sesión y registro de clientes, se devuelven los campos de nivel y porcentaje para aplicación inmediata de beneficios.
+  * **3. Módulo de Gestión de Clientes (`ClientView.jsx`):**
+    * **Filtros por Nivel:** Selector de filtro por nivel de lealtad en la cabecera del listado.
+    * **Columna Visual:** Badges de nivel con insignias distintivas (🥉 Bronce, 🥈 Plata, 🥇 Oro, 💎 Platino) y porcentaje de beneficio activo.
+    * **Formulario de Registro/Edición:** Sección dedicada *"Programa de Lealtad e Incentivos"* donde el administrador puede asignar el nivel o personalizar un descuento específico.
+    * **Modal de Detalles:** Tarjeta de estado de lealtad con barra de progreso de compras acumuladas hacia el siguiente nivel.
+  * **4. Punto de Venta / Vender (`POSView.jsx`):**
+    * Al seleccionar un cliente en el POS, el sistema detecta de inmediato su nivel y porcentaje de descuento.
+    * Muestra un recuadro visual de beneficio activo y calcula automáticamente el descuento sobre el subtotal de productos en tiempo real (`loyaltyDiscountAmount`).
+    * Permite edición o ajuste manual si el vendedor lo requiere.
+    * Desglosa el subtotal, descuento aplicado y total final en el ticket térmico y en la factura.
+  * **5. Catálogo Web de Clientes (`ClientCatalog.jsx`):**
+    * Al iniciar sesión un cliente con beneficios, la cabecera superior y el menú de usuario muestran su insignia VIP y el porcentaje de descuento.
+    * En el carrito de compras lateral, se desglosa el beneficio con una tarjeta informativa dorada, aplicando el descuento al total a pagar.
+    * Al presionar *"Enviar Pedido por WhatsApp"*, el mensaje enviado al **+591 67524675** incluye la identificación del cliente, su nivel de lealtad, el subtotal, el monto descontado y el total final a cobrar.
 
+### 122. Limpieza Automática del Carrito tras Envío de Pedido por WhatsApp (`ClientCatalog.jsx`)
+* **Problema / Solicitud:**
+  * Al presionar *"Enviar Pedido por WhatsApp"*, los artículos permanecían cargados en el carrito de compras y el drawer lateral continuaba abierto, lo que podía causar pedidos duplicados o confusión al cliente.
+* **Solución Implementada:**
+  * En [**`ClientCatalog.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx), dentro de la función `handleWhatsAppCheckout`:
+    1. Se genera y envía el mensaje con el enlace a WhatsApp.
+    2. Se vacía el estado y almacenamiento local del carrito (`setCart([])`).
+    3. Se cierra automáticamente el panel lateral de compras (`setIsCartOpen(false)`).
+    4. Se muestra una notificación flotante de confirmación (*"¡Pedido enviado por WhatsApp! Tu carrito ha sido limpiado exitosamente."*).
 
+### 123. Optimización de Pool de Conexión a SQL Server y Eliminación de Bloqueos por Alter Sync (`database.js` y modelos)
+* **Problema Identificado:**
+  * Al iniciar el backend con `npm start` / `nodemon`, se producían errores de timeout (*Failed to connect to LAPTOP-P8ONO5E5:1433 in 15000ms*) y caídas en `/products`, `/categories` y `/brands`.
+  * La causa raíz radicaba en llamadas concurrentes a `.sync({ alter: true })` en `product.js`, `supplier.js` y `inventoryMovement.js` durante la importación de módulos, las cuales emitían sentencias `ALTER TABLE` no estándar de MSSQL y bloqueaban el esquema de tablas en SQL Server, saturando el pool de conexiones.
+* **Solución Implementada:**
+  * **1. Eliminación de Alter Sync en Modelos:** Se removieron las llamadas automáticas a `.sync({ alter: true })` de [`product.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/models/product.js), [`supplier.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/models/supplier.js) y [`inventoryMovement.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/models/inventoryMovement.js).
+  * **2. Configuración Robusta del Pool de Conexiones ([`database.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/database.js)):**
+    * Se configuró un pool de hasta 15 conexiones concurrentes con tiempos de adquisición (`acquire: 30000`) y timeouts de conexión (`connectTimeout: 30000`, `requestTimeout: 30000`, `trustServerCertificate: true`).
+### 124. Resumen del Ticket de Venta POS Puro y No Editable (`POSView.jsx`)
+* **Problema / Solicitud:**
+  * En el pie del ticket del POS, se duplicaba la información de descuento y se permitía hacer clic sobre los totales. Se solicitó que el resumen fuera estrictamente informativo y de solo lectura.
+* **Solución Implementada:**
+  * En [**`POSView.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx):
+### 125. Simplificación de Nombres de Rangos de Lealtad (`loyalty.js`, `POSView.jsx`, `ClientView.jsx`)
+* **Problema / Solicitud:**
+  * Las etiquetas mostraban nombres compuestos largos como *"Mayorista / Platino"*, *"Constructor / Oro"*, etc. Se solicitó simplificarlos para que indiquen exclusivamente el nombre del metal o gema (*"Platino"*, *"Oro"*, *"Plata"*, *"Bronce"*).
+* **Solución Implementada:**
+  * En [**`loyalty.js`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/constants/loyalty.js), [**`POSView.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx) y [**`ClientView.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Contacts/ClientView.jsx):
+    - `🥉 Bronce` (0% de descuento)
+    - `🥈 Plata` (5% de descuento)
+    - `🥇 Oro` (10% de descuento)
+    - `💎 Platino` (15% de descuento)
+  * La tarjeta de identificación de fidelidad en la venta ahora muestra de forma limpia y directa: **`💎 Platino`** con su badge de **`15% Dcto. Automático`**.
 
+### 126. Actualización de Porcentajes y Jerarquía de Rangos de Lealtad (`loyalty.js`, `sales.js`, `POSView.jsx`, `ClientView.jsx`)
+* **Problema / Solicitud:**
+  * Se requirió actualizar la escala de descuentos automáticos por lealtad a los siguientes porcentajes:
+    * **🥉 Bronce:** 0% de descuento
+    * **🥈 Plata:** 3% de descuento
+    * **🥇 Oro:** 6% de descuento
+    * **💎 Diamante:** 10% de descuento
+* **Solución Implementada:**
+  * **1. Constantes de Fidelidad ([`loyalty.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/constants/loyalty.js)):**
+    * Se configuraron los valores estándar: `Estandar` (Bronce, 0%), `Frecuente` (Plata, 3%), `Constructor` (Oro, 6%) y `Mayorista` (Diamante, 10%).
+  * **2. Motor Backend de Ventas y Promoción ([`sales.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/sales.js)):**
+    * Se actualizaron los descuentos asignados automáticamente al acumular compras: 3% para rango Plata (`Frecuente`) y 6% para rango Oro (`Constructor`).
+  * **3. Terminal Punto de Venta ([`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx)):**
+    * Actualizado el selector de clientes y la etiqueta de descuento de fidelidad para reflejar el descuento exacto (0%, 3%, 6%, 10%) y el rango activo (`💎 Diamante`, `🥇 Oro`, `🥈 Plata`, `🥉 Bronce`).
+  * **4. Gestión de Clientes ([`ClientView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Contacts/ClientView.jsx)):**
+    * Actualizadas las opciones en el modal de creación/edición de clientes y los filtros por nivel de lealtad con los nuevos porcentajes.
+
+### 127. Contención del Desplazamiento Horizontal Dentro de la Tabla (`ClientView.jsx`, `SupplierView.jsx`, `index.css`)
+* **Problema Identificado:**
+  * En la vista de Clientes y Proveedores, el ancho extenso de las columnas con `whitespace-nowrap` provocaba que el contenedor flex principal `<main>` se expandiera más allá del 100% del ancho del viewport (`100vw`).
+  * Esto causaba un desbordamiento horizontal a nivel de toda la pantalla (barra de scroll inferior en toda la ventana del navegador) en lugar de permitir que la tabla se desplace internamente.
+* **Solución Implementada:**
+  * **1. Restricción de Ancho en Contenedores Flex ([`ClientView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Contacts/ClientView.jsx) y [`SupplierView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Contacts/SupplierView.jsx)):**
+    * Se agregaron las clases `w-full max-w-full overflow-x-hidden` al contenedor raíz.
+    * Se agregó `min-w-0 w-full overflow-x-hidden` al elemento `<main>` y a los contenedores intermedios, evitando la expansión no deseada del modelo de caja flex.
+  * **2. Desplazamiento Interno de la Tabla:**
+    * El contenedor de la tabla `<div className="overflow-x-auto w-full custom-scrollbar">` ahora contiene el ancho mínimo requerido (`min-w-[1000px]`), haciendo que la barra de desplazamiento horizontal aparezca **exclusivamente dentro de la tabla**.
+  * **3. Scrollbar Oscuro Estilizado ([`index.css`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/index.css)):**
+    * Se incorporó la clase `.custom-scrollbar` con riel oscuro estilizado y barra deslizante en color slate/cyan con esquinas redondeadas.
+
+### 128. Simplificación del Formulario de Creación / Edición de Clientes (`ClientView.jsx`)
+* **Problema / Solicitud:**
+  * En la ventana modal de agregar y editar cliente (tanto para clientes individuales como empresas), se encontraban campos y secciones no requeridas:
+    * *Fecha de nacimiento*
+    * *Asignado a*
+    * Acordeón *Más información* (Dirección y Ciudad redundantes)
+    * Acordeón *Agregar personas de contacto*
+* **Solución Implementada:**
+  * En [**`ClientView.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Contacts/ClientView.jsx):
+    * Se eliminó la fila de *Fecha de nacimiento* y *Asignado a*.
+    * Se eliminaron los acordeones colapsables de *Más información* y *Agregar personas de contacto*.
+    * Se limpiaron los estados booleanos innecesarios (`showMoreInfo` y `showContactPersons`).
+    * El formulario ahora es directo, compacto y enfocado en: Datos de contacto/empresa, Datos de facturación electrónica y Programa de lealtad.

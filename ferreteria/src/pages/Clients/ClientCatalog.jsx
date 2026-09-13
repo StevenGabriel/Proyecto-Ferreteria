@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getProducts, getCategories, getBrands } from '../../services/api';
+import { LOYALTY_TIERS } from '../../constants/loyalty';
 
 function ClientCatalog() {
   const [products, setProducts] = useState([]);
@@ -82,14 +83,20 @@ function ClientCatalog() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [prodsData, catsData, brandsData] = await Promise.all([
+        const [prodsRes, catsRes, brandsRes] = await Promise.allSettled([
           getProducts(),
           getCategories(),
           getBrands()
         ]);
-        setProducts(prodsData || []);
-        setCategories(catsData || []);
-        setBrands(brandsData || []);
+        if (prodsRes.status === 'fulfilled' && Array.isArray(prodsRes.value)) {
+          setProducts(prodsRes.value);
+        }
+        if (catsRes.status === 'fulfilled' && Array.isArray(catsRes.value)) {
+          setCategories(catsRes.value);
+        }
+        if (brandsRes.status === 'fulfilled' && Array.isArray(brandsRes.value)) {
+          setBrands(brandsRes.value);
+        }
       } catch (err) {
         console.error("Error al cargar el catálogo de productos:", err);
         setError("No se pudieron cargar los productos en este momento.");
@@ -112,8 +119,14 @@ function ClientCatalog() {
   // Manejo de cantidades en el grid
   const getItemQuantity = (productId) => quantities[productId] || 1;
 
-  const setItemQuantity = (productId, qty) => {
-    const validQty = Math.max(1, parseInt(qty) || 1);
+  const setItemQuantity = (productId, qty, maxStock = null) => {
+    let validQty = Math.max(1, parseInt(qty) || 1);
+    if (maxStock !== null && maxStock !== undefined && validQty > maxStock) {
+      validQty = Math.max(1, maxStock);
+      setToastMessage(`Stock máximo disponible alcanzado (${maxStock} unid.)`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3500);
+    }
     setQuantities(prev => ({ ...prev, [productId]: validQty }));
   };
 
@@ -123,41 +136,77 @@ function ClientCatalog() {
     const availableStock = product.Stock || 0;
 
     if (availableStock <= 0) {
-      alert("Este producto se encuentra actualmente agotado.");
+      setToastMessage(`"${product.Nombre}" se encuentra actualmente agotado.`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3500);
       return;
     }
+
+    let reachedLimit = false;
+    let actualAdded = qtyToAdd;
 
     setCart(prevCart => {
       const existingIndex = prevCart.findIndex(item => item.product.ProductoID === product.ProductoID);
       if (existingIndex > -1) {
         const updated = [...prevCart];
-        const newTotal = updated[existingIndex].quantity + qtyToAdd;
-        updated[existingIndex].quantity = newTotal;
+        const currentInCart = updated[existingIndex].quantity;
+        const proposedTotal = currentInCart + qtyToAdd;
+
+        if (proposedTotal > availableStock) {
+          reachedLimit = true;
+          actualAdded = Math.max(0, availableStock - currentInCart);
+          updated[existingIndex].quantity = availableStock;
+        } else {
+          updated[existingIndex].quantity = proposedTotal;
+        }
         return updated;
       } else {
-        return [...prevCart, { product, quantity: qtyToAdd }];
+        const initialQty = Math.min(qtyToAdd, availableStock);
+        if (qtyToAdd > availableStock) {
+          reachedLimit = true;
+          actualAdded = initialQty;
+        }
+        return [...prevCart, { product, quantity: initialQty }];
       }
     });
 
     playCartSound();
-    setToastMessage(`¡${product.Nombre} (${qtyToAdd} unid) añadido al carrito!`);
+    if (reachedLimit) {
+      setToastMessage(`Has alcanzado el límite disponible para "${product.Nombre}" (máx. ${availableStock} unid.)`);
+    } else {
+      setToastMessage(`¡${product.Nombre} (${actualAdded} unid) añadido al carrito!`);
+    }
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3500);
   };
 
   // Modificar cantidad dentro del carrito
   const updateCartQuantity = (productId, delta) => {
+    let reachedLimit = false;
+
     setCart(prevCart => {
       return prevCart
         .map(item => {
           if (item.product.ProductoID === productId) {
+            const availableStock = item.product.Stock || 0;
             const newQty = item.quantity + delta;
+
+            if (delta > 0 && newQty > availableStock) {
+              reachedLimit = true;
+              return { ...item, quantity: availableStock };
+            }
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }
           return item;
         })
         .filter(Boolean);
     });
+
+    if (reachedLimit) {
+      setToastMessage(`No puedes agregar más unidades del stock disponible.`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3500);
+    }
   };
 
   // Remover ítem del carrito
@@ -172,26 +221,60 @@ function ClientCatalog() {
     }
   };
 
+  // Determinar nivel de lealtad y descuento del usuario conectado
+  const userLoyaltyTierKey = currentUser?.NivelLealtad || 'Estandar';
+  const userTierInfo = LOYALTY_TIERS[userLoyaltyTierKey] || LOYALTY_TIERS.Estandar;
+  const userDiscountPercent = (currentUser?.DescuentoPorcentaje !== undefined && currentUser?.DescuentoPorcentaje !== null && parseFloat(currentUser.DescuentoPorcentaje) > 0)
+    ? parseFloat(currentUser.DescuentoPorcentaje)
+    : (userTierInfo?.discount || 0);
+
   // Cálculo de totales del carrito
   const cartTotalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
-  const cartTotalPrice = cart.reduce((acc, item) => {
+  const cartSubtotal = cart.reduce((acc, item) => {
     const price = parseFloat(item.product.PrecioVenta || 0);
     return acc + price * item.quantity;
   }, 0);
+  const cartLoyaltyDiscount = userDiscountPercent > 0 ? (cartSubtotal * userDiscountPercent) / 100 : 0;
+  const cartFinalTotal = Math.max(0, cartSubtotal - cartLoyaltyDiscount);
+  const cartTotalPrice = cartFinalTotal;
 
   // Enviar pedido por WhatsApp
   const handleWhatsAppCheckout = () => {
     if (cart.length === 0) return;
     let message = `🛒 *HOLA C&C FERRETERÍA, DESEO REALIZAR UN PEDIDO:*\n\n`;
+    
+    if (currentUser) {
+      message += `👤 *Cliente:* ${currentUser.Nombre || 'Cliente Registrado'}\n`;
+      if (userDiscountPercent > 0) {
+        message += `🎖️ *Nivel Lealtad:* ${userTierInfo.name} (${userTierInfo.badge} - ${userDiscountPercent}% de Desc.)\n`;
+      }
+      message += `\n`;
+    }
+
     cart.forEach((item, index) => {
       const subtotal = (parseFloat(item.product.PrecioVenta || 0) * item.quantity).toFixed(2);
       message += `${index + 1}. *${item.product.Nombre}*\n   Cantidad: ${item.quantity} ${item.product.Unidad?.Nombre || 'pza(s)'} x Bs. ${parseFloat(item.product.PrecioVenta).toFixed(2)} = *Bs. ${subtotal}*\n`;
     });
-    message += `\n💰 *TOTAL DEL PEDIDO: Bs. ${cartTotalPrice.toFixed(2)}*\n`;
+
+    message += `\n💵 *Subtotal:* Bs. ${cartSubtotal.toFixed(2)}`;
+    if (userDiscountPercent > 0) {
+      message += `\n🎁 *Descuento Lealtad (${userTierInfo.badge} - ${userDiscountPercent}%):* -Bs. ${cartLoyaltyDiscount.toFixed(2)}`;
+      message += `\n💰 *TOTAL FINAL DEL PEDIDO: Bs. ${cartFinalTotal.toFixed(2)}*\n`;
+    } else {
+      message += `\n💰 *TOTAL DEL PEDIDO: Bs. ${cartSubtotal.toFixed(2)}*\n`;
+    }
+
     message += `\n📍 *Por favor confírmenme la disponibilidad y forma de entrega/pago.*`;
 
     const encoded = encodeURIComponent(message);
-    window.open(`https://wa.me/59170700000?text=${encoded}`, '_blank');
+    window.open(`https://wa.me/59167524675?text=${encoded}`, '_blank');
+
+    // Limpiar carrito y cerrar drawer tras enviar el pedido
+    setCart([]);
+    setIsCartOpen(false);
+    setToastMessage("¡Pedido enviado por WhatsApp! Tu carrito ha sido limpiado exitosamente.");
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 4000);
   };
 
   // Filtrado y Ordenamiento de Productos
@@ -231,9 +314,13 @@ function ClientCatalog() {
       
       {/* 1. BARRA SUPERIOR / HEADER PRINCIPAL */}
       <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40 shadow-xl">
-        {/* Franja superior de anuncio */}
+        {/* Franja superior de anuncio con información de beneficios */}
         <div className="bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 text-white text-[11px] font-bold py-1.5 px-4 text-center tracking-wide flex justify-center items-center gap-2">
-          <span>⚡ ¡Precios especiales y cotizaciones inmediatas para obras y construcción!</span>
+          {currentUser && userDiscountPercent > 0 ? (
+            <span>⭐ ¡Hola {currentUser.Nombre || 'Cliente'}! Tu beneficio <strong className="underline decoration-amber-300 decoration-2">{userTierInfo.badge} ({userDiscountPercent}% OFF)</strong> se aplica automáticamente en tu carrito.</span>
+          ) : (
+            <span>⚡ ¡Precios especiales y cotizaciones inmediatas para obras y construcción! Acumula compras y obtén hasta 15% de descuento.</span>
+          )}
           <span className="hidden md:inline bg-white/20 px-2 py-0.5 rounded-full text-[10px]">Cochabamba - Bolivia</span>
         </div>
 
@@ -309,7 +396,7 @@ function ClientCatalog() {
           <div className="hidden md:flex items-center gap-3">
             {/* Contacto WhatsApp */}
             <a
-              href="https://wa.me/59170700000?text=Hola%20C%26C%20Ferreter%C3%ADa,%20quisiera%20consultar%20sobre%20sus%20productos."
+              href="https://wa.me/59167524675?text=Hola%20C%26C%20Ferreter%C3%ADa,%20quisiera%20consultar%20sobre%20sus%20productos."
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition-colors"
@@ -331,11 +418,18 @@ function ClientCatalog() {
                     {currentUser.Nombre ? currentUser.Nombre.charAt(0).toUpperCase() : 'U'}
                   </div>
                   <div className="text-left hidden sm:block">
-                    <p className="text-xs font-bold text-white max-w-[130px] truncate leading-none">
-                      {currentUser.Nombre || currentUser.Correo}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs font-bold text-white max-w-[130px] truncate leading-none">
+                        {currentUser.Nombre || currentUser.Correo}
+                      </p>
+                      {userTierInfo && userDiscountPercent > 0 && (
+                        <span className="px-1.5 py-0.2 text-[9px] font-black rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                          {userTierInfo.badge}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[10px] text-cyan-400 font-semibold leading-none">
-                      {currentUser.Rol || 'Cliente'}
+                      {currentUser.Rol || 'Cliente'} {userDiscountPercent > 0 && `• ${userDiscountPercent}% OFF`}
                     </span>
                   </div>
                   <svg className="w-3.5 h-3.5 text-slate-400 ml-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -345,13 +439,18 @@ function ClientCatalog() {
 
                 {/* Dropdown flotante del usuario */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-60 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl p-3 z-50 animate-fade-in space-y-2">
-                    <div className="px-3 py-2 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                  <div className="absolute right-0 mt-2 w-64 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl p-3.5 z-50 animate-fade-in space-y-2.5">
+                    <div className="px-3 py-2.5 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-1.5">
                       <p className="text-xs font-bold text-white truncate">{currentUser.Nombre || "Usuario"}</p>
                       <p className="text-[11px] text-slate-400 truncate">{currentUser.Correo}</p>
-                      <span className="inline-block mt-1 px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/30 rounded text-[9px] font-extrabold text-cyan-400 uppercase">
-                        {currentUser.Rol || "Cliente"}
-                      </span>
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-800">
+                        <span className="px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/30 rounded text-[9px] font-extrabold text-cyan-400 uppercase">
+                          {currentUser.Rol || "Cliente"}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-black border ${userTierInfo.textClass || 'text-slate-300 bg-slate-800 border-slate-700'}`}>
+                          {userTierInfo.badge} ({userDiscountPercent}% OFF)
+                        </span>
+                      </div>
                     </div>
 
                     {/* Si es Administrador, acceso directo al Dashboard */}
@@ -603,7 +702,7 @@ function ClientCatalog() {
                           : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
                       }`}
                     >
-                      {isAvailable ? `${stock} ${p.Unidad?.Nombre || 'disp.'}` : 'Agotado'}
+                      {isAvailable ? 'Disponible' : 'Agotado'}
                     </span>
 
                     {/* Botón Flotante de Vista Rápida */}
@@ -658,8 +757,9 @@ function ClientCatalog() {
                         {/* Stepper de cantidad */}
                         <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl overflow-hidden w-28">
                           <button
-                            onClick={() => setItemQuantity(p.ProductoID, currentQty - 1)}
-                            className="px-2.5 py-1 text-slate-400 hover:text-white hover:bg-slate-800 font-bold transition-colors"
+                            disabled={!isAvailable || currentQty <= 1}
+                            onClick={() => setItemQuantity(p.ProductoID, currentQty - 1, stock)}
+                            className="px-2.5 py-1 text-slate-400 hover:text-white hover:bg-slate-800 font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             -
                           </button>
@@ -668,12 +768,13 @@ function ClientCatalog() {
                             min="1"
                             max={stock}
                             value={currentQty}
-                            onChange={(e) => setItemQuantity(p.ProductoID, e.target.value)}
+                            onChange={(e) => setItemQuantity(p.ProductoID, e.target.value, stock)}
                             className="w-full text-center bg-transparent text-xs text-white font-bold outline-none"
                           />
                           <button
-                            onClick={() => setItemQuantity(p.ProductoID, currentQty + 1)}
-                            className="px-2.5 py-1 text-slate-400 hover:text-white hover:bg-slate-800 font-bold transition-colors"
+                            disabled={!isAvailable || currentQty >= stock}
+                            onClick={() => setItemQuantity(p.ProductoID, currentQty + 1, stock)}
+                            className="px-2.5 py-1 text-slate-400 hover:text-white hover:bg-slate-800 font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             +
                           </button>
@@ -785,8 +886,9 @@ function ClientCatalog() {
                               </button>
                               <span className="px-2 text-xs font-bold text-white">{quantity}</span>
                               <button
+                                disabled={quantity >= (product.Stock || 0)}
                                 onClick={() => updateCartQuantity(product.ProductoID, 1)}
-                                className="px-2 py-0.5 text-xs text-slate-400 hover:text-white font-bold"
+                                className="px-2 py-0.5 text-xs text-slate-400 hover:text-white font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                               >
                                 +
                               </button>
@@ -818,18 +920,47 @@ function ClientCatalog() {
               {/* Footer del Carrito con Resumen y Checkout */}
               {cart.length > 0 && (
                 <div className="p-6 bg-slate-950 border-t border-slate-800 space-y-4">
+                  {/* Beneficio de Lealtad / Banner Informativo */}
+                  {currentUser && userDiscountPercent > 0 ? (
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs text-amber-300">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">🎁</span>
+                        <div>
+                          <p className="font-bold">{userTierInfo.badge} Activo</p>
+                          <p className="text-[10px] text-amber-400/80">{userDiscountPercent}% de descuento aplicado a tu compra</p>
+                        </div>
+                      </div>
+                      <span className="font-extrabold text-amber-300">-Bs. {cartLoyaltyDiscount.toFixed(2)}</span>
+                    </div>
+                  ) : !currentUser ? (
+                    <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center gap-2.5 text-xs text-slate-300">
+                      <span className="text-base flex-shrink-0">💎</span>
+                      <p className="text-[11px] leading-tight">
+                        <strong className="text-cyan-400">¿Eres cliente frecuente o contratista?</strong> Inicia sesión para aplicar tus descuentos de lealtad en cada pedido.
+                      </p>
+                    </div>
+                  ) : null}
+
                   <div className="space-y-1.5 text-xs text-slate-300">
                     <div className="flex justify-between">
                       <span className="text-slate-400">Subtotal</span>
-                      <span className="font-semibold text-white">Bs. {cartTotalPrice.toFixed(2)}</span>
+                      <span className="font-semibold text-white">Bs. {cartSubtotal.toFixed(2)}</span>
                     </div>
+
+                    {userDiscountPercent > 0 && (
+                      <div className="flex justify-between text-amber-400 font-bold">
+                        <span>Descuento Lealtad ({userTierInfo.badge} - {userDiscountPercent}%)</span>
+                        <span>-Bs. {cartLoyaltyDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between">
                       <span className="text-slate-400">Impuestos (13% IVA)</span>
                       <span className="font-semibold text-emerald-400">Incluido</span>
                     </div>
                     <div className="flex justify-between pt-2 border-t border-slate-800 text-sm font-black">
                       <span className="text-white">Total a Pagar</span>
-                      <span className="text-cyan-400">Bs. {cartTotalPrice.toFixed(2)}</span>
+                      <span className="text-cyan-400">Bs. {cartFinalTotal.toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -919,9 +1050,15 @@ function ClientCatalog() {
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span>Stock disponible:</span>
-                  <span className="font-extrabold text-white">
-                    {quickViewProduct.Stock || 0} {quickViewProduct.Unidad?.Nombre || 'unid'}
+                  <span>Disponibilidad:</span>
+                  <span
+                    className={`font-extrabold px-2.5 py-0.5 rounded-lg text-[11px] ${
+                      (quickViewProduct.Stock || 0) > 0
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                    }`}
+                  >
+                    {(quickViewProduct.Stock || 0) > 0 ? 'Disponible' : 'Agotado'}
                   </span>
                 </div>
 

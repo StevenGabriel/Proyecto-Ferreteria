@@ -285,6 +285,13 @@ function UserManagement() {
             Vendedor / Cajero
           </span>
         );
+      case "Cliente":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            Cliente (Revertido)
+          </span>
+        );
       default:
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 border border-slate-700 text-slate-300 rounded-lg text-xs font-medium">
@@ -416,6 +423,7 @@ function UserManagement() {
                 <option value="ALL">Todos los Roles</option>
                 <option value="Administrador">Administrador</option>
                 <option value="Vendedor">Vendedor / Cajero</option>
+                <option value="Cliente">Cliente (Revertido)</option>
               </select>
 
               {/* Filtro por Estado */}
@@ -852,11 +860,23 @@ function UserManagement() {
                     onChange={(e) => setEditFormData({ ...editFormData, rol: e.target.value })}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500 font-bold"
                   >
-                    <option value="Administrador">Administrador</option>
-                    <option value="Vendedor">Vendedor (Vendedor / Cajero)</option>
+                    <option value="Administrador">Administrador (Acceso Total)</option>
+                    <option value="Vendedor">Vendedor (Vendedor / Cajero POS)</option>
+                    <option value="Cliente">Cliente (Revertir acceso a cliente de tienda)</option>
                   </select>
                 </div>
               </div>
+
+              {/* Advertencia contextual si se revierte a Cliente */}
+              {editFormData.rol === 'Cliente' && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-2.5 animate-fade-in">
+                  <span className="text-amber-400 text-sm font-bold shrink-0 mt-0.5">⚠️</span>
+                  <div className="text-[11px] text-amber-200 leading-relaxed">
+                    <strong className="text-amber-300 font-bold block mb-0.5">Reversión de Acceso a Cliente:</strong>
+                    El usuario perderá acceso inmediato al Punto de Venta (POS) y al panel administrativo. Al iniciar sesión, accederá únicamente como cliente al catálogo de compras de la tienda.
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
                 <button

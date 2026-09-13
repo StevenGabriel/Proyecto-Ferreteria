@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from '../../components/sidebar/sidebar';
 import Topbar from '../../components/topbar/topbar';
 import { useSidebar } from '../../context/SidebarContext';
+import { LOYALTY_TIERS } from '../../constants/loyalty';
+export { LOYALTY_TIERS };
 
 const DEFAULT_CLIENTS = [
   {
@@ -25,6 +27,9 @@ const DEFAULT_CLIENTS = [
     AsignadoA: '',
     Direccion: 'Ventas en Mostrador',
     Ciudad: 'Cochabamba',
+    NivelLealtad: 'Estandar',
+    DescuentoPorcentaje: 0,
+    TotalComprasAcumulado: 450.00,
     createdAt: '2026-09-01T08:00:00.000Z'
   },
   {
@@ -48,6 +53,9 @@ const DEFAULT_CLIENTS = [
     AsignadoA: '',
     Direccion: 'Av. Blanco Galindo Km 4',
     Ciudad: 'Cochabamba',
+    NivelLealtad: 'Mayorista',
+    DescuentoPorcentaje: 10,
+    TotalComprasAcumulado: 8500.00,
     createdAt: '2026-09-02T10:30:00.000Z'
   },
   {
@@ -71,6 +79,9 @@ const DEFAULT_CLIENTS = [
     AsignadoA: 'Oscar Edgar Claros',
     Direccion: 'Zona Norte, Calle Los Álamos #120',
     Ciudad: 'Cochabamba',
+    NivelLealtad: 'Frecuente',
+    DescuentoPorcentaje: 3,
+    TotalComprasAcumulado: 1850.00,
     createdAt: '2026-09-03T14:15:00.000Z'
   },
   {
@@ -94,6 +105,9 @@ const DEFAULT_CLIENTS = [
     AsignadoA: 'Oscar Edgar Claros',
     Direccion: 'Calle Heroínas #450',
     Ciudad: 'Cochabamba',
+    NivelLealtad: 'Constructor',
+    DescuentoPorcentaje: 6,
+    TotalComprasAcumulado: 4920.00,
     createdAt: '2026-09-04T16:45:00.000Z'
   }
 ];
@@ -115,29 +129,38 @@ function ClientView() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((c, i) => ({
-            ClienteID: c.ClienteID || c.id || i + 1,
-            TipoContacto: c.TipoContacto || (c.NombreEmpresa ? 'Empresa' : 'Individual'),
-            CodigoContacto: c.CodigoContacto || `CO${String(460 + i + 1).padStart(4, '0')}`,
-            NombreEmpresa: c.NombreEmpresa || '',
-            Prefijo: c.Prefijo || '',
-            Nombres: c.Nombres || c.name || c.Nombre || '',
-            SegundoNombre: c.SegundoNombre || '',
-            Apellidos: c.Apellidos || '',
-            Nombre: c.Nombre || c.name || c.NombreEmpresa || 'Cliente',
-            RazonSocial: c.RazonSocial || c.Nombre || c.name || 'SIN NOMBRE',
-            TipoDocumentoSIAT: c.TipoDocumentoSIAT || 'NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA',
-            NIT: c.NIT || c.nit || '0',
-            Movil: c.Movil || c.Telefono || c.phone || '0',
-            TelefonoAlternativo: c.TelefonoAlternativo || '',
-            LineaFija: c.LineaFija || '',
-            Email: c.Email || c.email || '',
-            FechaNacimiento: c.FechaNacimiento || '',
-            AsignadoA: c.AsignadoA || '',
-            Direccion: c.Direccion || c.address || '',
-            Ciudad: c.Ciudad || 'Cochabamba',
-            createdAt: c.createdAt || new Date().toISOString()
-          }));
+          return parsed.map((c, i) => {
+            const nivel = c.NivelLealtad || c.loyaltyTier || (c.DescuentoPorcentaje >= 15 ? 'Mayorista' : c.DescuentoPorcentaje >= 10 ? 'Constructor' : c.DescuentoPorcentaje >= 5 ? 'Frecuente' : 'Estandar');
+            const tierObj = LOYALTY_TIERS[nivel] || LOYALTY_TIERS.Estandar;
+            const descPct = c.DescuentoPorcentaje !== undefined ? parseFloat(c.DescuentoPorcentaje) : tierObj.discount;
+
+            return {
+              ClienteID: c.ClienteID || c.id || i + 1,
+              TipoContacto: c.TipoContacto || (c.NombreEmpresa ? 'Empresa' : 'Individual'),
+              CodigoContacto: c.CodigoContacto || `CO${String(460 + i + 1).padStart(4, '0')}`,
+              NombreEmpresa: c.NombreEmpresa || '',
+              Prefijo: c.Prefijo || '',
+              Nombres: c.Nombres || c.name || c.Nombre || '',
+              SegundoNombre: c.SegundoNombre || '',
+              Apellidos: c.Apellidos || '',
+              Nombre: c.Nombre || c.name || c.NombreEmpresa || 'Cliente',
+              RazonSocial: c.RazonSocial || c.Nombre || c.name || 'SIN NOMBRE',
+              TipoDocumentoSIAT: c.TipoDocumentoSIAT || 'NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA',
+              NIT: c.NIT || c.nit || '0',
+              Movil: c.Movil || c.Telefono || c.phone || '0',
+              TelefonoAlternativo: c.TelefonoAlternativo || '',
+              LineaFija: c.LineaFija || '',
+              Email: c.Email || c.email || '',
+              FechaNacimiento: c.FechaNacimiento || '',
+              AsignadoA: c.AsignadoA || '',
+              Direccion: c.Direccion || c.address || '',
+              Ciudad: c.Ciudad || 'Cochabamba',
+              NivelLealtad: nivel,
+              DescuentoPorcentaje: descPct,
+              TotalComprasAcumulado: parseFloat(c.TotalComprasAcumulado || c.totalCompras || 0),
+              createdAt: c.createdAt || new Date().toISOString()
+            };
+          });
         }
       }
     } catch (e) {
@@ -177,6 +200,9 @@ function ClientView() {
         address: c.Direccion,
         Direccion: c.Direccion,
         Ciudad: c.Ciudad,
+        NivelLealtad: c.NivelLealtad || 'Estandar',
+        DescuentoPorcentaje: c.DescuentoPorcentaje !== undefined ? c.DescuentoPorcentaje : 0,
+        TotalComprasAcumulado: c.TotalComprasAcumulado || 0,
         createdAt: c.createdAt
       }));
       localStorage.setItem('cyc_pos_clients', JSON.stringify(posFormat));
@@ -194,6 +220,7 @@ function ClientView() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [filterDocType, setFilterDocType] = useState('ALL');
   const [filterTipoContacto, setFilterTipoContacto] = useState('ALL');
+  const [filterLoyaltyTier, setFilterLoyaltyTier] = useState('ALL');
 
   // Visibilidad de columnas
   const [isColumnVisibilityOpen, setIsColumnVisibilityOpen] = useState(false);
@@ -201,6 +228,7 @@ function ClientView() {
     accion: true,
     codigoContacto: true,
     tipo: true,
+    programaLealtad: true,
     nombre: true,
     razonSocial: true,
     nit: true,
@@ -216,10 +244,6 @@ function ClientView() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
-
-  // Acordeones dentro del modal
-  const [showMoreInfo, setShowMoreInfo] = useState(false);
-  const [showContactPersons, setShowContactPersons] = useState(false);
 
   const initialFormState = {
     TipoContacto: 'Individual', // 'Individual' | 'Empresa'
@@ -239,7 +263,10 @@ function ClientView() {
     TipoDocumentoSIAT: 'NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA',
     NIT: '',
     Direccion: '',
-    Ciudad: 'Cochabamba'
+    Ciudad: 'Cochabamba',
+    NivelLealtad: 'Estandar',
+    DescuentoPorcentaje: 0,
+    TotalComprasAcumulado: 0
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -298,10 +325,11 @@ function ClientView() {
       if (filterTipoContacto !== 'ALL' && c.TipoContacto !== filterTipoContacto) return false;
       if (filterDocType === 'WITH_NIT' && (c.NIT === '0' || !c.NIT)) return false;
       if (filterDocType === 'WITHOUT_NIT' && c.NIT !== '0' && c.NIT) return false;
+      if (filterLoyaltyTier !== 'ALL' && (c.NivelLealtad || 'Estandar') !== filterLoyaltyTier) return false;
 
       return true;
     });
-  }, [clients, searchTerm, filterDocType, filterTipoContacto]);
+  }, [clients, searchTerm, filterDocType, filterTipoContacto, filterLoyaltyTier]);
 
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -319,14 +347,14 @@ function ClientView() {
       Movil: '0'
     });
     setFormError('');
-    setShowMoreInfo(false);
-    setShowContactPersons(false);
     setIsAddModalOpen(true);
   };
 
   const handleOpenEditModal = (clie, e) => {
     e.stopPropagation();
     setSelectedClient(clie);
+    const tier = clie.NivelLealtad || 'Estandar';
+    const tierObj = LOYALTY_TIERS[tier] || LOYALTY_TIERS.Estandar;
     setFormData({
       TipoContacto: clie.TipoContacto || (clie.NombreEmpresa ? 'Empresa' : 'Individual'),
       CodigoContacto: clie.CodigoContacto || '',
@@ -345,11 +373,12 @@ function ClientView() {
       TipoDocumentoSIAT: clie.TipoDocumentoSIAT || 'NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA',
       NIT: clie.NIT || '',
       Direccion: clie.Direccion || '',
-      Ciudad: clie.Ciudad || 'Cochabamba'
+      Ciudad: clie.Ciudad || 'Cochabamba',
+      NivelLealtad: tier,
+      DescuentoPorcentaje: clie.DescuentoPorcentaje !== undefined ? clie.DescuentoPorcentaje : tierObj.discount,
+      TotalComprasAcumulado: clie.TotalComprasAcumulado || 0
     });
     setFormError('');
-    setShowMoreInfo(false);
-    setShowContactPersons(false);
     setIsEditModalOpen(true);
     setOpenActionMenuId(null);
   };
@@ -439,6 +468,9 @@ function ClientView() {
       RazonSocial: resolvedRazonSocial,
       NIT: resolvedNIT,
       Movil: resolvedMovil,
+      NivelLealtad: formData.NivelLealtad || 'Estandar',
+      DescuentoPorcentaje: parseFloat(formData.DescuentoPorcentaje) || 0,
+      TotalComprasAcumulado: parseFloat(formData.TotalComprasAcumulado) || 0,
       createdAt: new Date().toISOString()
     };
 
@@ -450,35 +482,30 @@ function ClientView() {
   const handleUpdateClient = (e) => {
     e.preventDefault();
 
-    const hasIndividualName = formData.Nombres.trim() || formData.Apellidos.trim();
-    const hasCompanyName = formData.NombreEmpresa.trim();
-    const hasRazonSocial = formData.RazonSocial.trim();
-
-    if (!hasIndividualName && !hasCompanyName && !hasRazonSocial) {
-      setFormError('Por favor ingrese al menos el Nombre del cliente o Razón Social.');
-      return;
-    }
-
     const displayName = buildDisplayName(formData);
     const resolvedRazonSocial = formData.RazonSocial.trim() || displayName.toUpperCase();
     const resolvedNIT = formData.NIT.trim() || '0';
     const resolvedMovil = formData.Movil.trim() || '0';
 
-    const updated = clients.map(c =>
-      c.ClienteID === selectedClient.ClienteID
-        ? {
+    const updatedClients = clients.map((c) => {
+      if (c.ClienteID === selectedClient.ClienteID) {
+        return {
           ...c,
           ...formData,
           Nombre: displayName,
           RazonSocial: resolvedRazonSocial,
           NIT: resolvedNIT,
-          Movil: resolvedMovil
-        }
-        : c
-    );
+          Movil: resolvedMovil,
+          NivelLealtad: formData.NivelLealtad || 'Estandar',
+          DescuentoPorcentaje: parseFloat(formData.DescuentoPorcentaje) || 0,
+          TotalComprasAcumulado: parseFloat(formData.TotalComprasAcumulado) || 0
+        };
+      }
+      return c;
+    });
 
-    persistClients(updated);
-    triggerToast(`¡Datos del cliente "${displayName}" actualizados!`);
+    persistClients(updatedClients);
+    triggerToast(`¡Cliente "${displayName}" actualizado exitosamente!`);
     setIsEditModalOpen(false);
   };
 
@@ -717,33 +744,6 @@ function ClientView() {
         </div>
       </div>
 
-      {/* Fila Nacimiento y Asignado a */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-slate-400 font-bold mb-1">Fecha de nacimiento:</label>
-          <input
-            type="date"
-            value={formData.FechaNacimiento}
-            onChange={(e) => setFormData({ ...formData, FechaNacimiento: e.target.value })}
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 outline-none focus:border-cyan-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-slate-400 font-bold mb-1">Asignado a:</label>
-          <select
-            value={formData.AsignadoA}
-            onChange={(e) => setFormData({ ...formData, AsignadoA: e.target.value })}
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 outline-none focus:border-cyan-500 font-medium"
-          >
-            <option value="">Por favor seleccione</option>
-            <option value="Oscar Edgar Claros">Oscar Edgar Claros (Administrador)</option>
-            <option value="Vendedor Mostrador">Vendedor Mostrador</option>
-            <option value="Caja 1">Caja 1</option>
-          </select>
-        </div>
-      </div>
-
       {/* SECCIÓN FACTURACIÓN */}
       <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3">
         <h4 className="font-extrabold text-cyan-400 text-xs flex items-center gap-1.5 uppercase tracking-wide">
@@ -791,90 +791,76 @@ function ClientView() {
         </div>
       </div>
 
-      {/* Acordeón: Más información */}
-      <div className="border border-slate-800 rounded-xl overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setShowMoreInfo(!showMoreInfo)}
-          className="w-full px-4 py-2.5 bg-slate-950/70 hover:bg-slate-900 flex items-center justify-between text-left font-bold text-slate-300 hover:text-white transition-colors"
-        >
-          <span className="flex items-center gap-2">
-            <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Más información
+      {/* SECCIÓN PROGRAMA DE LEALTAD Y DESCUENTOS */}
+      <div className="p-3.5 bg-slate-950/80 border border-amber-500/30 rounded-xl space-y-3">
+        <div className="flex items-center justify-between">
+          <h4 className="font-extrabold text-amber-400 text-xs flex items-center gap-1.5 uppercase tracking-wide">
+            <span>👑</span>
+            Programa de Lealtad e Incentivos
+          </h4>
+          <span className="text-[10px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg">
+            Descuento automático en POS y Tienda
           </span>
-          <svg className={`w-4 h-4 text-slate-400 transition-transform ${showMoreInfo ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+        </div>
 
-        {showMoreInfo && (
-          <div className="p-4 bg-slate-950/40 border-t border-slate-800 space-y-3 animate-fade-in">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">Dirección:</label>
-                <input
-                  type="text"
-                  value={formData.Direccion}
-                  onChange={(e) => setFormData({ ...formData, Direccion: e.target.value })}
-                  placeholder="Calle, avenida, edificio o zona"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">Ciudad:</label>
-                <input
-                  type="text"
-                  value={formData.Ciudad}
-                  onChange={(e) => setFormData({ ...formData, Ciudad: e.target.value })}
-                  placeholder="Ej. Cochabamba, La Paz, Santa Cruz"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
-                />
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-slate-300 font-bold mb-1">Nivel de Fidelidad:</label>
+            <select
+              value={formData.NivelLealtad || 'Estandar'}
+              onChange={(e) => {
+                const tierKey = e.target.value;
+                const tier = LOYALTY_TIERS[tierKey] || LOYALTY_TIERS.Estandar;
+                setFormData({
+                  ...formData,
+                  NivelLealtad: tierKey,
+                  DescuentoPorcentaje: tier.discount
+                });
+              }}
+              className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-slate-200 outline-none focus:border-amber-500 font-semibold"
+            >
+              <option value="Estandar">🥉 Bronce (0% Dcto)</option>
+              <option value="Frecuente">🥈 Plata (3% Dcto)</option>
+              <option value="Constructor">🥇 Oro (6% Dcto)</option>
+              <option value="Mayorista">💎 Diamante (10% Dcto)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-slate-300 font-bold mb-1">Descuento Asignado (%):</label>
+            <div className="relative">
+              <input
+                type="number"
+                step="0.5"
+                min="0"
+                max="100"
+                value={formData.DescuentoPorcentaje ?? 0}
+                onChange={(e) => setFormData({ ...formData, DescuentoPorcentaje: parseFloat(e.target.value) || 0 })}
+                className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-emerald-400 font-mono font-bold outline-none focus:border-emerald-500 pr-8"
+              />
+              <span className="absolute right-3 top-2 text-slate-500 font-bold">%</span>
             </div>
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Acordeón: Agregar personas de contacto */}
-      <div className="border border-slate-800 rounded-xl overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setShowContactPersons(!showContactPersons)}
-          className="w-full px-4 py-2.5 bg-slate-950/70 hover:bg-slate-900 flex items-center justify-between text-left font-bold text-slate-300 hover:text-white transition-colors"
-        >
-          <span className="flex items-center gap-2">
-            <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-            </svg>
-            Agregar personas de contacto
+        <div className="text-[11px] text-slate-400 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80 flex items-center justify-between">
+          <span>Histórico de compras acumulado:</span>
+          <span className="font-extrabold text-white font-mono">
+            Bs. {parseFloat(formData.TotalComprasAcumulado || 0).toFixed(2)}
           </span>
-          <svg className={`w-4 h-4 text-slate-400 transition-transform ${showContactPersons ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        {showContactPersons && (
-          <div className="p-4 bg-slate-950/40 border-t border-slate-800 space-y-2 text-slate-400 animate-fade-in text-[11px]">
-            <p>Puede registrar contactos de compras, almacén o contabilidad vinculados a este cliente.</p>
-            <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-lg text-slate-300 font-medium">
-              Contacto principal sincronizado con el formulario general.
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
 
   return (
-    <div className="bg-slate-950 text-white min-h-screen font-sans flex">
+    <div className="bg-slate-950 text-white min-h-screen font-sans flex w-full max-w-full overflow-x-hidden">
       <Sidebar activeItem="clientes" />
 
-      <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-slate-950 flex flex-col`}>
+      <main className={`flex-1 min-w-0 w-full transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-slate-950 flex flex-col overflow-x-hidden`}>
         <Topbar />
 
-        <div className="p-6 md:p-8 max-w-[1920px] w-full mx-auto space-y-6 flex-1">
+        <div className="p-6 md:p-8 max-w-[1920px] w-full mx-auto space-y-6 flex-1 min-w-0">
           {/* Encabezado */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-baseline gap-3">
@@ -921,7 +907,7 @@ function ClientView() {
             </button>
 
             {isFiltersOpen && (
-              <div className="p-5 border-t border-slate-800/60 grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-950/40 animate-fade-in text-xs">
+              <div className="p-5 border-t border-slate-800/60 grid grid-cols-1 sm:grid-cols-4 gap-4 bg-slate-950/40 animate-fade-in text-xs">
                 <div>
                   <label className="block text-slate-400 font-semibold mb-1.5">Tipo de cliente:</label>
                   <select
@@ -936,21 +922,36 @@ function ClientView() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1.5">Tipo de documento de facturación:</label>
+                  <label className="block text-slate-400 font-semibold mb-1.5">Tipo de documento:</label>
                   <select
                     value={filterDocType}
                     onChange={(e) => { setFilterDocType(e.target.value); setCurrentPage(1); }}
                     className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-medium outline-none focus:border-cyan-500/50"
                   >
-                    <option value="ALL">Todos los clientes</option>
-                    <option value="WITH_NIT">Con NIT / CI (Para Factura)</option>
-                    <option value="WITHOUT_NIT">Sin NIT / Venta Mostrador (NIT 0)</option>
+                    <option value="ALL">Todos los documentos</option>
+                    <option value="WITH_NIT">Con NIT / CI (Factura)</option>
+                    <option value="WITHOUT_NIT">Sin NIT / Mostrador (0)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1.5">Programa de Lealtad:</label>
+                  <select
+                    value={filterLoyaltyTier}
+                    onChange={(e) => { setFilterLoyaltyTier(e.target.value); setCurrentPage(1); }}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-medium outline-none focus:border-amber-500/50"
+                  >
+                    <option value="ALL">Todos los niveles</option>
+                    <option value="Estandar">🥉 Bronce (0%)</option>
+                    <option value="Frecuente">🥈 Plata (3%)</option>
+                    <option value="Constructor">🥇 Oro (6%)</option>
+                    <option value="Mayorista">💎 Diamante (10%)</option>
                   </select>
                 </div>
 
                 <div className="flex items-end">
                   <button
-                    onClick={() => { setFilterDocType('ALL'); setFilterTipoContacto('ALL'); setSearchTerm(''); }}
+                    onClick={() => { setFilterDocType('ALL'); setFilterTipoContacto('ALL'); setFilterLoyaltyTier('ALL'); setSearchTerm(''); }}
                     className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition-colors"
                   >
                     Limpiar Filtros
@@ -961,15 +962,15 @@ function ClientView() {
           </div>
 
           {/* Tarjeta Principal: Todos sus Clientes */}
-          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-2xl space-y-5">
+          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-2xl space-y-5 min-w-0 w-full">
             <h2 className="text-lg font-bold text-white tracking-wide">
               Todos sus Clientes
             </h2>
 
             {/* Barra de Herramientas */}
-            <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
+            <div className="flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
               {/* Mostrar entradas */}
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 flex-shrink-0">
                 <span>Mostrar</span>
                 <select
                   value={itemsPerPage}
@@ -1062,7 +1063,7 @@ function ClientView() {
               </div>
 
               {/* Buscador */}
-              <div className="relative w-full sm:w-64">
+              <div className="relative w-full sm:w-64 flex-shrink-0">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1079,14 +1080,15 @@ function ClientView() {
             </div>
 
             {/* Tabla DataTable */}
-            <div className="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-950/40">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left text-slate-300">
+            <div className="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-950/40 w-full">
+              <div className="overflow-x-auto w-full custom-scrollbar">
+                <table className="w-full text-xs text-left text-slate-300 min-w-[1000px]">
                   <thead className="uppercase bg-slate-900/90 text-slate-400 border-b border-slate-800 text-[11px] whitespace-nowrap">
                     <tr>
                       {visibleColumns.accion && <th className="px-4 py-3.5 font-bold">Acción</th>}
                       {visibleColumns.codigoContacto && <th className="px-4 py-3.5 font-bold">ID Contacto</th>}
                       {visibleColumns.tipo && <th className="px-4 py-3.5 font-bold">Tipo</th>}
+                      {visibleColumns.programaLealtad && <th className="px-4 py-3.5 font-bold text-amber-400">👑 Nivel Lealtad</th>}
                       {visibleColumns.nombre && <th className="px-4 py-3.5 font-bold">Nombre / Empresa</th>}
                       {visibleColumns.razonSocial && <th className="px-4 py-3.5 font-bold">Razón Social Factura</th>}
                       {visibleColumns.nit && <th className="px-4 py-3.5 font-bold">NIT / CI</th>}
@@ -1101,6 +1103,10 @@ function ClientView() {
                       currentClients.map((clie) => {
                         const isActionOpen = openActionMenuId === clie.ClienteID;
                         const isCompany = clie.TipoContacto === 'Empresa' || !!clie.NombreEmpresa;
+                        const tierKey = clie.NivelLealtad || 'Estandar';
+                        const tier = LOYALTY_TIERS[tierKey] || LOYALTY_TIERS.Estandar;
+                        const discountVal = clie.DescuentoPorcentaje !== undefined ? parseFloat(clie.DescuentoPorcentaje) : tier.discount;
+
                         return (
                           <tr key={clie.ClienteID} className="hover:bg-slate-900/50 transition-colors whitespace-nowrap">
                             {visibleColumns.accion && (
@@ -1169,6 +1175,20 @@ function ClientView() {
                                 )}
                               </td>
                             )}
+                            {visibleColumns.programaLealtad && (
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold border ${tier.textClass}`}>
+                                    {tier.badge}
+                                  </span>
+                                  {discountVal > 0 && (
+                                    <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md">
+                                      {discountVal}% OFF
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                            )}
                             {visibleColumns.nombre && (
                               <td className="px-4 py-3 font-bold text-white uppercase">
                                 {clie.Nombre || clie.NombreEmpresa || 'SIN NOMBRE'}
@@ -1193,7 +1213,7 @@ function ClientView() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={10} className="py-12 text-center text-slate-500 font-semibold">
+                        <td colSpan={11} className="py-12 text-center text-slate-500 font-semibold">
                           No se encontraron clientes registrados con estos filtros.
                         </td>
                       </tr>
@@ -1368,6 +1388,24 @@ function ClientView() {
                 <div className="col-span-2">
                   <span className="text-slate-500 block font-semibold">Dirección:</span>
                   <span className="font-semibold text-slate-300">{selectedClient.Direccion || '—'}</span>
+                </div>
+
+                {/* Resumen de Lealtad */}
+                <div className="col-span-2 p-3 bg-slate-900/90 rounded-xl border border-amber-500/30 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wide block">
+                      👑 Programa de Lealtad:
+                    </span>
+                    <span className="text-xs font-black text-white">
+                      {LOYALTY_TIERS[selectedClient.NivelLealtad || 'Estandar']?.badge || '🥉 Bronce'} — {selectedClient.NivelLealtad || 'Estándar'}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-400 block font-semibold">Descuento Activo:</span>
+                    <span className="text-xs font-black text-emerald-400">
+                      {selectedClient.DescuentoPorcentaje ?? 0}% OFF
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

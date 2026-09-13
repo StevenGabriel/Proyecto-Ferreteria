@@ -324,15 +324,15 @@ function SupplierView() {
   };
 
   return (
-    <div className="bg-slate-950 text-white min-h-screen font-sans flex">
+    <div className="bg-slate-950 text-white min-h-screen font-sans flex w-full max-w-full overflow-x-hidden">
       {/* Barra Lateral */}
       <Sidebar activeItem="contactos-proveedores" />
 
       {/* Contenedor Principal */}
-      <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-slate-950 flex flex-col`}>
+      <main className={`flex-1 min-w-0 w-full transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-slate-950 flex flex-col overflow-x-hidden`}>
         <Topbar />
 
-        <div className="p-6 md:p-8 max-w-[1920px] w-full mx-auto space-y-6 flex-1">
+        <div className="p-6 md:p-8 max-w-[1920px] w-full mx-auto space-y-6 flex-1 min-w-0">
           {/* Encabezado Principal */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-baseline gap-3">
@@ -422,15 +422,15 @@ function SupplierView() {
           </div>
 
           {/* Tarjeta Principal: Todos sus Proveedores */}
-          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-2xl space-y-5">
+          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-2xl space-y-5 min-w-0 w-full">
             <h2 className="text-lg font-bold text-white tracking-wide">
               Todos sus Proveedores
             </h2>
 
             {/* Barra de Herramientas: Paginador, Botones de Exportación y Búsqueda */}
-            <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
+            <div className="flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
               {/* Mostrar entradas */}
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 flex-shrink-0">
                 <span>Mostrar</span>
                 <select
                   value={itemsPerPage}
@@ -526,7 +526,7 @@ function SupplierView() {
               </div>
 
               {/* Buscador Rápido */}
-              <div className="relative w-full sm:w-64">
+              <div className="relative w-full sm:w-64 flex-shrink-0">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -543,9 +543,9 @@ function SupplierView() {
             </div>
 
             {/* Tabla DataTable de Proveedores */}
-            <div className="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-950/40">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left text-slate-300">
+            <div className="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-950/40 w-full">
+              <div className="overflow-x-auto w-full custom-scrollbar">
+                <table className="w-full text-xs text-left text-slate-300 min-w-[1000px]">
                   <thead className="uppercase bg-slate-900/90 text-slate-400 border-b border-slate-800 text-[11px] whitespace-nowrap">
                     <tr>
                       {visibleColumns.accion && <th className="px-4 py-3.5 font-bold">Acción</th>}
