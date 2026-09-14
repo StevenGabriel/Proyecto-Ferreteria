@@ -1171,3 +1171,32 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
     * Se eliminaron los acordeones colapsables de *Más información* y *Agregar personas de contacto*.
     * Se limpiaron los estados booleanos innecesarios (`showMoreInfo` y `showContactPersons`).
     * El formulario ahora es directo, compacto y enfocado en: Datos de contacto/empresa, Datos de facturación electrónica y Programa de lealtad.
+
+### 129. Limpieza del Proyecto: Eliminación de Código y Tablas sin Uso
+* **Problema / Solicitud:**
+  * Se realizó una auditoría completa del sistema (backend, frontend y base de datos) para identificar código muerto, páginas huérfanas, funciones API sin uso y tablas de la BDD que no están en los alcances del proyecto.
+* **Hallazgos:**
+  * **4 tablas de la BDD sin modelo Sequelize ni uso alguno:** `Facturas`, `PedidosOnline`, `DetallePedidosOnline`, `Historial_Chatbot` — pendientes de eliminación manual en SQL Server.
+  * **1 página huérfana** (sin ruta en `App.jsx`): `SupplierView.jsx` — con su modelo, ruta backend y funciones API asociadas.
+  * **1 función API sin uso:** `getProductSalesHistory` — definida pero nunca importada.
+  * **Módulo de Proveedores completo** fuera de los alcances del proyecto.
+* **Solución Implementada:**
+  * **Archivos eliminados:**
+    * `backend/api/models/supplier.js` — Modelo Sequelize de proveedores.
+    * `backend/api/routes/suppliers.js` — Ruta CRUD de proveedores.
+    * `ferreteria/src/pages/Contacts/SupplierView.jsx` — Vista frontend de proveedores.
+  * **Archivos modificados:**
+    * En [**`app.js`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/app.js): Se eliminó el `require` y `app.use('/suppliers', ...)`.
+    * En [**`api.js`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/services/api.js): Se eliminaron `getSuppliers`, `createSupplier`, `updateSupplier`, `deleteSupplier` y `getProductSalesHistory`.
+  * **Pendiente (usuario):** Eliminar manualmente en SQL Server las tablas `Facturas`, `PedidosOnline`, `DetallePedidosOnline`, `Historial_Chatbot` y `Proveedores`.
+
+### 130. Implementación del Chatbot Asistente Virtual con Fine-Tuning de IA
+* **Objetivo Abordado:**
+  * *"Integrar un chatbot de asistencia virtual mediante finetuning de un modelo de lenguaje natural para resolver consultas frecuentes y elevar la experiencia de usuario."*
+* **Acciones Realizadas:**
+  * **1. Selección y Justificación del Modelo:** Se seleccionó `meta-llama/Llama-3.2-3B-Instruct` por su rendimiento en español, arquitectura Transformer y capacidad de cuantización a 4 bits (QLoRA) para GPU T4 gratuita de Google Colab.
+  * **2. Dataset Especializado:** Se creó el dataset de entrenamiento conversacional [**`dataset_ferreteria.jsonl`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/chatbot/dataset_ferreteria.jsonl) con preguntas y respuestas técnicas sobre materiales, herramientas, electricidad, plomería, pinturas, facturación y catálogo.
+  * **3. Cuaderno de Fine-Tuning:** Se construyó el cuaderno de Jupyter [**`entrenar_llama3_colab.ipynb`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/chatbot/entrenar_llama3_colab.ipynb) con Unsloth / Hugging Face PEFT y autenticación por token, ejecutado exitosamente.
+  * **4. Backend Express:** Se creó la ruta [**`chatbot.js`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/chatbot.js) y se registró el endpoint `POST /chatbot/ask` en [**`app.js`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/app.js).
+  * **5. Frontend React:** Se creó el componente [**`ChatbotWidget.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/chatbot/ChatbotWidget.jsx) integrado en [**`ClientCatalog.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx) con botón flotante animado, sugerencias rápidas, chat en tiempo real y formateo estilizado.
+  * **6. Documentación Técnica:** Se redactó el documento exhaustivo [**`Chatbot.md`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/Chatbot.md) detallando la justificación, hiperparámetros de QLoRA, estructura del dataset y arquitectura.

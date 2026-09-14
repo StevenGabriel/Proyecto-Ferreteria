@@ -35,7 +35,7 @@ export const uploadImage = async (imageBase64, filename) => {
   return response.data;
 };
 
-// API de Marcas, Proveedores y Ubicaciones
+// API de Marcas y Ubicaciones
 export const getBrands = async () => {
   const response = await api.get('/brands');
   return response.data;
@@ -95,26 +95,6 @@ export const updateUnit = async (id, unitData) => {
 
 export const deleteUnit = async (id) => {
   const response = await api.delete(`/units/${id}`);
-  return response.data;
-};
-
-export const getSuppliers = async () => {
-  const response = await api.get('/suppliers');
-  return response.data;
-};
-
-export const createSupplier = async (supplierData) => {
-  const response = await api.post('/suppliers', supplierData);
-  return response.data;
-};
-
-export const updateSupplier = async (id, supplierData) => {
-  const response = await api.put(`/suppliers/${id}`, supplierData);
-  return response.data;
-};
-
-export const deleteSupplier = async (id) => {
-  const response = await api.delete(`/suppliers/${id}`);
   return response.data;
 };
 
@@ -311,10 +291,6 @@ export const getSalesPerformanceReport = async (params = {}) => {
   return response.data;
 };
 
-export const getProductSalesHistory = async (productId, days = 60) => {
-  const response = await api.get(`/reports/product-sales-history/${productId}`, { params: { days } });
-  return response.data;
-};
 
 export const getDemandForecastReport = async (params = {}) => {
   const response = await api.get('/reports/demand-forecast', { params });
@@ -323,6 +299,12 @@ export const getDemandForecastReport = async (params = {}) => {
 
 export const getProductForecastDetail = async (productId, params = {}) => {
   const response = await api.get(`/reports/product-forecast/${productId}`, { params });
+  return response.data;
+};
+
+// API del Chatbot Asistente Virtual
+export const askChatbot = async (message, history = []) => {
+  const response = await api.post('/chatbot/ask', { message, history });
   return response.data;
 };
 

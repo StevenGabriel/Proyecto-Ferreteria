@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getProducts, getCategories, getBrands } from '../../services/api';
 import { LOYALTY_TIERS } from '../../constants/loyalty';
+import ChatbotWidget from '../../components/chatbot/ChatbotWidget';
 
 function ClientCatalog() {
   const [products, setProducts] = useState([]);
@@ -1116,6 +1117,9 @@ function ClientCatalog() {
           </div>
         </div>
       </footer>
+
+      {/* 9. WIDGET DE ASISTENTE VIRTUAL IA */}
+      <ChatbotWidget />
     </div>
   );
 }

@@ -1,0 +1,29 @@
+﻿# Instaladores y binarios pesados
+*.exe
+*.msi
+*.zip
+*.tar.gz
+*.rar
+OllamaSetup.exe
+ferreteria_llama3_lora.zip
+
+# Dependencias de Node.js
+node_modules/
+backend/node_modules/
+ferreteria/node_modules/
+
+# Archivos de compilación / Build
+dist/
+ferreteria/dist/
+build/
+
+# Entorno y logs
+.env
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
