@@ -324,16 +324,6 @@ function ClientCatalog() {
       
       {/* 1. BARRA SUPERIOR / HEADER PRINCIPAL */}
       <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40 shadow-xl">
-        {/* Franja superior de anuncio con información de beneficios */}
-        <div className="bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 text-white text-[11px] font-bold py-1.5 px-4 text-center tracking-wide flex justify-center items-center gap-2">
-          {currentUser && userDiscountPercent > 0 ? (
-            <span>⭐ ¡Hola {currentUser.Nombre || 'Cliente'}! Tu beneficio <strong className="underline decoration-amber-300 decoration-2">{userTierInfo.badge} ({userDiscountPercent}% OFF)</strong> se aplica automáticamente en tu carrito.</span>
-          ) : (
-            <span>⚡ ¡Precios especiales y cotizaciones inmediatas para obras y construcción! Acumula compras y obtén hasta 15% de descuento.</span>
-          )}
-          <span className="hidden md:inline bg-white/20 px-2 py-0.5 rounded-full text-[10px]">Cochabamba - Bolivia</span>
-        </div>
-
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Logo & Marca */}
           <div className="flex items-center justify-between w-full md:w-auto">
@@ -408,21 +398,8 @@ function ClientCatalog() {
             </button>
           </div>
 
-          {/* Acciones del Menú Superior: WhatsApp, Login y Carrito */}
+          {/* Acciones del Menú Superior: Login y Carrito */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Contacto WhatsApp */}
-            <a
-              href="https://wa.me/59167524675?text=Hola%20C%26C%20Ferreter%C3%ADa,%20quisiera%20consultar%20sobre%20sus%20productos."
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition-colors"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
-              </svg>
-              <span>WhatsApp</span>
-            </a>
-
             {/* Iniciar Sesión / Registrarse o Perfil de Usuario Logueado */}
             {currentUser ? (
               <div className="relative">
@@ -555,17 +532,6 @@ function ClientCatalog() {
             <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
               Explora nuestro catálogo en línea con existencias en tiempo real, precios de ferretería con factura y haz tus pedidos al instante.
             </p>
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800">
-                <span className="text-emerald-400">✓</span> Stock Inmediato
-              </div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800">
-                <span className="text-emerald-400">✓</span> Facturación 13% IVA
-              </div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800">
-                <span className="text-emerald-400">✓</span> Despacho Directo
-              </div>
-            </div>
           </div>
 
           {/* Ilustración / Emblema visual */}
@@ -1203,15 +1169,10 @@ function ClientCatalog() {
 
       {/* 9. FOOTER DEL PORTAL CLIENTE */}
       <footer className="bg-slate-900 border-t border-slate-800/80 py-8 mt-12 text-xs text-slate-500">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center sm:justify-start">
           <div className="flex items-center gap-2">
             <span className="font-bold text-white">C&C Ferretería</span>
             <span>— Casa y Construcción © {new Date().getFullYear()}</span>
-          </div>
-          <div className="flex items-center gap-6 text-slate-400 text-[11px]">
-            <span>📍 Cochabamba, Bolivia</span>
-            <span>⚡ Envíos a todo el país</span>
-            <span>🛡️ Compra 100% Segura</span>
           </div>
         </div>
       </footer>

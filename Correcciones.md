@@ -1263,3 +1263,16 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
 * **Verificación:**
   * Se probó la navegación como visitante sin sesión: al pulsar "+ Añadir", "+", o "Carro", se abre inmediatamente el modal sin permitir abrir el carrito.
   * Al iniciar sesión con una cuenta de cliente registrada, el bloqueo se desactiva por completo, permitiendo acumular productos, aplicar los descuentos del nivel de lealtad y formalizar el pedido con nombre y NIT vía WhatsApp.
+
+### 134. Limpieza Visual y Simplificación de la Landing Page (`ClientCatalog.jsx`)
+* **Solicitud:**
+  * Retirar de la página principal del catálogo los siguientes elementos visuales y textos promocionales:
+    1. La franja/banner superior de anuncio: *"⚡ ¡Precios especiales y cotizaciones inmediatas para obras y construcción! Acumula compras y obtén hasta 15% de descuento. Cochabamba - Bolivia"*.
+    2. Las insignias/chips de características debajo del título: *"✓ Stock Inmediato, ✓ Facturación 13% IVA, ✓ Despacho Directo"*.
+    3. El bloque de enlaces informativos del pie de página (*footer*): *"📍 Cochabamba, Bolivia | ⚡ Envíos a todo el país | 🛡️ Compra 100% Segura"*.
+* **Solución Implementada ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+  * Se eliminó el contenedor `div` de la barra superior de anuncio en el encabezado sticky.
+  * Se retiró el contenedor `div` con las tres insignias bajo la descripción en el Hero de la tienda.
+  * Se removió el bloque de enlaces del pie de página, dejando un footer limpio y centrado con el nombre y derechos reservados de *C&C Ferretería*.
+* **Verificación:**
+  * Compilación exitosa del frontend con Vite sin advertencias ni errores. La landing page ahora presenta un diseño más limpio, directo y enfocado en el catálogo de productos y búsqueda.
