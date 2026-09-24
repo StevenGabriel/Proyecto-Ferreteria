@@ -1200,3 +1200,66 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
   * **4. Backend Express:** Se creó la ruta [**`chatbot.js`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/chatbot.js) y se registró el endpoint `POST /chatbot/ask` en [**`app.js`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/app.js).
   * **5. Frontend React:** Se creó el componente [**`ChatbotWidget.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/chatbot/ChatbotWidget.jsx) integrado en [**`ClientCatalog.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx) con botón flotante animado, sugerencias rápidas, chat en tiempo real y formateo estilizado.
   * **6. Documentación Técnica:** Se redactó el documento exhaustivo [**`Chatbot.md`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/Chatbot.md) detallando la justificación, hiperparámetros de QLoRA, estructura del dataset y arquitectura.
+
+### 131. Corrección del Error en Registro de Ventas POS (`realClienteID is not defined` y Manejo de Errores)
+* **Problema Identificado:**
+  * Al intentar procesar una venta desde el punto de venta (POS) o mediante la API `POST /sales`, el sistema arrojaba un error 500 en el backend: `ReferenceError: realClienteID is not defined`.
+  * La transacción atómica ACID ejecutaba un rollback forzado (`await t.rollback()`), impidiendo que cualquier venta se registrara en la base de datos SQL Server (`dbo.Ventas`, `dbo.DetalleVentas`, `dbo.Lotes`, `dbo.MovimientosInventario`).
+  * En el frontend ([`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx)), la llamada a `createSale` capturaba el error con un simple `console.error`, sin alertar visualmente al usuario con una notificación toast ni abortar la simulación de ticket en memoria, lo que provocaba confusión sobre si la venta había sido guardada o no.
+* **Causa Raíz:**
+  * En [**`backend/api/routes/sales.js`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/sales.js), la variable que almacena el ID del cliente resuelto se declaró como `resolvedClienteID` (en la línea 164).
+  * Sin embargo, en la sección de actualización de compras acumuladas y fidelización (línea 262), se hacía referencia a `realClienteID`, una variable inexistente. Al evaluar `if (realClienteID)`, JavaScript lanzaba un error de referencia inmediato que interrumpía la transacción antes del `commit`.
+* **Solución Implementada:**
+  * **1. Corrección en Backend ([`backend/api/routes/sales.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/sales.js)):**
+    * Se sustituyó `realClienteID` por `resolvedClienteID` tanto en la condición de validación como en la búsqueda por clave primaria `Cliente.findByPk(resolvedClienteID, { transaction: t })`.
+    * Ahora, cuando el cliente es anónimo o general (`resolvedClienteID === null`), la condición se salta limpiamente; cuando es un cliente registrado, actualiza su acumulado de compras y categoría de lealtad sin errores.
+  * **2. Mejora de Manejo de Errores en Frontend ([`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx)):**
+    * En `handleCashClick`, dentro del bloque `catch (err)`, se implementó `showToast(errorMsg, 'error')` y un `return` prematuro para evitar que el POS limpie el carrito o emita tickets falsos en memoria si el servidor falla o la base de datos rechaza la transacción.
+* **Problema Adicional (Vaciado de Carrito en POS):**
+  * Al cobrar con el botón "Efectivo", la venta se guardaba en el backend pero los productos no se limpiaban del ticket en la pantalla.
+  * **Causa:** En [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx), justo después de guardar la venta, el objeto `newSale` intentaba acceder a la variable `discount` en lugar de `effectiveDiscount`, y luego llamaba a `setDiscount(0)` en vez de `setManualDiscount(null)`. Al ser variables no declaradas, el navegador lanzaba un `ReferenceError` que detenía la ejecución del código antes de llegar a `setCart([])` y a la apertura del modal.
+  * **Solución:** Se corrigieron todas las referencias a `discount` y `setDiscount` en [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx) (en el cobro, cotizaciones y resumen de factura), garantizando que `setCart([])` se ejecute inmediatamente, limpiando los productos del ticket y abriendo el modal de factura correctamente.
+
+### 132. Calibración del Chatbot Asistente Virtual: Eliminación de Alucinaciones y RAG Enriquecido por Categorías y Marcas
+* **Problema Identificado:**
+  * Al consultar al chatbot sobre pinturas u otras categorías en el catálogo virtual ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)), el asistente recomendaba marcas extranjeras que no se comercializan en la tienda (como *Farrow & Ball*, *DecoArt*, *Rust-Oleum*, *Sikkens*) y mencionaba precios irreales (Bs. 1200 - Bs. 1500 por litro).
+* **Causa Raíz:**
+  * **1. Búsqueda RAG limitada:** En [`backend/api/routes/chatbot.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/chatbot.js), la búsqueda SQL solo consultaba la columna `Nombre` de la tabla `Productos`. Dado que las pinturas del inventario se denominan técnicamente como `0,9L LATEX TRADICONAL...` o `0,9L SINTETICA BRILLO...`, ninguna contenía la palabra literal *"pintura"* en el nombre, haciendo que la búsqueda retornara cero productos (`productContext = ''`).
+  * **2. Alucinación del LLM:** Al quedarse sin contexto del inventario real, la red neuronal Llama 3.2 acudía a su memoria general de internet, sugiriendo marcas internacionales ajenas al mercado boliviano.
+  * **3. Falta de directivas de Cero Alucinación:** El System Prompt carecía de una prohibición estricta que impidiera mencionar marcas ajenas a la ferretería.
+* **Solución Implementada:**
+  * **1. Inclusión de Modelos Asociados ([`chatbot.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/chatbot.js)):**
+    * Se importaron los modelos Sequelize `Categoria` y `Marca`.
+  * **2. RAG Multicriterio y Expansión Semántica:**
+    * El endpoint `POST /chatbot/ask` ahora analiza los términos de la consulta e identifica la intención (pinturas, aerosoles, herramientas, seguridad, pegamentos, siliconas).
+    * La búsqueda recupera los productos asociados incluyendo su categoría y marca, inyectando de forma precisa los nombres oficiales y precios exactos en Bolivianos (Bs.).
+  * **3. System Prompt con Reglas Estrictas Anti-Alucinación:**
+    * Se definió explícitamente el catálogo de marcas oficiales autorizadas: **MONOPOL** (pinturas y aerosoles), **TRUPER** (herramientas y seguridad) y **AKFIX** (pegamentos y siliconas).
+    * Se estableció una regla prohibitiva taxativa: queda terminantemente prohibido nombrar o inventar marcas foráneas no vendidas en la ferretería.
+  * **4. Actualización de la Base de Conocimiento de Contingencia:**
+    * Se actualizaron los dominios de respuesta de respaldo (`EXTENDED_DOMAINS`) para que, ante eventuales caídas o tiempos de espera de Ollama, recomienden directamente las líneas oficiales de Monopol, Truper y Akfix.
+* **Verificación:**
+  * Se probó el endpoint en vivo con preguntas de pinturas, herramientas de electricista y siliconas para vidrios:
+    * Consulta de pinturas: Recomienda únicamente Látex Tradicional Monopol (Bs. 44), Pintura Sintética con Brillo Monopol (Bs. 61) y Aerosoles Monopol (Bs. 20 - Bs. 30).
+    * Consulta de herramientas: Recomienda Alicate 1000V Truper (Bs. 114) y Flexómetro 8m Truper (Bs. 81).
+    * Consulta de adhesivos: Recomienda Silicona Akfix 610 Montaje Transparente PU (Bs. 67).
+  * Cero mención de marcas inexistentes. Precios y disponibilidad 100% fieles a la base de datos SQL Server.
+
+### 133. Protección del Carrito de Compras en la Landing Page con Autenticación Obligatoria y Modal Estilizado
+* **Objetivo y Justificación:**
+  * Brindar un propósito y valor funcional directo al sistema de autenticación de clientes (`dbo.CuentasUsuario`, `dbo.Clientes`, `dbo.Personas`), conectando la tienda virtual ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)) con el sistema de fidelización y el Punto de Venta (POS).
+  * Evitar pedidos anónimos o desordenados, asegurando que cada cliente esté plenamente identificado para gozar de sus descuentos de lealtad (**Frecuente 3%**, **Constructor 6%**, **Mayorista 10%**) y facilitar la facturación computarizada oficial.
+* **Solución Implementada:**
+  * **1. Bloqueo de Acceso al Carrito para Usuarios No Autenticados ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+    * Se interceptó la acción de agregar productos (`addToCart`) tanto desde las tarjetas de producto en el grid como desde el modal de vista rápida (*Quick View*). Si `currentUser` es `null`, se previene la adición y se despliega el modal de autenticación.
+    * Se interceptaron los botones de apertura del carrito ("Carro") en el encabezado de escritorio y en la vista móvil para que no abran el cajón lateral si no hay sesión iniciada.
+  * **2. Modal Emergente de Autenticación Requerida:**
+    * Se diseñó un modal estilizado con efecto *backdrop-blur* oscuro y acentos en cyan/azul con ícono distintivo (`🛒🔒`).
+    * Explica al visitante los beneficios de registrarse: descuentos automáticos acumulables, facturación oficial con NIT/C.I. y despacho coordinado.
+    * Ofrece enlaces directos con un solo clic a:
+      * **Iniciar Sesión** (`/login`).
+      * **Crear Cuenta Gratuita** (`/registro`).
+      * Opción de cerrar para continuar curioseando el catálogo.
+* **Verificación:**
+  * Se probó la navegación como visitante sin sesión: al pulsar "+ Añadir", "+", o "Carro", se abre inmediatamente el modal sin permitir abrir el carrito.
+  * Al iniciar sesión con una cuenta de cliente registrada, el bloqueo se desactiva por completo, permitiendo acumular productos, aplicar los descuentos del nivel de lealtad y formalizar el pedido con nombre y NIT vía WhatsApp.

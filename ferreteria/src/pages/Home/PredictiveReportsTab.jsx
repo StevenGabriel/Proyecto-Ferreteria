@@ -572,9 +572,8 @@ function PredictiveReportsTab() {
               <button
                 type="button"
                 onClick={() => setModel('SES')}
-                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-1 ${
-                  model === 'SES' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-                }`}
+                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-1 ${model === 'SES' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                  }`}
                 title="Recomendado: se adapta rápidamente a los productos con mayor salida reciente"
               >
                 <div className="flex items-center gap-1">
@@ -588,9 +587,8 @@ function PredictiveReportsTab() {
               <button
                 type="button"
                 onClick={() => setModel('SMA')}
-                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-1 ${
-                  model === 'SMA' ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-                }`}
+                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-1 ${model === 'SMA' ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                  }`}
                 title="Para productos que se venden parejo todo el año"
               >
                 <div className="flex items-center gap-1">
@@ -604,9 +602,8 @@ function PredictiveReportsTab() {
               <button
                 type="button"
                 onClick={() => setModel('WMA')}
-                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-1 ${
-                  model === 'WMA' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-                }`}
+                className={`py-2 px-1.5 rounded-lg font-bold text-[11px] transition-all flex flex-col items-center justify-center gap-1 ${model === 'WMA' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                  }`}
                 title="Prioriza las ventas de la última semana"
               >
                 <div className="flex items-center gap-1">
@@ -627,19 +624,17 @@ function PredictiveReportsTab() {
               <button
                 type="button"
                 onClick={() => handleSensitivityChange('CONSERVATIVE')}
-                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
-                  sensitivityPreset === 'CONSERVATIVE' ? 'bg-slate-800 text-cyan-400 border border-cyan-500/40' : 'text-slate-400 hover:text-white'
-                }`}
+                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${sensitivityPreset === 'CONSERVATIVE' ? 'bg-slate-800 text-cyan-400 border border-cyan-500/40' : 'text-slate-400 hover:text-white'
+                  }`}
               >
                 <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-                <span>Cautelosa</span>
+                <span>Conservador</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleSensitivityChange('NORMAL')}
-                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
-                  sensitivityPreset === 'NORMAL' ? 'bg-slate-800 text-purple-400 border border-purple-500/40' : 'text-slate-400 hover:text-white'
-                }`}
+                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${sensitivityPreset === 'NORMAL' ? 'bg-slate-800 text-purple-400 border border-purple-500/40' : 'text-slate-400 hover:text-white'
+                  }`}
               >
                 <span className="w-2 h-2 rounded-full bg-purple-400"></span>
                 <span>Normal</span>
@@ -647,9 +642,8 @@ function PredictiveReportsTab() {
               <button
                 type="button"
                 onClick={() => handleSensitivityChange('FAST')}
-                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
-                  sensitivityPreset === 'FAST' ? 'bg-slate-800 text-amber-400 border border-amber-500/40' : 'text-slate-400 hover:text-white'
-                }`}
+                className={`py-2 px-1 rounded-lg font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${sensitivityPreset === 'FAST' ? 'bg-slate-800 text-amber-400 border border-amber-500/40' : 'text-slate-400 hover:text-white'
+                  }`}
               >
                 <span className="w-2 h-2 rounded-full bg-amber-400"></span>
                 <span>Reactiva</span>
@@ -712,9 +706,8 @@ function PredictiveReportsTab() {
         <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 hover:border-rose-500/30 transition-all space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Por Agotarse Pronto</span>
-            <span className={`px-2 py-0.5 rounded-lg font-bold text-xs flex items-center gap-1 ${
-              forecastSummary.productsAtRiskOfStockout > 0 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse' : 'bg-slate-800 text-slate-400'
-            }`}>
+            <span className={`px-2 py-0.5 rounded-lg font-bold text-xs flex items-center gap-1 ${forecastSummary.productsAtRiskOfStockout > 0 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse' : 'bg-slate-800 text-slate-400'
+              }`}>
               <svg className="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
@@ -1006,13 +999,12 @@ function PredictiveReportsTab() {
 
                       {/* 2. Importancia */}
                       <td className="py-3 px-3 text-center">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                          prod.abcClass === 'A'
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${prod.abcClass === 'A'
                             ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                             : prod.abcClass === 'B'
-                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                            : 'bg-slate-800 text-slate-400 border border-slate-700'
-                        }`}>
+                              ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                              : 'bg-slate-800 text-slate-400 border border-slate-700'
+                          }`}>
                           {prod.abcClass === 'A' ? 'Clase A' : prod.abcClass === 'B' ? 'Clase B' : 'Clase C'}
                         </span>
                       </td>
@@ -1037,32 +1029,30 @@ function PredictiveReportsTab() {
 
                       {/* 6. Días para Agotarse */}
                       <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase border ${
-                          isStockout
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase border ${isStockout
                             ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
                             : isCritical
-                            ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-                            : isHigh
-                            ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                            : isMedium
-                            ? 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30'
-                            : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${
-                            isStockout || isCritical
+                              ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                              : isHigh
+                                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                                : isMedium
+                                  ? 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30'
+                                  : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                          }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isStockout || isCritical
                               ? 'bg-rose-400'
                               : isHigh
-                              ? 'bg-amber-400'
-                              : isMedium
-                              ? 'bg-yellow-400'
-                              : 'bg-emerald-400'
-                          }`}></span>
+                                ? 'bg-amber-400'
+                                : isMedium
+                                  ? 'bg-yellow-400'
+                                  : 'bg-emerald-400'
+                            }`}></span>
                           <span>
                             {isStockout
                               ? 'Agotado'
                               : isCritical || isHigh || isMedium
-                              ? `${prod.daysUntilStockout} días`
-                              : 'Seguro (>30d)'}
+                                ? `${prod.daysUntilStockout} días`
+                                : 'Seguro (>30d)'}
                           </span>
                         </span>
                       </td>

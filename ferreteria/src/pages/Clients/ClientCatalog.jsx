@@ -33,6 +33,9 @@ function ClientCatalog() {
   // Modal de Vista Rápida (Quick View)
   const [quickViewProduct, setQuickViewProduct] = useState(null);
 
+  // Modal de Requerimiento de Inicio de Sesión para Carrito
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   // Sesión de Usuario y Menú Desplegable
   const [currentUser, setCurrentUser] = useState(() => {
     try {
@@ -133,6 +136,12 @@ function ClientCatalog() {
 
   // Agregar producto al carrito
   const addToCart = (product, customQty = null) => {
+    // Si no ha iniciado sesión, bloquear acción y abrir modal de login/registro
+    if (!currentUser) {
+      setShowAuthModal(true);
+      return;
+    }
+
     const qtyToAdd = customQty !== null ? customQty : getItemQuantity(product.ProductoID);
     const availableStock = product.Stock || 0;
 
@@ -344,7 +353,13 @@ function ClientCatalog() {
 
             {/* Botón Carrito en Mobile */}
             <button
-              onClick={() => setIsCartOpen(true)}
+              onClick={() => {
+                if (!currentUser) {
+                  setShowAuthModal(true);
+                  return;
+                }
+                setIsCartOpen(true);
+              }}
               className="md:hidden relative p-2 bg-slate-800 text-cyan-400 rounded-xl border border-slate-700 flex items-center gap-1.5"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -494,8 +509,14 @@ function ClientCatalog() {
 
             {/* Botón Carrito de Compras */}
             <button
-              onClick={() => setIsCartOpen(true)}
-              className="flex items-center gap-2.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold rounded-xl shadow-lg shadow-cyan-500/20 text-xs transition-all"
+              onClick={() => {
+                if (!currentUser) {
+                  setShowAuthModal(true);
+                  return;
+                }
+                setIsCartOpen(true);
+              }}
+              className="flex items-center gap-2.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold rounded-xl shadow-lg shadow-cyan-500/20 text-xs transition-all active:scale-95"
             >
               <div className="relative">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -1067,6 +1088,11 @@ function ClientCatalog() {
                 <button
                   disabled={(quickViewProduct.Stock || 0) <= 0}
                   onClick={() => {
+                    if (!currentUser) {
+                      setQuickViewProduct(null);
+                      setShowAuthModal(true);
+                      return;
+                    }
                     addToCart(quickViewProduct, 1);
                     setQuickViewProduct(null);
                   }}
@@ -1103,7 +1129,79 @@ function ClientCatalog() {
         </div>
       )}
 
-      {/* 8. FOOTER DEL PORTAL CLIENTE */}
+      {/* 8. MODAL DE AUTENTICACIÓN REQUERIDA PARA USAR EL CARRITO */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl relative text-center">
+            {/* Botón Cerrar */}
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white text-sm font-bold w-8 h-8 rounded-full bg-slate-800/60 hover:bg-slate-800 flex items-center justify-center transition-colors"
+            >
+              ✕
+            </button>
+
+            {/* Ícono de Candado y Carrito */}
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center text-3xl shadow-lg shadow-cyan-500/10">
+              🛒🔒
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-white tracking-tight">
+                Inicia Sesión para Comprar
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
+                Para armar tu carrito de compras, acceder a <span className="text-amber-400 font-bold">descuentos automáticos de fidelización</span> y coordinar tus pedidos en C&C Ferretería, debes ingresar con tu cuenta de cliente.
+              </p>
+            </div>
+
+            {/* Beneficios rápidos */}
+            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-3.5 text-left space-y-2 text-xs">
+              <div className="flex items-center gap-2.5 text-slate-300">
+                <span className="text-emerald-400 font-black">✓</span>
+                <span>Descuentos de cliente frecuente (hasta 10% OFF)</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-slate-300">
+                <span className="text-emerald-400 font-black">✓</span>
+                <span>Facturación computarizada oficial con tu NIT / C.I.</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-slate-300">
+                <span className="text-emerald-400 font-black">✓</span>
+                <span>Coordinación de despacho y entrega por WhatsApp</span>
+              </div>
+            </div>
+
+            {/* Botones de Acción */}
+            <div className="space-y-2.5">
+              <Link
+                to="/login"
+                className="w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold rounded-xl shadow-lg shadow-cyan-500/25 text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Iniciar Sesión</span>
+              </Link>
+
+              <Link
+                to="/registro"
+                className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700/80 text-cyan-400 border border-cyan-500/30 font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              >
+                <span>Crear Cuenta Gratuita</span>
+              </Link>
+            </div>
+
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="text-[11px] text-slate-500 hover:text-slate-400 font-medium transition-colors"
+            >
+              Continuar explorando el catálogo
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 9. FOOTER DEL PORTAL CLIENTE */}
       <footer className="bg-slate-900 border-t border-slate-800/80 py-8 mt-12 text-xs text-slate-500">
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">

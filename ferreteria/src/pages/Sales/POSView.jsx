@@ -930,6 +930,9 @@ function POSView() {
       }).catch(() => {});
     } catch (err) {
       console.error('Error procesando venta en base de datos:', err);
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || err.message || 'Error al procesar la venta en la base de datos';
+      showToast(errorMsg, 'error');
+      return;
     }
 
     // Registrar la venta en memoria para recibo y vista
@@ -959,7 +962,7 @@ function POSView() {
       detalles: formattedDetalles,
       totalItemsCount: totalQuantity,
       subtotal: subtotalProducts,
-      discount,
+      discount: effectiveDiscount,
       total: finalTotal,
       baseCreditoFiscal: finalTotal,
       creditoFiscal: finalTotal * 0.13,
@@ -985,7 +988,7 @@ function POSView() {
 
     // Limpiar ticket activo y salir del modo edición
     setCart([]);
-    setDiscount(0);
+    setManualDiscount(null);
     setEditingSaleId(null);
 
     // Abrir automáticamente el modal de "Datos para Factura"
@@ -1280,7 +1283,7 @@ function POSView() {
       nit: clientNit,
       empleado: currentUser?.Nombre || 'Cajero / Vendedor',
       total: finalTotal,
-      discount: discount,
+      discount: effectiveDiscount,
       subtotal: subtotalProducts,
       items: totalQuantity,
       time: timeStr,
@@ -1307,7 +1310,7 @@ function POSView() {
 
     // Vaciar el carrito tras emitir la cotización
     setCart([]);
-    setDiscount(0);
+    setManualDiscount(null);
     setEditingSaleId(null);
     showToast(`Cotización #COT-${quoteNum} guardada exitosamente (sin descontar stock)`, 'success');
   };
@@ -1353,7 +1356,7 @@ function POSView() {
     });
 
     setCart(loadedItems);
-    setDiscount(parseFloat(q.discount || 0));
+    setManualDiscount(parseFloat(q.discount || 0));
     setEditingSaleId(null); // Es cotización nueva a cobrar o modificar
     setShowRecentSalesModal(false);
     showToast(`Cotización #${q.quoteID || q.id} cargada al ticket. Puede cobrar con Efectivo o modificarla.`, 'info');
@@ -2302,7 +2305,7 @@ function POSView() {
             {(() => {
               const modalSaleTotal = lastSaleReceipt?.total ?? finalTotal;
               const modalSaleSubtotal = lastSaleReceipt?.subtotal ?? subtotalProducts;
-              const modalSaleDiscount = lastSaleReceipt?.discount ?? discount;
+              const modalSaleDiscount = lastSaleReceipt?.discount ?? effectiveDiscount;
 
               return (
                 <div className="space-y-2 pt-2 border-t border-slate-800">
