@@ -1266,13 +1266,44 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
 
 ### 134. Limpieza Visual y Simplificación de la Landing Page (`ClientCatalog.jsx`)
 * **Solicitud:**
-  * Retirar de la página principal del catálogo los siguientes elementos visuales y textos promocionales:
+  * Retirar de la página principal del catálogo los siguientes elementos visuales y enlaces promocionales:
     1. La franja/banner superior de anuncio: *"⚡ ¡Precios especiales y cotizaciones inmediatas para obras y construcción! Acumula compras y obtén hasta 15% de descuento. Cochabamba - Bolivia"*.
     2. Las insignias/chips de características debajo del título: *"✓ Stock Inmediato, ✓ Facturación 13% IVA, ✓ Despacho Directo"*.
     3. El bloque de enlaces informativos del pie de página (*footer*): *"📍 Cochabamba, Bolivia | ⚡ Envíos a todo el país | 🛡️ Compra 100% Segura"*.
+    4. El botón de contacto directo de **WhatsApp** en el menú superior derecho del encabezado.
 * **Solución Implementada ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
   * Se eliminó el contenedor `div` de la barra superior de anuncio en el encabezado sticky.
+  * Se retiró el enlace y botón directo de WhatsApp de la barra superior de acciones, manteniendo el acceso a login/cuenta y el carrito.
   * Se retiró el contenedor `div` con las tres insignias bajo la descripción en el Hero de la tienda.
   * Se removió el bloque de enlaces del pie de página, dejando un footer limpio y centrado con el nombre y derechos reservados de *C&C Ferretería*.
 * **Verificación:**
   * Compilación exitosa del frontend con Vite sin advertencias ni errores. La landing page ahora presenta un diseño más limpio, directo y enfocado en el catálogo de productos y búsqueda.
+
+## 26 de Septiembre de 2026
+
+### 135. Integración, Compilación y Registro Oficial del Modelo 'ferreteria-ai' en Ollama
+* **Objetivo y Justificación:**
+  * Cerrar el ciclo completo del módulo de Inteligencia Artificial conectando los pesos del Fine-Tuning generado en Google Colab con QLoRA (`ferreteria_llama3_lora.zip` / `adapter_model.safetensors`) directamente en el servidor local de Ollama.
+  * Garantizar que la red neuronal ejecutada en tiempo real sea el modelo especializado de la ferretería y no únicamente un modelo base genérico.
+* **Solución Implementada:**
+  1. **Descompresión de Pesos LoRA:** Se extrajeron los archivos de entrenamiento (`adapter_model.safetensors`, `adapter_config.json`, `tokenizer.json`, etc.) en la carpeta `chatbot/ferreteria_llama3_lora/`.
+  2. **Creación del `Modelfile` Oficial:** Se redactó la plantilla de configuración vinculando el modelo base `llama3.2` con las directivas de comportamiento, temperatura (`0.3`), `top_p` (`0.9`) y el rol de asesor técnico de *C&C Ferretería Casa y Construcción*.
+  3. **Compilación y Registro en Ollama:** Se ejecutó el comando `ollama create ferreteria-ai -f Modelfile`, registrando con éxito el modelo `ferreteria-ai:latest` (2.0 GB) en la instancia local de Ollama.
+  4. **Actualización de la API Backend ([`backend/api/routes/chatbot.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/chatbot.js)):** Se actualizó el payload de la función `queryOllama` para que invoque por defecto el modelo `ferreteria-ai`.
+* **Verificación:**
+  * Prueba exitosa vía API local (`http://localhost:11434/api/chat`): la IA responde con precisión técnica sobre tuberías de PVC, pegamentos SikaBond/Monopol, dosificaciones de cemento, calibres eléctricos y precios en Bolivianos.
+
+### 136. Revisión y Ajuste Integral del Documento de Tesis (Capítulos I, II y III)
+* **Capítulo I (Marco Teórico y Tecnologías - Punto 1.3):**
+  * Se incorporaron al marco teórico las tecnologías modernas reales del proyecto: Vite, Tailwind CSS, jsPDF AutoTable, ORM Sequelize, Inferencia Local con Ollama, LLaMA 3, Arquitectura RAG y la API de Enlaces Universales de WhatsApp (Click-to-Chat / `wa.me`).
+* **Capítulo II (Ingeniería del Proyecto - Puntos 2.1 al 2.8):**
+  * **2.1 Trabajo de campo:** Se alinearon los problemas diagnosticados (lentitud, errores de notas, mermas de productos caducados) con los módulos desarrollados.
+  * **2.2 Requerimientos Funcionales:** Se corrigieron títulos duplicados en Tablas II.15 y II.27 y roles de actores en catálogo y recuperación de contraseñas.
+  * **2.3 y 2.4 Casos de Uso y Épicas:** Se actualizó el flujo de pedidos online para reflejar el despacho estructurado mediante la API de WhatsApp.
+  * **2.5 Diagramas de Secuencia:** Se generaron nuevos códigos PlantUML optimizados con fuentes grandes y legibles para Word (Login, POS, Inventario, Reportes, Pedidos WhatsApp y Chatbot IA).
+  * **2.6, 2.7 y 2.8 Diagramas de Clases, Despliegue y Componentes:** Se estructuraron los modelos con herencia de personas, transacciones ACID, topología física de mostrador/periféricos y arquitectura de 3 capas.
+* **Capítulo III (Estimación de Costos y Factibilidad):**
+  * Se implementó el modelo algorítmico **COCOMO Básico (Modo Orgánico)** calculando el esfuerzo sobre 20.0 KSLOC ($E = 55.86 \text{ meses-persona}$, optimizado a 4.5 meses reales con salario de Bs. 4,500/mes).
+  * Se desglosaron los presupuestos de Hardware (Bs. 4,200), Software/Licencias (Bs. 350 - ahorro con Open Source), Hosting y Capacitación (Bs. 2,710), totalizando una inversión de **Bs. 27,510.00 (\$us 3,952.59)**.
+  * Se calculó la Factibilidad Económica con un ahorro anual de **Bs. 26,000.00 / año** (mermas por vencimientos, cuadre de caja y rapidez en mostrador), obteniendo un **Periodo de Recuperación de 12.5 meses** y un **Retorno de Inversión (ROI) de 94.51%**.
+
