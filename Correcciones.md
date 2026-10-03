@@ -1302,8 +1302,20 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
   * **2.3 y 2.4 Casos de Uso y Épicas:** Se actualizó el flujo de pedidos online para reflejar el despacho estructurado mediante la API de WhatsApp.
   * **2.5 Diagramas de Secuencia:** Se generaron nuevos códigos PlantUML optimizados con fuentes grandes y legibles para Word (Login, POS, Inventario, Reportes, Pedidos WhatsApp y Chatbot IA).
   * **2.6, 2.7 y 2.8 Diagramas de Clases, Despliegue y Componentes:** Se estructuraron los modelos con herencia de personas, transacciones ACID, topología física de mostrador/periféricos y arquitectura de 3 capas.
-* **Capítulo III (Estimación de Costos y Factibilidad):**
+* **Capítulo IV (Estimación de Costos y Factibilidad):**
   * Se implementó el modelo algorítmico **COCOMO Básico (Modo Orgánico)** calculando el esfuerzo sobre 20.0 KSLOC ($E = 55.86 \text{ meses-persona}$, optimizado a 4.5 meses reales con salario de Bs. 4,500/mes).
   * Se desglosaron los presupuestos de Hardware (Bs. 4,200), Software/Licencias (Bs. 350 - ahorro con Open Source), Hosting y Capacitación (Bs. 2,710), totalizando una inversión de **Bs. 27,510.00 (\$us 3,952.59)**.
   * Se calculó la Factibilidad Económica con un ahorro anual de **Bs. 26,000.00 / año** (mermas por vencimientos, cuadre de caja y rapidez en mostrador), obteniendo un **Periodo de Recuperación de 12.5 meses** y un **Retorno de Inversión (ROI) de 94.51%**.
+
+### 137. Redacción del Capítulo IV con el Enfoque de Estimación Pragmática de Costos (Estándar Univalle)
+* **Objetivo:**
+  * Adoptar la estructura pragmática y directa de estimación de costos exigida en la Universidad del Valle (referenciada en `Ejemplo 2.pdf`), facilitando la explicación y defensa ante el tribunal de grado.
+* **Estructura Desarrollada:**
+  * **4.1. Introducción:** Planteamiento del modelo pragmático desglosado en personal, viajes, consumibles, infraestructura y resumen consolidado.
+  * **4.2. Costo del Personal:** Desglose por fases de ingeniería de software (Análisis/Diseño, Implementación Full-Stack, Afinación de IA/RAG, Pruebas y Documentación) con roles, meses y salarios base del mercado laboral boliviano.
+  * **4.3. Costos de Viajes / Viáticos:** Transporte para levantamiento de requerimientos en el establecimiento comercial y revisiones académicas.
+  * **4.4. Costos de Consumibles:** Papelería, encuestas impresas, anillados, borradores y empastados de grado.
+  * **4.5. Costos de Infraestructura y Operación:** Equipamiento de hardware para inferencia local de IA (Ollama), base de datos y alojamiento.
+  * **4.6. Costo Total y Viabilidad Financiera:** Consolidado en Bolivianos (BOB) y Dólares (\$us), complementado con el análisis de ahorro operativo anual y recuperación de la inversión (ROI).
+
 
