@@ -1,0 +1,907 @@
+CAPÍTULO II
+INGENIERÍA DEL PROYECTO
+INGENIERÍA DEL PROYECTO
+En esta parte del documento se presenta la planificación, análisis y diseño de las actividades realizadas para desarrollar el sistema web de ventas y control de inventarios de la Ferretería Casa y Construcción.
+MARCO DE TRABAJO ESTRUCTURADO
+TRABAJO DE CAMPO
+Siguiendo la metodología explicada anteriormente, el trabajo de campo se realizó directamente en la Ferretería Casa y Construcción utilizando tres formas de recolección de información: entrevistas, observación en el lugar y revisión de documentos. Esto permitió conocer cómo funciona el negocio día a día, qué problemas tienen con las ventas y el inventario, y qué necesita realmente el personal para que el nuevo sistema les sea útil.
+Resultados de la Entrevista Semiestructurada
+Se realizó una serie de preguntas al personal que trabaja a diario en la ferretería (el administrador y los encargados de ventas y atención en mostrador). A partir de sus respuestas, se identificaron los siguientes puntos principales:
+Proceso de Ventas y Facturación:
+Demoras al atender a los clientes: Los encargados de ventas explicaron que registrar las compras a mano y hacer recibos en papel hace que la atención sea lenta, lo que genera filas de clientes en los horarios más concurridos.
+Dificultad para encontrar precios actualizados: Es muy complicado y tardado saber el precio exacto de varios productos, en especial los que no tienen código de barras (como clavos sueltos, tornillos pequeños, cañerías o codos), obligando al vendedor a buscar en libretas o tener que memorizarlos.
+Necesidad de comprobantes automáticos: Tanto el dueño como los vendedores indicaron que el sistema debe generar facturas o notas de venta de forma automática al terminar la compra, para ahorrar tiempo y entregar un respaldo claro al cliente.
+Control de Inventarios y Almacén:
+Diferencias de productos en los estantes: El personal confirmó que muy seguido pasa que en los registros figura que hay un producto, pero al buscarlo en el estante ya no queda nada, haciendo perder ventas al momento.
+Falta de alertas de poco stock: Vieron muy necesario que el sistema avise automáticamente cuando queden pocas unidades de un producto, para no quedarse sin mercadería de la que más se vende.
+Productos que se vencen sin darse cuenta: Revisar a simple vista las fechas de vencimiento de productos como pegamentos, siliconas o pinturas no funciona bien y genera errores, causando pérdidas de dinero cuando los productos caducan y ya no se pueden vender.
+Diagnóstico de la Gestión Financiera y Toma de Decisiones:
+Problemas para cuadrar la caja al final del día: La administración comentó que al cerrar el negocio siempre hay retrasos y dificultades para hacer coincidir el dinero físico con las ventas anotadas, debido a equivocaciones al sumar o ventas que no se llegaron a anotar.
+Falta de reportes con gráficos: No cuentan con informes que muestren qué productos se venden más o en qué épocas del año, lo que dificulta saber con certeza qué mercadería conviene volver a comprar.
+Resultados de la observación directa
+Al observar directamente cómo se trabaja en el mostrador y en el almacén durante días normales y días con mucha gente, se notó lo siguiente:
+Clientes esperando en el mostrador: En las horas con más clientes, las personas tienen que esperar bastante porque el vendedor tiene que hacer todo manual: ver si hay el producto, buscar el precio en listas de papel y llenar la nota a mano.
+Salidas constantes al depósito: Al no tener una pantalla donde ver el stock al instante, el vendedor tiene que dejar el mostrador e ir hasta el almacén del fondo solo para verificar si queda mercadería.
+Productos sin etiquetas claras: Muchos materiales de construcción no tienen código de barras, por lo que el sistema necesita permitir tanto el escaneo con lector de barras como una búsqueda rápida por nombre o categoría.
+Adicionalmente, se identificó que los clientes llaman con frecuencia o acuden solo para consultar disponibilidad de productos y precios fuera de horario, surgiendo la necesidad de un catálogo web de acceso público y un asistente virtual que responda dudas frecuentes de manera automática.
+Resultados de la revisión documental
+Al revisar las notas de venta, cuadernos de notas y registros que se usan actualmente, se encontró lo siguiente:
+Notas de venta manuales con errores: Hay muchas notas con tachones, correcciones o letras poco claras, lo que complica saber el monto real de las ventas del día.
+Cuadernos de inventario desactualizados: Las entradas y salidas de mercadería no siempre se anotan al instante en las libretas, por lo que casi nunca coincide lo que dice el papel con lo que realmente hay en la tienda.
+Información desordenada: Las facturas de los proveedores, las ventas diarias y los datos de clientes están guardados en diferentes archivadores y carpetas de papel, lo que hace imposible sacar estadísticas o ver historiales de ventas rápido.
+REQUERIMIENTOS FUNCIONALES Y NO FUNCIONALES
+La especificación de requerimientos constituye la base fundamental para el diseño, desarrollo y validación de la arquitectura del software. Para la especificación de requisitos de software, estos se dividen en requerimientos funcionales, que definen el comportamiento operativo del sistema, y requerimientos no funcionales, que establecen los criterios de calidad y restricciones técnicas que garantizan un desempeño óptimo en el entorno operativo.
+REQUERIMIENTOS FUNCIONALES
+Los requerimientos funcionales describen de manera detallada las funciones, servicios, transformaciones de datos y comportamientos específicos que el sistema web debe ejecutar en respuesta a las entradas e interacciones de los distintos actores (Administrador, Empleado y Cliente). Estos requerimientos capturan la lógica de negocio de la Ferretería Casa y Construcción, estructurándose en módulos operativos para garantizar la trazabilidad de los procesos de venta, control de inventarios, analítica predictiva de demanda, asistencia virtual inteligente y seguridad de usuarios.
+A continuación, se presentan las tablas de especificación de cada requerimiento funcional organizadas por módulos, detallando sus actores involucrados, entradas requeridas, medios de interacción y resultados esperados (flujos de éxito y excepciones):
+Módulo de ventas y caja
+Tabla 2.1 Requerimientos (Registro de transacciones de venta)
+ID: RF-VTA-01
+Actores: Empleado
+Nombre
+Registro de transacciones de venta.
+Descripción
+Permitirá la captura y registro de transacciones de venta en el mostrador en tiempo real, con opciones para agregar, modificar cantidades, aplicar precios y remover productos del carrito.
+Medio
+Punto de Venta (POS) / Interfaz Web.
+Entrada
+Selección o escaneo de productos, cantidades solicitadas, método de pago y monto recibido.
+Salida
+Éxito: La venta se procesa exitosamente, se descuenta el stock automáticamente en la base de datos, se registra el ingreso en caja y se genera el número de transacción.
+Fallo: Mostrar mensaje de alerta indicando que no hay stock suficiente del producto, faltan datos requeridos o existió un error de comunicación con el servidor.
+Fuente: Elaboración propia (2026)
+Tabla 2.2 Requerimientos (Búsqueda de productos y lectura de código de barras)
+ID: RF-VTA-02
+Actores: Empleado
+Nombre
+Búsqueda de productos y lectura de código de barras.
+Descripción
+Soporta la lectura rápida mediante escáner físico de código de barras y búsqueda manual por coincidencia de nombre, categoría o código interno para productos a granel.
+Medio
+Lector de código de barras y barra de búsqueda en la interfaz POS.
+Entrada
+Código de barras escaneado o texto ingresado (nombre, marca o código del artículo).
+Salida
+Éxito: El sistema localiza el producto de forma inmediata, muestra su precio y stock disponible, y lo añade automáticamente al carrito de venta.
+Fallo: Indicar al empleado mediante una alerta visual que el código o nombre introducido no existe en el catálogo activo.
+Fuente: Elaboración propia (2026)
+Tabla 2.3 Requerimientos (Emisión de comprobantes de venta)
+ID: RF-VTA-03
+Actores: Empleado
+Nombre
+Emisión de comprobantes y notas de venta.
+Descripción
+Permite generar e imprimir comprobantes de venta, notas de entrega y facturas proforma con el detalle completo de la transacción y cálculo de totales.
+Medio
+Módulo de impresión / Generador de documentos PDF.
+Entrada
+Confirmación de la transacción de venta finalizada y selección del formato de comprobante.
+Salida
+Éxito: Se genera el documento digital formateado listo para ser impreso o descargado con el desglose de productos, precios, fecha y datos del negocio.
+Fallo: Notificar al usuario que ocurrió un error al renderizar el documento digital y permitir reintentar la descarga.
+Fuente: Elaboración propia (2026)
+Tabla 2.4 Requerimientos (Control y cierre de flujo de caja diario)
+ID: RF-VTA-04
+Actores: Empleado y Administrador
+Nombre
+Control y cierre de flujo de caja diario.
+Descripción
+Permite la apertura de caja inicial, el registro automático de ingresos por ventas, registro de egresos menores y el arqueo/cierre de caja diario.
+Medio
+Panel de control de caja / Interfaz Web.
+Entrada
+Monto de apertura de caja, transacciones de venta registradas y confirmación de arqueo de cierre.
+Salida
+Éxito: El balance de caja se actualiza en tiempo real reflejando el saldo acumulado en efectivo/digital y genera el resumen de cierre del turno.
+Fallo: Mostrar mensaje de error si el monto de cierre presenta discrepancias no justificadas o si la caja del día no fue aperturada previamente.
+Fuente: Elaboración propia (2026)
+Tabla 2.5 Requerimientos (Generación de cotizaciones personalizadas)
+ID: RF-VTA-05
+Actores: Empleado y Administrador
+Nombre
+Generación de cotizaciones personalizadas.
+Descripción
+Permite elaborar presupuestos detallados para clientes con lista de materiales requeridos, precios vigentes y opción de conversión directa a venta.
+Medio
+Formulario de cotización / Exportador PDF.
+Entrada
+Datos del cliente, lista de productos seleccionados, cantidades y tiempo de validez de la cotización.
+Salida
+Éxito: Se genera la cotización formal con número de folio, lista de materiales y monto total presupuestado, lista para imprimir o enviar al cliente.
+Fallo: Alertar que faltan datos obligatorios del cliente o que los artículos seleccionados no cuentan con precio registrado.
+Fuente: Elaboración propia (2026)
+Tabla 2.6 Requerimientos (Catálogo web y pedidos en línea)
+ID: RF-VTA-06
+Actores: Cliente y Administrador / Empleado
+Nombre
+Catálogo web, pedidos en línea y pasarela de pago QR.
+Descripción
+Permite a los clientes explorar el catálogo interactivo de productos con stock en tiempo real, agregar artículos al carrito de compras, aplicar descuentos automáticos según su nivel de fidelización y formalizar pedidos en línea mediante el pago electrónico con código QR dinámico (Yape Bolivia / Pago Simple), reservando el inventario de almacén de forma inmediata.
+Medio
+Tabla de visualización / Interfaz Web.
+Entrada
+Carga de la vista de inventario o término de búsqueda de un producto.
+Salida
+Éxito: El sistema compila la lista de productos seleccionados, valida el stock disponible, calcula el total con descuentos por fidelización y redirige al cliente con el mensaje estructurado de compra listo para ser enviado por WhatsApp al personal de mostrador.
+Fallo: Mostrar un mensaje indicando que no se pudo establecer conexión con la base de datos para cargar el inventario.
+Fuente: Elaboración propia (2026)
+Tabla 2.7 Requerimientos (Políticas de descuentos e incentivos)
+ID: RF-VTA-07
+Actores: Empleado, Administrador y Cliente
+Nombre
+Programa de fidelización y políticas de descuentos por niveles de lealtad.
+Descripción
+Permite aplicar beneficios económicos automáticos a los clientes en función de su histórico de compras acumuladas, estructurado en cuatro niveles de lealtad: Bronce (0%), Plata (3%), Oro (6%) y Diamante (10%), aplicables tanto en compras por mostrador como en pedidos online.
+Medio
+Catálogo Web / Punto de Venta (POS) / Módulo de Clientes.
+Entrada
+Identificación del cliente registrado (vía sesión web o búsqueda por NIT/CI en mostrador).
+Salida
+Éxito: El sistema reconoce el nivel del comprador, muestra su insignia y recalcula de forma transparente el descuento porcentual sobre el subtotal de la venta en el comprobante fiscal o recibo.
+Fallo: Aplicar tarifa estándar en caso de tratarse de un cliente ocasional no registrado.
+Fuente: Elaboración propia (2026)
+Módulo de Inventario y Almacén
+Tabla 2.8 Requerimientos (Comprobación y consulta de stock en tiempo real.)
+ID: RF-INV-01
+Actores: Empleado y Administrador
+Nombre
+Alertas de escasez.
+Descripción
+Permitirá la visualización y consulta inmediata de las existencias disponibles de cada producto en tienda y depósitos, actualizadas automáticamente tras cada venta o reposición.
+Medio
+Tabla de visualización / Interfaz Web de Inventario.
+Entrada
+Carga del módulo de inventario o búsqueda por nombre, categoría o código de producto.
+Salida
+Éxito: Visualizar la lista de productos con la cantidad física exacta disponible, costo, precio de venta y estado de disponibilidad.
+Fallo: Mostrar un mensaje indicando que no se pudo establecer conexión con el servidor de base de datos para cargar los datos de stock.
+Fuente: Elaboración propia (2026)
+Tabla 2.9 Requerimientos (Alertas de bajas existencias y stock mínimo)
+ID: RF-INV-02
+Actores: Empleado y Administrador
+Nombre
+Sistema de alertas de bajas existencias (Stock mínimo).
+Descripción
+Generará notificaciones automáticas y distintivos visuales (semáforos) cuando las existencias de un producto caigan por debajo del umbral mínimo de seguridad establecido.
+Medio
+Panel de notificaciones / Tablero de inventario con indicadores de color.
+Entrada
+Disminución del stock tras operaciones de venta por debajo del parámetro de stock mínimo.
+Salida
+Éxito: El sistema resalta los artículos en estado crítico o bajo stock, alertando al personal sobre la necesidad de reabastecimiento.
+Fallo: El sistema no logra obtener los valores umbral de la base de datos y muestra una advertencia al usuario.
+Fuente: Elaboración propia (2026)
+Tabla 2.10 Requerimientos (Control de lotes y alertas de caducidad)
+ID: RF-INV-03
+Actores: Empleado y Administrador
+Nombre
+Control de lotes y alertas de caducidad.
+Descripción
+Permite el seguimiento de productos perecederos (químicos, pinturas, pegamentos, masillas) mediante número de lote y fecha de vencimiento, emitiendo alertas para productos próximos a caducar.
+Medio
+Panel de alertas / Lista de lotes en inventario.
+Entrada
+Verificación automática de fechas de vencimiento de lotes frente a la fecha actual del sistema.
+Salida
+Éxito: Desplegar una lista de lotes en riesgo de vencimiento indicando días restantes para priorizar su rotación y venta oportuna.
+Fallo: Indicar un error de lectura en los registros de lotes de la base de datos.
+Fuente: Elaboración propia (2026)
+Tabla 2.11 Requerimientos (Registro y alta de productos con lotes)
+ID: RF-INV-04
+Actores: Administrador
+Nombre
+Registro y alta de productos con lotes y datos técnicos.
+Descripción
+Permite dar de alta nuevos artículos en el catálogo, asignando nombre, código de barras, categoría, marca, unidad de medida, precio de compra, precio de venta, lote inicial y fecha de vencimiento.
+Medio
+Formulario de Registro de Producto.
+Entrada
+Nombre, categoría, marca, unidad de medida, código de barras, precios de compra/venta, stock inicial, número de lote y fecha de vencimiento (si aplica).
+Salida
+Éxito: El producto y su lote inicial se guardan correctamente en la base de datos y se habilitan para su comercialización.
+Fallo: Notificar al usuario que faltan campos obligatorios o que el código de barras/código interno ya se encuentra registrado.
+Fuente: Elaboración propia (2026)
+Tabla 2.12 Requerimientos (Modificación y edición de productos)
+ID: RF-INV-05
+Actores: Administrador
+Nombre
+Modificación y edición de información de productos.
+Descripción
+Permite actualizar la información comercial o técnica de un producto existente (precios de venta, costos, descripciones, categorías o stock mínimo).
+Medio
+Formulario de Edición de Producto.
+Entrada
+Selección del producto y modificación de los datos en los campos del formulario.
+Salida
+Éxito: Los datos del producto se actualizan de forma instantánea en toda la plataforma.
+Fallo: Mostrar una alerta indicando que los cambios no pudieron ser procesados debido a un error de validación o conflicto de datos.
+Fuente: Elaboración propia (2026)
+Tabla 2.13 Requerimientos (Baja y retiro de productos)
+ID: RF-INV-06
+Actores: Administrador
+Nombre
+Baja y retiro de productos del catálogo activo.
+Descripción
+Permite desactivar o retirar del catálogo aquellos productos discontinuados o que ya no se comercializarán en la ferretería, preservando el historial de ventas previas.
+Medio
+Botón de acción con diálogo modal de confirmación.
+Entrada
+Confirmación de baja del producto seleccionado.
+Salida
+Éxito: El producto cambia su estado a inactivo y deja de mostrarse en las vistas de ventas y catálogo público.
+Fallo: Notificar que el producto no puede ser desactivado debido a inconsistencias o bloqueos en registros abiertos.
+Fuente: Elaboración propia (2026)
+Tabla 2.14 Requerimientos (Gestión de almacenes, ubicaciones y catálogo maestro)
+ID: RF-INV-07
+Actores: Administrador
+Nombre
+Gestión de almacenes, ubicaciones físicas y catálogo maestro.
+Descripción
+Permite administrar almacenes y la ubicación física de los materiales (pasillos, estantes), así como el mantenimiento del catálogo maestro de marcas, categorías y unidades de medida.
+Medio
+Panel de Configuración de Almacenes y Catálogo Maestro.
+Entrada
+Creación o edición de nombres de almacenes, pasillos/estantes, categorías, marcas o unidades de medida (metros, kg, unidades, bolsas).
+Salida
+Éxito: Los nuevos registros maestros quedan disponibles para ser asignados a los productos en el inventario.
+Fallo: Alertar si se intenta registrar una categoría/marca duplicada o eliminar una ubicación que actualmente contiene stock físico.
+Fuente: Elaboración propia (2026)
+Reportes y Análisis Predictivo
+Tabla 2.15 Requerimientos (Informes de ventas periódicos y desempeño por producto)
+ID: RF-REP-01
+Actores: Administrador
+Nombre
+Informes de ventas periódicos y desempeño por producto.
+Descripción
+Permite generar informes detallados de ventas agrupados por períodos (diario, semanal y mensual), calculando para cada producto: unidades vendidas, ingresos brutos, costo de adquisición, ganancia bruta y margen de rentabilidad.
+Medio
+Panel de Reportes / Interfaz Web.
+Entrada
+Selección de rango de fechas o filtro temporal (diario, semanal, mensual) y filtros opcionales por categoría o marca.
+Salida
+Éxito: Desplegar en pantalla y permitir exportar el informe estructurado con el resumen global de ventas, costos, márgenes y el desglose producto por producto.
+Fallo: Mostrar una advertencia indicando que no existen registros de ventas para el rango de fechas seleccionado.
+Fuente: Elaboración propia (2026)
+Tabla 2.16 Requerimientos (Visualización gráfica interactiva y KPIs)
+ID: RF-REP-02
+Actores: Administrador
+Nombre
+Dashboard de visualización gráfica e indicadores clave (KPIs).
+Descripción
+Presenta un panel interactivo con métricas clave del negocio (ingresos totales, margen neto global, ticket promedio, volumen de transacciones) y gráficos de líneas/barras para evaluar el comportamiento histórico de ventas.
+Medio
+Dashboard interactivo / Gráficos en tiempo real.
+Entrada
+Selección del período de análisis y métricas visuales deseadas.
+Salida
+Éxito: Renderizar gráficos interactivos con líneas de tendencia de ventas históricas, distribución de ingresos por categoría/marca y tarjetas de resumen financiero.
+Fallo: Mostrar mensaje de error si el volumen de datos históricos es insuficiente para generar las curvas gráficas.
+Fuente: Elaboración propia (2026)
+Tabla 2.17 Requerimientos (Modelos predictivos de demanda)
+ID: RF-REP-03
+Actores: Administrador
+Nombre
+Pronóstico de demanda con modelos predictivos de series temporales.
+Descripción
+Ejecuta algoritmos matemáticos de series de tiempo (Suavizado Exponencial Simple - SES, Promedio Móvil Simple - SMA y Promedio Móvil Ponderado - WMA) sobre el historial de ventas diarias para proyectar la demanda futura de cada artículo.
+Medio
+Motor de Análisis Predictivo / Interfaz de Proyecciones.
+Entrada
+elección del modelo (SES/SMA/WMA), factor de sensibilidad (α), tamaño de ventana (k) y horizonte de proyección (7, 15 o 30 días).
+Salida
+Éxito: Calcular y graficar la curva de demanda proyectada en unidades para el período futuro seleccionado junto al comportamiento histórico real.
+Fallo: Notificar al administrador que el producto seleccionado no cuenta con suficiente historial de ventas para ejecutar el modelo estadístico.
+Fuente: Elaboración propia (2026)
+Tabla 2.18 Requerimientos (Evaluación y selección del mejor modelo)
+ID: RF-REP-04
+Actores: Administrador
+Nombre
+Diagnóstico y selección automática del modelo con menor margen de error.
+Descripción
+Calcula las métricas de error estadístico (Desviación Media Absoluta - MAD, Raíz del Error Cuadrático Medio - RMSE y Error Porcentual Absoluto Medio - MAPE) comparando las proyecciones contra los datos reales para seleccionar automáticamente el modelo mejor ajustado.
+Medio
+Modal de Diagnóstico Matemático / Vista Detallada de Producto.
+Entrada
+Solicitud de detalle técnico o diagnóstico de predicción de un artículo específico.
+Salida
+Éxito: Visualizar la tabla comparativa de errores (MAD, RMSE, MAPE) entre SES, SMA y WMA, resaltando el método óptimo seleccionado por el sistema.
+Fallo: Indicar que no fue posible calcular las métricas debido a dispersión nula o falta de puntos temporales mínimos.
+Fuente: Elaboración propia (2026)
+Tabla 2.19 Requerimientos (Plan de reabastecimiento y días de cobertura)
+ID: RF-REP-05
+Actores: Administrador
+Nombre
+Plan de reabastecimiento inteligente y cálculo de días hasta quiebre de stock.
+Descripción
+A partir de la tasa de demanda diaria proyectada, calcula cuántos días durará el stock actual antes de agotarse (D quiebre), emite semáforos de urgencia y sugiere la cantidad exacta de unidades a comprar junto al presupuesto requerido en bolivianos.
+Medio
+Tabla del Plan de Reabastecimiento / Panel Predictivo.
+Entrada
+Horizonte de planificación seleccionado (ej. próximos 30 días) y stock actual del inventario.
+Salida
+Éxito: Presentar la lista ordenada de productos según nivel de criticidad (Rojo: Agotado/≤7 días; Amarillo: 8-30 días; Verde: Seguro), con la cantidad sugerida de compra y el costo de inversión estimado.
+Fallo: Notificar al usuario si existen inconsistencias en los precios de compra unitarios al calcular el presupuesto.
+Fuente: Elaboración propia (2026)
+Tabla 2.20 Requerimientos (Clasificación ABC de rentabilidad)
+ID: RF-REP-06
+Actores: Administrador
+Nombre
+Clasificación ABC de inventario.
+Descripción
+Segmenta automáticamente los productos del catálogo según su aporte a los ingresos totales: Clase A, Clase B y Clase C facilitando la priorización del capital.
+Medio
+Módulo de Rendimiento y Análisis ABC.
+Entrada
+Procesamiento automático del volumen total de ventas registradas en el período seleccionado.
+Salida
+Éxito: Asignar y mostrar las etiquetas ABC con distintivos de color a cada artículo en las tablas de inventario y reportes gerenciales.
+Fallo: Indicar error en el cálculo si el ingreso total acumulado del período es igual a cero.
+Fuente: Elaboración propia (2026)
+Módulo de Asistencia
+Tabla 2.21 Requerimientos (Asistencia técnica y respuestas en lenguaje natural)
+ID: RF-IA-01
+Actores: Cliente
+Nombre
+Asistencia técnica y respuestas en lenguaje natural mediante modelo con Fine-Tuning.
+Descripción
+El sistema procesa preguntas del cliente en lenguaje natural sobre uso, aplicación y compatibilidad de materiales de ferretería, devolviendo respuestas técnicas contextualizadas mediante un modelo preentrenado especializado
+Medio
+Widget interactivo de Chat / Interfaz web del catálogo.
+Entrada
+Consulta técnica o pregunta escrita en lenguaje natural por parte del cliente y contexto conversacional previo.
+Salida
+Éxito: El modelo procesa la intención y devuelve una respuesta fluida, coherente y precisa orientando al cliente en la solución de su necesidad.
+Fallo: Mostrar un mensaje amable indicando que el asistente no pudo interpretar la consulta o que el servicio de inferencia local no se encuentra disponible momentáneamente.
+Fuente: Elaboración propia (2026)
+Tabla 2.22 Requerimientos (Consulta de catálogo y precios en tiempo real (RAG))
+ID: RF-IA-02
+Actores: Cliente
+Nombre
+Consulta de catálogo y precios en tiempo real mediante arquitectura RAG.
+Descripción
+Permite al asistente virtual consultar en tiempo real la base de datos SQL del sistema para proporcionar nombres exactos y precios de venta vigentes de los productos solicitados, aplicando el principio de mínimo privilegio.
+Medio
+Motor RAG / API de integración entre Express y Ollama.
+Entrada
+Consulta del usuario mencionando productos, materiales o cotizaciones de precios en la tienda.
+Salida
+Éxito: El asistente identifica los artículos coincidentes en la base de datos e incorpora los precios y nombres actualizados dentro de su respuesta conversacional.
+Fallo: Indicar al cliente de manera clara que el producto consultado no se encuentra disponible actualmente en el catálogo de la ferretería.
+Fuente: Elaboración propia (2026)
+Tabla 2.23 Requerimientos (Filtro de seguridad de dominio y control de contexto)
+ID: RF-IA-03
+Actores: Cliente
+Nombre
+Filtro de seguridad de dominio (Guardrails) y guía de compra asistida.
+Descripción
+Detecta y bloquea consultas sobre temas ajenos al ámbito de la ferretería (anti-jailbreak / off-topic), manteniendo al asistente enfocado exclusivamente en la atención comercial y orientando al cliente para agregar productos a su carrito web.
+Medio
+Módulo de Guardrails y memoria conversacional.
+Entrada
+Mensaje ingresado por el usuario en el chat.
+Salida
+Éxito: Si la consulta es válida, se atiende con normalidad; si es ajena al negocio (recetas, bromas, temas externos), el sistema responde amablemente recordando su función como asesor ferretero y redirige al catálogo.
+Fallo: Notificar error interno en caso de falla en el clasificador de intenciones.
+Fuente: Elaboración propia (2026)
+Módulo de Usuarios y Seguridad
+Tabla 2.24 Requerimientos (Autenticación e inicio de sesión seguro)
+ID: RF-USR-01
+Actores: Administrador, Empleado y Cliente
+Nombre
+Autenticación e inicio de sesión seguro en la plataforma.
+Descripción
+Permite el acceso al sistema mediante credenciales validadas (correo electrónico y contraseña encriptada), derivando al usuario a la vista correspondiente según su rol y generando una sesión segura protegida por token.
+Medio
+Formulario de Inicio de Sesión / Interfaz Web.
+Entrada
+Correo electrónico y contraseña del usuario.
+Salida
+Éxito: Acceso exitoso al sistema, apertura de sesión y redirección al panel de control o catálogo correspondiente a su nivel de privilegios.
+Fallo: Mostrar una alerta informando que las credenciales son inválidas, la cuenta está inactiva o los campos requeridos están vacíos.
+Fuente: Elaboración propia (2026)
+Tabla 2.25 Requerimientos (Gestión de roles y permisos)
+ID: RF-USR-02
+Actores: Administrador
+Nombre
+Gestión de roles y asignación de permisos.
+Descripción
+Permite al administrador crear, modificar y dar de baja cuentas de usuarios internos (empleados y administradores), asignando perfiles de acceso con permisos y restricciones específicas sobre los módulos del sistema.
+Medio
+Panel de Gestión de Usuarios / Formulario de Cuentas Internas.
+Entrada
+Datos personales del usuario, correo electrónico, contraseña provisional y selección del rol (Administrador o Empleado).
+Salida
+Éxito: La cuenta queda registrada y habilitada con los niveles de autorización exactos correspondientes al rol asignado.
+Fallo: Notificar al administrador que el correo electrónico ya se encuentra registrado o que faltan datos obligatorios para completar el alta.
+Fuente: Elaboración propia (2026)
+Tabla 2.26 Requerimientos (Recuperación segura de contraseñas)
+ID: RF-USR-03
+Actores: Administrador, Empleado y Cliente
+Nombre
+Recuperación segura de contraseñas vía correo electrónico.
+Descripción
+Ofrece un mecanismo de autoservicio para que los usuarios que hayan olvidado su clave puedan restablecerla mediante un token temporal y seguro enviado a su casilla de correo electrónico.
+Medio
+Formulario de Recuperación de Contraseña / Servicio de Correo Electrónico.
+Entrada
+Correo electrónico registrado de la cuenta a recuperar y nueva contraseña ingresada tras validar el token.
+Salida
+Éxito: Se envía el correo con el enlace de restablecimiento seguro, y tras ingresar la nueva clave, esta se actualiza encriptada en la base de datos.
+Fallo: Indicar al usuario que el correo introducido no existe en el sistema o que el enlace de recuperación ha expirado.
+Fuente: Elaboración propia (2026)
+Tabla 2.27 Requerimientos (Registro público y autogestión de perfil de clientes)
+ID: RF-USR-04
+Actores: Cliente
+Nombre
+Registro público y autogestión de perfil de clientes.
+Descripción
+Permite a los clientes externos registrarse de forma autónoma en la plataforma web, creando su propio perfil para realizar pedidos, consultar su historial de compras y mantener actualizados sus datos de contacto.
+Medio
+Formulario de Registro Público de Clientes.
+Entrada
+Nombre completo, número de teléfono/WhatsApp, correo electrónico y contraseña.
+Salida
+Éxito: Creación exitosa de la cuenta de cliente con rol "Cliente", inicio de sesión automático y redirección al catálogo de productos.
+Fallo: Mostrar un mensaje de alerta si el correo electrónico ya está en uso o si la contraseña no cumple con los requisitos mínimos de seguridad.
+Fuente: Elaboración propia (2026)
+REQUERIMIENTOS NO FUNCIONALES
+Los requerimientos no funcionales establecen las propiedades de calidad, restricciones de rendimiento y condiciones operativas que el sistema web debe satisfacer para garantizar su estabilidad, eficiencia y seguridad. A diferencia de las funciones operativas, estos requerimientos   abarcan criterios de rendimiento, usabilidad, seguridad informática, confiabilidad de datos, disponibilidad del servicio y portabilidad multiplataforma.
+A continuación, se detallan los requerimientos no funcionales agrupados por atributos de calidad:
+Rendimiento y Eficiencia:
+RNF-REND-01 (Tiempo de respuesta en ventas): El procesamiento y guardado de una transacción de venta en mostrador no debe exceder los 2 segundos, garantizando un cobro ágil para evitar demoras.
+RNF-REND-02 (Búsqueda instantánea): Las consultas de inventario y precios (por texto o mediante escaneo de código de barras) deben mostrar resultados en menos de 1 segundo.
+RNF-REND-03 (Carga de analítica y reportes): La generación de informes de ventas, clasificación ABC y curvas predictivas no debe tardar más de 3 segundos bajo condiciones normales de red local.
+RNF-REND-04 (Latencia de Asistencia por IA): La inferencia local del chatbot mediante Ollama debe emitir el primer token de respuesta en un tiempo inferior a 3.5 segundos en hardware estándar, con un consumo controlado de memoria RAM/VRAM no superior a 4 GB.
+Usabilidad y Facilidad de Aprendizaje:
+RNF-USA-01 (Interfaz intuitiva y responsiva): El diseño visual debe ser limpio, accesible y fácil de interpretar desde el primer día para el personal de mostrador, minimizando la curva de aprendizaje y reduciendo errores operativos.
+RNF-USA-02 (Operaciones ágiles): El flujo para completar una venta estándar en mostrador no debe requerir más de 3 pasos (búsqueda/escaneo del producto, ingreso de cantidad y confirmación de pago).
+RNF-USA-03 (Retroalimentación visual al usuario): El sistema debe emitir notificaciones visuales comprensibles tanto en operaciones exitosas (ej. "Venta registrada con éxito") como en situaciones de excepción (ej. "Stock insuficiente para este producto").
+Seguridad y Control de Acceso:
+RNF-SEG-01 (Autenticación robusta): El acceso a las funciones del sistema requiere inicio de sesión con correo y contraseña mediante tokens criptográficos JWT (JSON Web Tokens) con tiempo de expiración definido.
+RNF-SEG-02 (Cifrado de credenciales): Ninguna contraseña se almacenará en texto plano; todas serán cifradas mediante el algoritmo de hashing seguro Bcrypt.
+RNF-SEG-03 (Control de acceso basado en roles - RBAC): El sistema restringe estrictamente los accesos: el empleado solo opera ventas, cotizaciones e inventario de mostrador; la configuración de precios, eliminación de ítems, cierre global de caja y analítica predictiva son de acceso exclusivo para el Administrador.
+RNF-SEG-04 (Seguridad y Privacidad en IA / Guardrails): El chatbot no tiene acceso a datos de costos de compra ni contraseñas internas (mínimo privilegio), y cuenta con filtros de seguridad que bloquean intentos de desvío de conversación (anti-jailbreak).
+Fiabilidad e Integridad de Datos:
+RNF-FIA-01 (Consistencia transaccional ACID): Las transacciones de venta y actualización de existencias se manejan bajo el principio ACID de SQL Server; ante fallas de energía o desconexión, la operación se revierte para evitar discrepancias entre el dinero cobrado y el stock descontado.
+RNF-FIA-02 (Integridad referencial): No se permite la eliminación física de productos que cuenten con historial de ventas previas, garantizando la trazabilidad contable y la consistencia de los modelos predictivos.
+Disponibilidad:
+RNF-DISP-01 (Operatividad en horario comercial): El sistema debe garantizar una disponibilidad del 99% durante las horas de atención comercial de la ferretería, minimizando interrupciones del servicio.
+Compatibilidad y Portabilidad:
+RNF-PORT-01 (Acceso multiplataforma): Al tratarse de una aplicación web (Single Page Application en React), debe ser 100% compatible con los principales navegadores web (Google Chrome, Microsoft Edge, Mozilla Firefox) en computadoras de escritorio, portátiles y tablets sin requerir instalaciones cliente adicionales.
+ÉPICAS
+Las épicas agrupan los requerimientos funcionales en bloques de valor de negocio según la metodología ágil, desglosándose en historias de usuario con sus respectivos criterios de aceptación:
+Épica 1: Gestión Integral de Ventas, Pedidos y Caja.
+(Cubre: RF-VTA-01, RF-VTA-02, RF-VTA-03, RF-VTA-04, RF-VTA-05, RF-VTA-06, RF-VTA-07)
+Épica 2: Control, Monitoreo y Trazabilidad de Inventario.
+(Cubre: RF-INV-01, RF-INV-02, RF-INV-03, RF-INV-04, RF-INV-05, RF-INV-06, RF-INV-07)
+Épica 3: Analítica Predictiva, Reabastecimiento y Reportes.
+(Cubre: RF-REP-01, RF-REP-02, RF-REP-03, RF-REP-04, RF-REP-05, RF-REP-06)
+Épica 4: Administración de Usuarios, Roles y Seguridad.
+(Cubre: RF-USR-01, RF-USR-02, RF-USR-03, RF-USR-04)
+Épica 5: Asistencia Virtual Inteligente con IA.
+(Cubre: RF-IA-01, RF-IA-02, RF-IA-03)
+ÉPICA 1: Gestión Integral de Ventas y Caja
+Historia de Usuario 1.1 (Venta en Mostrador y POS):
+Como empleado de mostrador, quiero registrar las ventas mediante búsqueda rápida o lector de código de barras y emitir comprobantes, para atender ágilmente y evitar filas en tienda.
+Criterios de aceptación: Captura en tiempo real, soporte de código de barras, emisión de nota/factura proforma y actualización automática de stock y caja.
+Historia de Usuario 1.2 (Pedidos Online y Cotizaciones):
+Como cliente de la ferretería, quiero consultar el catálogo web y realizar pedidos en línea o solicitar cotizaciones, para agilizar mis compras sin acudir previamente a la tienda física.
+Criterios de aceptación: Carrito de compras funcional, cálculo de totales, registro de pedido con código de seguimiento y generación de cotizaciones formales.
+ÉPICA 2: Control y Monitoreo de Inventario
+Historia de Usuario 2.1 (Registro y Control por Lotes):
+Como administrador, quiero dar de alta productos registrando lotes, fechas de vencimiento y stock mínimo, para mantener el inventario ordenado y prevenir mermas de productos químicos o perecederos.
+Criterios de aceptación: Formulario completo de producto con lote/vencimiento, asignación de categorías/marcas y validación de códigos duplicados.
+Historia de Usuario 2.2 (Alertas Preventivas de Stock y Caducidad):
+Como empleado o administrador, quiero recibir alertas visuales de productos por agotarse o próximos a caducar, para rotar la mercadería a tiempo y evitar pérdidas económicas.
+Criterios de aceptación: Semáforos de stock en el panel principal y listado prioritario de lotes con caducidad cercana.
+ÉPICA 3: Generación de Analíticas y Reportes
+Historia de Usuario 3.1 (Pronóstico de Demanda y Sugerencia de Compras):
+Como administrador de la ferretería, quiero proyectar la demanda de ventas con modelos estadísticos y conocer los días hasta el quiebre de stock, para saber con exactitud qué cantidad comprar a los proveedores y cuánto presupuesto invertir.
+Criterios de aceptación: Ejecución de modelos SES/SMA/WMA, cálculo de días de cobertura, sugerencia de cantidad a pedir y costo en bolivianos.
+Historia de Usuario 3.2 (Informes y Clasificación ABC de Pareto):
+Como administrador, quiero consultar informes periódicos y ver la clasificación ABC de mis productos, para identificar cuáles son los artículos más rentables y tomar decisiones comerciales informadas.
+Criterios de aceptación: Reportes diarios/semanales/mensuales, cálculo de margen bruto, segmentación ABC  y dashboards visuales interactivos.
+ÉPICA 4: Administración de Usuarios y Accesos
+Historia de Usuario 4.1 (Control de Acceso y Roles):
+Como administrador, quiero crear y gestionar cuentas de empleados y clientes asignando permisos específicos (RBAC), para proteger la información financiera y delegar tareas operativas con seguridad.
+Criterios de aceptación: Distinción clara de vistas entre Administrador, Empleado y Cliente; contraseñas cifradas y recuperación segura vía correo.
+ÉPICA 5: Asistencia Virtual Automatizada
+Historia de Usuario 5.1 (Asesoría Técnica y Consulta de Precios):
+Como cliente de la ferretería, quiero consultar a un asistente virtual sobre materiales recomendados y precios vigentes en lenguaje natural, para resolver mis dudas técnicas al instante y comprar con mayor confianza.
+Criterios de aceptación: Respuestas técnicas precisas del modelo entrenado (Fine-Tuning), cotización de precios reales desde la base de datos (RAG) y filtros de seguridad que evitan temas ajenos al negocio. 
+DIAGRAMAS DE CASOS DE USO
+Los diagramas de casos de uso representan gráficamente las interacciones entre los actores del sistema y las funcionalidades que pueden realizar. A continuación, se presentan los diagramas de casos de uso organizados por módulos.
+Módulo de ventas y caja
+El módulo de ventas y caja concentra los procesos de atención comercial en mostrador y los pedidos remotos de los clientes. Como se ilustra en la Figura 2.1 , en este módulo intervienen principalmente dos actores: el Empleado, encargado de registrar ventas, buscar productos mediante código de barras, aplicar descuentos y realizar el arqueo de caja; y el Cliente, quien puede interactuar a través del catálogo web realizando pedidos en línea.
+Figura 2.1 : Diagrama de Casos de Uso (Modulo de ventas y Caja)
+Fuente: Elaboración propia (2026)
+A partir de las interacciones modeladas en la Figura 2.1, a continuación se detallan las especificaciones formales de los casos de uso más representativos del módulo. En la Tabla 2.28 se describe el flujo principal para el registro de ventas en mostrador, mientras que en la Tabla 2.29 se especifica el proceso de pedidos en línea.
+Tabla 2.28 Casos de uso (Registrar transacción de venta)
+Caso de Uso:
+Registrar transacción de venta
+Nro. de CU:
+1
+Actores:
+Empleado (iniciador)
+Propósito:
+Permitir la captura de transacciones de venta en tiempo real para apoyar el control financiero del negocio.
+Descripción Breve
+Un empleado inicia el registro de una nueva venta. Introduce o escanea los productos que el cliente desea llevar y el sistema calcula el total. Tras recibir el pago, el sistema procesa la información, actualiza el flujo de caja automáticamente y permite la emisión de una factura o comprobante de venta.
+Tipo:
+Primario y Esencial
+Referencias:
+Buscar producto (con código), Emitir factura/comprobante, Actualizar flujo de caja.
+Curso (Flujo) típico de eventos:
+Acción del actor
+Respuesta del sistema
+1. En este caso de uso empieza cuando el Empleado selecciona la opción de nueva venta en la pantalla principal.
+3. Introduce los artículos usando el soporte para lectura de código de barras o mediante identificación manual.
+5. Confirma la lista de productos y selecciona la opción de cobrar.
+7. Introduce la cantidad recibida y confirma el pago.
+9. (Espera la respuesta del sistema)
+11. Selecciona el formato del documento (factura/comprobante).
+2. Habilita la interfaz de registro de transacciones de venta.
+4. Identifica el producto en la base de datos, lo añade a la transacción actual y actualiza el subtotal a pagar.
+6. Pide confirmar el monto recibido por parte del cliente.
+8. Procesa el pago, actualiza el flujo de caja en tiempo real basado en la transacción y guarda la venta.
+10. Da la opción de generar una factura o comprobante al finalizar la venta.
+12. Genera el documento y finaliza la operación cerrando la transacción.
+Cursos (Flujos) Alternativos:
+Línea 4: El producto escaneado o introducido manualmente no existe en el inventario. Se indica el error en pantalla y el empleado debe retirar el ítem de la lista.
+Línea 8: Falla la conexión con la base de datos al intentar actualizar el flujo de caja. Se indica el error de red y se cancela la confirmación de la venta para proteger los datos financieros.
+Fuente: Elaboración propia (2026)
+Tabla 2.29 Casos de uso (Pedidos Online)
+Caso de Uso:
+Pedidos Online y Liquidación en Mostrador
+Nro. de CU:
+2
+Actores:
+Cliente (iniciador), Administrador o Empleado (receptor en tienda)
+Propósito:
+Permitir al cliente armar pedidos desde el catálogo web, pagar vía QR electrónico y retirar sus productos en mostrador recibiendo su Factura Computarizada SIAT o Recibo Oficial.
+Descripción Breve
+El cliente autenticado selecciona productos con stock verificado, ingresa a la pasarela de compra donde se cargan automáticamente su NIT y teléfono, realiza la transferencia mediante código QR Yape/BCP y confirma su pedido. El sistema reserva los materiales en base de datos y genera su comprobante en PDF. Posteriormente, el cajero accede a la cola de pedidos en “/pedidos-online”, verifica el pago en mostrador, define si emite Factura o Recibo y entrega los artículos.
+Tipo:
+Primario y Esencial
+Referencias:
+Iniciar Sesión (Módulo de Usuarios).
+Curso (Flujo) típico de eventos:
+Acción del actor
+Respuesta del sistema
+1.  El cliente autenticado navega en el catálogo web y añade productos al carrito.
+3. Presiona "Finalizar Compra y Pagar Online".
+5. Escanea el código QR oficial de Yape / Pago Simple por el monto exacto y presiona "Confirmar Compra".
+7. El cliente se apersona a mostrador; el cajero abre la orden en /pedidos-online y presiona "Revisar y Entregar".
+9. El cajero confirma la entrega tras verificar la transferencia.
+2.   Valida existencias en tiempo real, suma los subtotales y muestra el descuento según su nivel de lealtad.
+4.  Despliega el formulario de checkout con su Nombre, NIT/CI y Teléfono precargados automáticamente.
+6.  Registra el pedido en la base de datos (PedidosOnline), descuenta el stock de inventario y genera el Comprobante Digital de Reserva en PDF con código único.
+8. Muestra el detalle del pedido, permite alternar la emisión de Factura Computarizada SIAT o Recibo, recalculando precios unitarios al instante.
+10. Cambia el estado del pedido a Entregado, registra la venta formal en “Ventas/DetalleVentas” y despliega la ventana emergente para Imprimir Factura/Recibo o descargar el PDF.
+Cursos (Flujos) Alternativos:
+Línea 1: Si otro usuario agota el inventario antes de confirmar, el sistema bloquea la transacción e informa las unidades disponibles.
+Línea 8: Si el cliente no solicita factura, el sistema recalcula los ítems a precio sin factura y refleja el saldo a favor a entregar en efectivo al cliente.
+Fuente: Elaboración propia (2026)
+Módulo de inventario y almacén
+En la Figura 2.2 se presenta el diagrama de casos de uso para la administración del inventario y la trazabilidad de almacenes. En este subsistema, el Administrador posee los privilegios para gestionar el alta de productos, configurar lotes y definir stock mínimo, mientras que el Empleado participa consultando existencias en tiempo real y recibiendo las alertas automáticas de productos bajo stock o lotes próximos a caducar.
+Figura 2.2 Diagrama de Casos de Uso (Módulo de Inventario y Almacén)
+Fuente: Elaboración propia (2026)
+Para clarificar el comportamiento del sistema ante estas operaciones, en la Tabla 2.30 se detalla la especificación del caso de uso de registro de mercadería, en la Tabla 2.31 la comprobación de existencias en tiempo real y en la Tabla 2.32 el mecanismo de recepción de alertas de caducidad.
+Tabla 2.30 Casos de uso (Registrar Producto)
+Caso de Uso:
+Registrar Producto
+Nro. de CU:
+3
+Actores:
+Administrador (iniciador)
+Propósito:
+Permitir al administrador registrar sus productos de manera sencilla y fácil sin tantos contratiempos para mantener el catálogo actualizado.
+Descripción Breve
+El administrador accede al sistema de inventario e inicia el registro de nueva mercadería. Introduce detalles fundamentales como el nombre, código, precio y stock inicial. El sistema valida la información para evitar duplicados y guarda el ítem en la base de datos.
+Tipo:
+Primario y Esencial
+Referencias:
+Ninguna
+Curso (Flujo) típico de eventos:
+Acción del actor
+Respuesta del sistema
+1. En este caso de uso empieza cuando el Administrador ingresa a la pestaña de inventario y selecciona "Añadir nuevo producto".
+3. Introduce la información requerida (nombre, categoría, precio, cantidad, etc.) y presiona el botón de guardar.
+5. (Espera la respuesta del sistema)
+2. Presenta un formulario en blanco solicitando los datos de la mercadería.
+4. Valida que los campos obligatorios estén llenos y comprueba que el código del producto no exista previamente en la base de datos.
+6. Procesa la petición, registra el nuevo ítem de manera exitosa y limpia el formulario mostrando un mensaje de confirmación.
+Cursos (Flujos) Alternativos:
+  Línea 4: El código introducido ya pertenece a otro producto en el sistema. Se indica el error en pantalla y se solicita modificar el código para evitar duplicidad.
+  Línea 4: Faltan datos obligatorios por rellenar en el formulario. Se resaltan los campos vacíos en rojo y se detiene el proceso de guardado.
+Fuente: Elaboración propia (2026)
+Tabla 2.31 Casos de uso (Comprobación de stock en tiempo real)
+Caso de Uso:
+Comprobación de stock en tiempo real
+Nro. de CU:
+4
+Actores:
+Empleado, Administrador (iniciador)
+Propósito:
+Facilitar la visualización del stock en tiempo real para agilizar las ventas realizadas y optimizar la atención al cliente.
+Descripción Breve
+El usuario necesita verificar si hay suficiente mercadería para un cliente. Ingresa al buscador del inventario, tipea el nombre o escanea el código, y el sistema extrae de la base de datos la cantidad exacta disponible en ese instante.
+Tipo:
+Primario y Esencial
+Referencias:
+Buscar producto en catálogo (include), Recibir alertas de escasez (extend
+Curso (Flujo) típico de eventos:
+Acción del actor
+Respuesta del sistema
+1. En este caso de uso empieza cuando un usuario (Empleado o Administrador) requiere verificar disponibilidad y selecciona la barra de búsqueda en el módulo de inventario.
+3. Introduce el nombre del producto o escanea su código de barras.
+5. Selecciona el ítem deseado de la lista de resultados.
+2. Habilita el campo de texto y espera la entrada de datos.
+4. Procesa la petición buscando coincidencias exactas o similares en la base de datos.
+6. Presenta los detalles completos del producto, destacando de forma clara la cantidad de stock disponible en tiempo real.
+Cursos (Flujos) Alternativos:
+  Línea 4: Hubo un fallo de conexión con el servidor. Se muestra un mensaje de "Error de conexión" y se pide reintentar la búsqueda.
+  Línea 6: La consulta detecta que los niveles de stock del producto han caído por debajo del umbral establecido. Junto con la información de disponibilidad, se generan alertas automáticas de escasez en pantalla.
+Fuente: Elaboración propia (2026)
+Tabla 2.32 Casos de uso (Alertas de caducidad)
+Caso de Uso:
+Alertas de caducidad
+Nro. de CU:
+5
+Actores:
+Encargado de almacén / Administrador (iniciador)
+Propósito:
+Identificar oportunamente la mercadería que está próxima a vencer para tomar decisiones operativas.
+Descripción Breve
+Al iniciar la jornada, el usuario revisa el panel de notificaciones. El sistema, habiendo comprobado las fechas de forma automática, alerta sobre los productos que están a punto de caducar para que puedan ser rotados o puestos en promoción.
+Tipo:
+Primario y Esencial
+Referencias:
+Ninguna
+Curso (Flujo) típico de eventos:
+Acción del actor
+Respuesta del sistema
+1. En este caso de uso empieza cuando el Encargado de almacén o Administrador inicia sesión e ingresa al panel principal (Dashboard).
+3. (Observa el panel principal).
+5. Hace clic sobre la notificación de caducidad.
+2. Realiza un escaneo interno comparando la fecha actual con las fechas de vencimiento registradas en el inventario.
+4. Activa el sistema de notificaciones para productos con fecha de caducidad próxima, mostrando un indicador visual o una lista de advertencia. 
+6. Despliega un reporte detallado con los nombres de los productos, su ubicación y los días restantes hasta su vencimiento.
+Cursos (Flujos) Alternativos:
+Línea 2: El sistema no detecta ningún producto dentro del rango de caducidad próxima. No se muestra ninguna alerta y el panel se presenta limpio.
+Fuente: Elaboración propia (2026)
+Módulo de reportes y Análisis Predictivo
+La gestión analítica y la inteligencia de negocio se ilustran en el diagrama de casos de uso de la Figura 2.3. En este módulo, el actor Administrador interactúa con el sistema para evaluar el desempeño histórico de las ventas, ejecutar modelos matemáticos de pronóstico de demanda, consultar los días restantes de stock antes del quiebre y revisar la clasificación ABC de rentabilidad.
+Figura 2.3 Diagrama de Casos de Uso (Módulo de Reportes y Análisis Predictivo)
+Fuente: Elaboración propia (2026)
+En la  se desglosa la especificación del caso de uso para la generación de informes y analítica predictiva del negocio.
+Tabla 2.33 Casos de uso (Generar informes de ventas)
+Caso de Uso:
+Generar informes de ventas
+Nro. de CU:
+6
+Actores:
+Administrador (iniciador)
+Propósito:
+Evaluar el desempeño de las ventas y el rendimiento de los productos para la toma de decisiones gerenciales sobre qué mercadería comprar basada en la demanda futura.
+Descripción Breve
+El administrador accede a la sección de analíticas y solicita un reporte definiendo el rango de tiempo. El sistema recopila el historial de transacciones y genera un informe detallado del rendimiento, integrando visualizaciones gráficas y tablas para facilitar su interpretación rápida.
+Tipo:
+Primario y Esencial
+Referencias:
+Filtrar por rango de tiempo (include), Renderizar visualización gráfica (include), Exportar / Imprimir informe (extend).
+Curso (Flujo) típico de eventos:
+Acción del actor
+Respuesta del sistema
+1. En este caso de uso empieza cuando el Administrador ingresa al módulo de reportes desde el panel de control.
+3. Selecciona el periodo deseado para el reporte (informes de ventas diarias, semanales o mensuales) y presiona "Generar". 
+5. (Espera la respuesta del sistema)
+7. Selecciona la opción extendida de exportar o imprimir el informe generado.
+9. Descarga el archivo y finaliza la revisión.
+2. Presenta la interfaz de analíticas con los filtros de tiempo disponibles.
+4. Procesa la petición extrayendo la información correspondiente del historial de ventas en la base de datos. 
+6. Implementa el análisis de rendimiento de productos y renderiza los resultados utilizando funcionalidades de visualización mediante gráficos y tablas.
+8. Genera el archivo del reporte (PDF/Excel) y procesa la descarga o habilita la vista de impresión.
+Cursos (Flujos) Alternativos:
+  Línea 4: El sistema detecta que no existen registros de ventas ni transacciones para el rango de fechas seleccionado. Se indica mediante un mensaje en pantalla que no hay datos disponibles para ese periodo y se muestran los gráficos en blanco.
+  Línea 6: Ocurre un error al procesar las librerías de los gráficos. El sistema muestra los datos únicamente en formato de tabla plana e indica el error de visualización gráfica.
+Fuente: Elaboración propia (2026)
+Módulo de Asistencia
+La interacción con el componente de inteligencia artificial se describe en la Figura 2.4. El actor Cliente se comunica en lenguaje natural con el asistente virtual incrustado en el catálogo web, el cual se apoya en el modelo de lenguaje fine-tuneado y en el mecanismo RAG conectado a la base de datos para responder dudas técnicas y cotizar precios vigentes.
+Figura 2.4 Diagrama de Casos de Uso (Modulo de asistencia)
+Fuente: Elaboración propia (2026)
+En la Tabla 2.34 se detalla la especificación del caso de uso para la consulta asistida mediante el chatbot ferretero.
+Tabla 2.34 Casos de uso (Consulta de ferretería)
+Caso de Uso:
+Realizar consulta de ferretería
+Nro. de CU:
+7
+Actores:
+Cliente (iniciador)
+Propósito:
+Permitir al usuario resolver sus dudas comunes de forma rápida sin tener que ir a la tienda física o esperar a que un empleado se desocupe, elevando la experiencia de usuario.
+Descripción Breve
+El cliente interactúa con el asistente virtual a través de la interfaz web. Formula una pregunta en lenguaje natural y el sistema, respaldado por un modelo de inteligencia artificial pre entrenado, analiza el contexto de la ferretería y genera una respuesta automática con un alto nivel de precisión.
+Tipo:
+Primario y Esencial
+Referencias:
+Procesar lenguaje natural (include), Generar respuesta automática (include), Sugerir contacto con empleado (extend).
+Curso (Flujo) típico de eventos:
+Acción del actor
+Respuesta del sistema
+1. En este caso de uso empieza cuando un Cliente abre la ventana del chatbot de asistencia en la plataforma web.
+3. Escribe y envía una consulta rápida utilizando procesamiento de lenguaje natural. 
+5. (Espera la respuesta del sistema)
+2. Despliega la interfaz de conversación y presenta un mensaje automático de bienvenida.
+4. Recibe la solicitud, invoca al modelo de IA y ejecuta el procesamiento de lenguaje natural (NLP) aplicando el finetuning del contexto ferretero.
+6. Genera y devuelve en pantalla una respuesta automática en texto con alta precisión frente a la duda planteada.
+Cursos (Flujos) Alternativos:
+  Línea 4: El asistente virtual no logra comprender la consulta o la pregunta está totalmente fuera del ámbito de la ferretería y la construcción. El sistema se disculpa, indica sus limitaciones y sugiere al cliente que se comunique directamente con un empleado de mostrador.
+  Línea 4: Se pierde la conexión con el servidor que aloja el modelo de inteligencia artificial. El sistema emite un mensaje automático indicando que el servicio de asistencia no está disponible en este momento.
+Fuente: Elaboración propia (2026)
+Módulo de Usuarios
+Finalmente, en la Figura 2.5 se expone el diagrama de casos de uso correspondiente a la autenticación, administración de accesos y seguridad del sistema. En él interactúan los tres actores del software (Administrador, Empleado y Cliente) para autenticarse e iniciar sesión, mientras que las labores de asignación de roles y control de privilegios quedan restringidas al Administrador.
+Figura 2.5 Diagrama de Casos de Uso (Modulo de usuarios)
+Fuente: Elaboración propia (2026)
+Las especificaciones detalladas de estos flujos se exponen a continuación: en la Tabla 2.35 el inicio de sesión, en la Tabla 2.36 el registro de nuevos clientes y en la Tabla 2.37 la asignación y gestión de roles y permisos.
+Tabla 2.35 Casos de uso (Iniciar sesión en el sistema)
+Caso de Uso:
+Iniciar sesión en el sistema
+Nro. de CU:
+8
+Actores:
+Administrador, Empleado, Cliente (iniciador)
+Propósito:
+Validar la identidad de los usuarios para proteger la información del negocio y restringir el acceso según el rol correspondiente.
+Descripción Breve
+El usuario accede a la pantalla de autenticación del sistema web e introduce sus credenciales (correo y contraseña). El sistema verifica la información en la base de datos y, de ser correcta, concede el acceso redirigiendo al usuario a su panel de control específico.
+Tipo:
+Primario y Esencial
+Referencias:
+Recuperar contraseña (extend)
+Curso (Flujo) típico de eventos:
+Acción del actor
+Respuesta del sistema
+1. En este caso de uso empieza cuando un usuario ingresa a la URL del sistema y selecciona "Iniciar Sesión".
+3. Introduce sus credenciales de acceso y presiona el botón de entrar.
+5. (Espera la validación del sistema)
+2. Despliega el formulario solicitando correo electrónico y contraseña.
+4. Recibe los datos y los compara de forma segura con los registros de la base de datos.
+6. Confirma la identidad, verifica el rol asignado (administrador, empleado o cliente) y redirige a la pantalla principal correspondiente a sus permisos.
+Cursos (Flujos) Alternativos:
+  Línea 4: Las credenciales introducidas son incorrectas o el correo no existe. El sistema deniega el acceso, muestra un mensaje de "Usuario o contraseña inválidos" y limpia el formulario de contraseña.
+  Línea 4: La cuenta del usuario (ej. un ex-empleado) ha sido dada de baja previamente por el administrador. El sistema indica que la cuenta está inactiva y bloquea el acceso.
+Fuente: Elaboración propia (2026)
+Tabla 2.36 Casos de uso (Registrar cuenta de cliente)
+Caso de Uso:
+Registrar cuenta de cliente
+Nro. de CU:
+9
+Actores:
+Cliente (iniciador)
+Propósito:
+Permitir a los clientes crear sus propios perfiles de forma autónoma para gestionar sus pedidos e información de la cuenta.
+Descripción Breve
+Un comprador nuevo decide crear una cuenta para acceder a compras online o al programa de lealtad. Llena el formulario de registro con sus datos personales. El sistema valida que el correo no esté en uso, guarda la información y crea el nuevo perfil de cliente.
+Tipo:
+Primario y Esencial
+Referencias:
+Consultar incentivos o descuentos (extend)
+Curso (Flujo) típico de eventos:
+Acción del actor
+Respuesta del sistema
+1. En este caso de uso empieza cuando un visitante selecciona la opción de "Registrarse" en la página principal.
+3. Completa los campos solicitados y confirma el registro.
+5. (Espera la respuesta del sistema)
+2. El sistema presenta el formulario de creación de cuenta solicitando Nombre Completo o Razón Social, NIT o Cédula de Identidad, Teléfono de contacto, Correo electrónico y Contraseña. Estos datos quedan vinculados a su perfil de comprador para autocompletar sus futuras compras online y permitir la emisión inmediata de sus facturas computarizadas
+4. Verifica que no existan campos vacíos y comprueba en la base de datos que el correo electrónico no esté registrado.
+6. Genera el nuevo perfil de usuario con el rol de "Cliente", almacena los datos de forma segura y muestra un mensaje de éxito, redirigiendo a la pantalla de inicio de sesión.
+Cursos (Flujos) Alternativos:
+Línea 4: El correo electrónico ingresado ya se encuentra vinculado a otra cuenta existente. El sistema detiene el registro y notifica al usuario, sugiriendo que inicie sesión o recupere su contraseña.
+Fuente: Elaboración propia (2026)
+Tabla 2.37 Casos de uso (Asignar roles y permisos)
+Caso de Uso:
+Asignar roles y permisos
+Nro. de CU:
+10
+Actores:
+Administrador (iniciador)
+Propósito:
+Permitir la creación de distintos tipos de cuentas con diferentes niveles de acceso y permisos para garantizar la seguridad del sistema.
+Descripción Breve
+El administrador ingresa a la gestión de personal para registrar a un nuevo empleado o modificar uno existente. Asigna un rol específico y el sistema actualiza los permisos, restringiendo o habilitando los módulos correspondientes para ese perfil.
+Tipo:
+Primario y Esencial
+Referencias:
+Buscar cuenta de usuario (include)
+Curso (Flujo) típico de eventos:
+Acción del actor
+Respuesta del sistema
+1. En este caso de uso empieza cuando el Administrador accede a la sección de "Gestión de Usuarios".
+3. Selecciona "Crear usuario" o elige editar el perfil de un trabajador existente.
+5. Selecciona el nivel de acceso deseado (ej. Empleado) y guarda los cambios.
+2. Muestra la lista de usuarios activos y habilita las opciones de administración.
+4. Despliega el formulario con los detalles de la cuenta y un menú desplegable de roles.
+6. Procesa la solicitud, vincula el nuevo rol a las credenciales del usuario y actualiza la base de datos aplicando las restricciones correspondientes.
+Cursos (Flujos) Alternativos:
+Línea 6: Falla la conexión al intentar actualizar los privilegios en la base de datos. El sistema cancela la operación e indica que los permisos no pudieron ser modificados.
+Fuente: Elaboración propia (2026)
+DIAGRAMA DE SECUENCIAS
+Los diagramas de secuencia modelan la dimensión dinámica del sistema, describiendo cronológicamente la interacción e intercambio de mensajes entre los actores externos, los componentes de la interfaz de usuario (Frontend en ReactJS), los controladores de la lógica de negocio (Backend en Node.js/Express), el motor de base de datos relacional (Microsoft SQL Server) y el componente de inteligencia artificial. A continuación, se presentan los diagramas de secuencia de los flujos operativos más críticos de la plataforma.
+INICIAR SESIÓN EN EL SISTEMA (MODULO USUARIOS)
+Como realización técnica del requerimiento funcional RF-USR-01 y en concordancia con el caso de uso especificado en la Tabla II.35 (CU-08: Iniciar sesión en el sistema), en la Figura II.6 se modela el proceso de autenticación segura y asignación de roles.
+Figura 2.6 Diagrama de Secuencia (Iniciar sesión en el sistema)
+Fuente: Elaboración propia (2026)
+Descripción del flujo: El usuario ingresa su correo y contraseña en el formulario de acceso de la interfaz web (ReactJS). La aplicación envía una solicitud HTTP POST hacia el controlador de autenticación (/api/auth/login en Node.js), el cual consulta el registro del usuario en Microsoft SQL Server y valida la credencial cifrada mediante el algoritmo Bcrypt. Si la clave es válida, el servidor genera un token firmado (JWT) con el rol del usuario (Administrador, Empleado o Cliente), permitiendo que el frontend lo almacene y redirija automáticamente al usuario a su panel correspondiente (/home, /pos o /catalogo). En caso de error, el sistema emite una respuesta HTTP 401 y despliega una alerta visual de credenciales inválidas.
+REGISTRAR TRANSACCIÓN DE VENTA (MODULO VENTAS)
+En cumplimiento del requerimiento RF-VTA-01 y derivado del caso de uso principal descrito en la Tabla II.28 (CU-01: Registrar transacción de venta), la Figura II.7 describe la interacción en mostrador durante una venta física en tiempo real.
+Figura 2.7 Diagrama de Secuencia (Registrar transacción de venta)
+Fuente: Elaboración propia (2026)
+Descripción del flujo: El empleado de mostrador escanea el código de barras del producto o ingresa su identificador manualmente en el Punto de Venta (POS en ReactJS). El frontend consulta la información en el backend de Node.js, el cual obtiene el precio y stock actual desde SQL Server y añade el artículo al carrito activo. Una vez ingresado el monto recibido del cliente, el sistema procesa la transacción bajo principios ACID, descontando las unidades del inventario, registrando el ingreso en el balance de caja diario y generando el comprobante digital formateado en PDF para su impresión física o entrega digital.
+REALIZAR PEDIDO ONLINE (MODULO INVENTARIO)
+En correspondencia con el requerimiento RF-VTA-06 y el caso de uso detallado en la Tabla II.29 (CU-02: Pedidos Online), en la Figura II.8 se modela la selección de materiales desde el catálogo virtual y su despacho estructurado mediante mensajería instantánea.
+Figura 2.8 Diagrama de Secuencia (Realizar pedido online)
+Fuente: Elaboración propia (2026)
+El cliente navega por el catálogo web (ReactJS), el cual consulta los productos y existencias en tiempo real a la API de Node.js conectada a Microsoft SQL Server. Al agregar artículos al carrito y proceder al checkout, el sistema valida que el cliente haya iniciado sesión y pre-carga automáticamente su NIT/CI y teléfono registrado. La interfaz invoca la generación de un código QR dinámico compatible con Yape Bolivia y entidades de Pago Simple por el monto exacto a pagar (aplicando descuentos por nivel de lealtad: Bronce, Plata, Oro o Diamante). Al presionar 'Confirmar Compra', el frontend emite una solicitud HTTP POST hacia el endpoint /api/orders, el cual registra la transacción de forma atómica en las tablas PedidosOnline y DetallePedidosOnline y descuenta inmediatamente el stock en almacenes. El servidor retorna la confirmación con el código de reserva, permitiendo al cliente descargar su comprobante oficial en formato PDF. Finalmente, el personal de mostrador consulta la orden en el módulo /pedidos-online, valida la transferencia Yape del cliente y ejecuta la entrega física mediante /api/orders/:id/confirm, seleccionando si emite Factura SIAT o Recibo de venta oficial y registrando el ingreso definitivo en el sistema.
+COMPROBACIÓN DE STOCK EN TIEMPO REAL (MODULO INVENTARIO)
+En atención a los requerimientos funcionales RF-INV-01 y RF-INV-02, y como complemento del caso de uso formalizado en la Tabla II.31 (CU-04: Comprobación de stock en tiempo real), la Figura II.9 ilustra el mecanismo de consulta de inventario y semaforización de alertas
+Figura 2.9 Diagrama de Secuencia (Comprobación de stock en tiempo real)
+Fuente: Elaboración propia (2026)
+Descripción del flujo: El usuario (administrador o empleado) ingresa un criterio de búsqueda o escanea un código de barras en el módulo de inventario (ReactJS). El backend procesa la petición (/api/inventario), ejecutando una consulta en SQL Server que totaliza las existencias distribuidas en los diferentes lotes y ubicaciones físicas (pasillos/estantes). Al recibir el JSON con las cantidades, la vista compara el stock disponible contra el umbral mínimo configurado (LoteMinimo): si el stock es cero despliega un indicador rojo de producto agotado, si es menor o igual al mínimo activa una alerta amarilla de reabastecimiento urgente, y si es suficiente presenta el estado en verde junto a la ubicación en almacén.
+GENERAR INFORMES DE VENTAS (MODULO REPORTES)
+Como realización de los requerimientos analíticos RF-REP-01 al RF-REP-04 y formalizado en la Tabla II.33 (CU-06: Generar informes de ventas), en la Figura II.10 se expone la extracción histórica de datos y la ejecución de modelos matemáticos de demanda.
+Figura 2.10  Diagrama de Secuencia (Generar informes de ventas y análisis predictivo)
+Fuente: Elaboración propia, 2026
+Descripción del flujo: El administrador selecciona el periodo de evaluación (diario, semanal o mensual) en el panel de control y presiona el botón de generación. El controlador de analítica en Node.js extrae el dataset de transacciones desde SQL Server y ejecuta los cálculos de ingresos, costos y márgenes de rentabilidad, así como los algoritmos de pronóstico temporal (Suavizado Exponencial Simple - SES y Promedios Móviles) y la segmentación ABC de Pareto. El resultado estructurado es enviado al frontend para renderizar gráficos interactivos y tablas dinámicas en el dashboard, habilitando además la opción de descargar el informe consolidado en formatos PDF o Excel.
+REALIZAR CONSULTA DE FERRETERÍA (MODULO ASISTENCIA)
+En cumplimiento de los requerimientos RF-IA-01, RF-IA-02 y RF-IA-03, y derivado del caso de uso expuesto en la Tabla II.34 (CU-07: Realizar consulta de ferretería), la Figura II.11 describe el ciclo de atención automatizada mediante procesamiento de lenguaje natural y arquitectura RAG.
+Figura 2.11 Diagrama de Secuencia (Realizar consulta técnica al asistente virtual)
+Fuente: Elaboración propia, 2026
+Descripción del flujo: El cliente formula una consulta técnica sobre materiales o herramientas en la ventana del chatbot (ReactJS). El mensaje es enviado al backend (/api/chatbot), el cual ejecuta una primera validación mediante un filtro de guardrails para bloquear consultas ajenas al dominio ferretero. Si el mensaje es aprobado, el sistema ejecuta una búsqueda contextual en SQL Server (RAG) para extraer nombres y precios actualizados en bolivianos de los productos relacionados. Con esta información, el backend ensambla el prompt enriquecido e invoca la inferencia del modelo LLaMA 3 mediante Ollama local, retornando una recomendación técnica precisa que es renderizada en tiempo real en la pantalla del usuario.
+DIAGRAMA DE CLASES
+El diagrama de clases modela la estructura estática del sistema, representando las entidades del dominio de la ferretería, sus atributos, métodos principales y las relaciones de dependencia, herencia y multiplicidad.
+Figura 2.12 Diagrama de clases
+Fuente: Elaboración propia, 2026
+Patrón de Herencia de Personas: Se implementó una jerarquía donde la clase base Persona centraliza los datos generales (nombres, apellidos, CI, teléfono), especializándose en Empleado (para personal de mostrador y administración) y Cliente (el cual incorpora atributos para el programa de fidelización tales como NivelLealtad, DescuentoPorcentaje, TotalComprasAcumulado y su NIT/CI para facturación electrónica).
+Control de Acceso: La entidad CuentaUsuario gestiona las credenciales encriptadas con Bcrypt y los tokens JWT, vinculándose de manera flexible a un Empleado o Cliente según su rol.
+Gestión de Lotes y Trazabilidad: Cada Producto se relaciona con su Categoría, Marca, Unidad y Ubicación física dentro de un Almacén. La relación con Lote (composición 1 a muchos) permite controlar el stock por partidas con fechas de caducidad individuales para evitar mermas en artículos químicos y perecederos.
+Transacciones Comerciales: La clase Venta agrupa uno o más registros de DetalleVenta, garantizando que el cobro en mostrador descuente de forma atómica el stock disponible y actualice el flujo de caja diario. Asimismo, el modelo incorpora las clases PedidosOnline y DetallePedidosOnline, las cuales gestionan el ciclo de vida de las reservas efectuadas desde el catálogo web (estados: Pendiente, Entregado, Cancelado; método de pago QR; y modalidad de entrega), vinculándose con Venta al momento de la liquidación física en mostrador para respaldar la emisión de Facturas Computarizadas SIAT o Recibos Oficiales.
+DIAGRAMA DE DESPLIEGUE
+En la Figura 2.13 se presenta el diagrama de despliegue del sistema, el cual describe la distribución física de los equipos de hardware, los artefactos de software que se ejecutan en cada uno de ellos y los protocolos de red que permiten su comunicación.
+Figura 2.13 Diagrama de despliegue
+Fuente: Elaboración propia (2026)
+Dispositivos del Cliente y Periféricos de Mostrador:
+Dispositivo Mostrador (Caja): Es la computadora principal ubicada en el mostrador de atención. En ella se ejecuta en el navegador web el artefacto de Frontend Ventas (ReactJS). Para resolver la lentitud en la atención, este equipo cuenta con dos periféricos físicos conectados directamente:
+Lector de Código de Barras: Dispositivo USB que permite escanear instantáneamente los productos etiquetados para cargarlos a la venta sin tener que buscar los precios a mano.
+Impresora Térmica: Dispositivo de impresión rápida conectado para emitir automáticamente los comprobantes y notas de venta en papel en cuanto se confirma el cobro.
+Dispositivo Administrador: Es la computadora de escritorio o portátil utilizada por el dueño o administrador. Ejecuta el Frontend Dashboard (ReactJS), permitiéndole revisar los reportes de ventas en gráficos, gestionar el stock, recibir alertas de vencimiento de lotes y cuadrar la caja diaria.
+Dispositivo Cliente: Representa las computadoras o teléfonos inteligentes de los clientes externos de la ferretería. Mediante su navegador web acceden al catálogo de productos en línea, registran pedidos y utilizan el chatbot de consultas.
+Servidor de Aplicaciones (Backend):
+Es el entorno de ejecución central que procesa toda la lógica del negocio. Se encarga de recibir las peticiones que llegan desde los distintos navegadores web y contiene dos artefactos principales:
+API REST (Node.js con Express): Gestiona todas las operaciones del sistema (autenticación con tokens JWT, registro de transacciones de venta, validación de stock, altas y bajas de productos) y devuelve las respuestas en formato JSON.
+Modelo de IA (NLP): Módulo encargado de procesar el lenguaje natural de las consultas que realizan los clientes en el chatbot, generando respuestas contextualizadas sobre los materiales de la ferretería.
+Servidor de Base de Datos:
+Es el nodo dedicado exclusivamente al almacenamiento y persistencia segura de la información. Aloja el gestor Microsoft SQL Server, el cual resguarda las tablas de usuarios, productos, lotes, ventas y facturas. Se comunica directamente con el servidor de aplicaciones mediante conexiones TCP/IP seguras, asegurando que ninguna transacción de venta quede a medias y manteniendo el inventario actualizado en todo momento.
+Protocolos y Comunicación de Red:
+Comunicación Clientes – Servidor de Aplicaciones: Se realiza mediante el protocolo web estándar HTTP/HTTPS a través de la red local de la ferretería o Internet, garantizando rapidez y desacoplamiento de la interfaz gráfica.
+Comunicación Servidor de Aplicaciones – Base de Datos: Se efectúa a través del puerto estándar de SQL Server (1433) mediante consultas y procedimientos en Transact-SQL, asegurando alta velocidad y consistencia de los datos.
+DIAGRAMA DE COMPONENTES
+En la Figura II.14 se presenta el diagrama de componentes del sistema, el cual ilustra la organización modular del software bajo una arquitectura de tres capas (Presentación, Lógica de Negocio y Datos/Servicios), detallando las responsabilidades de cada módulo y las interfaces que permiten su interacción.
+Figura 2.14 Diagrama de Componentes de la Arquitectura del Sistema
+Fuente: Elaboración propia (2026)
+Capa de Presentación (Frontend en ReactJS):
+Agrupa los módulos de interfaz de usuario desarrollados bajo el enfoque de Single Page Application (SPA), ofreciendo vistas optimizadas según el rol:
+Módulo UI Administración: Pantallas para monitorear el dashboard interactivo, gestionar el catálogo de productos y lotes con fechas de vencimiento, visualizar alertas de stock mínimo y administrar cuentas y roles de usuarios.
+Módulo UI Mostrador / Caja: Diseñado para la atención rápida en tienda, integrando la lectura por escáner de código de barras, búsqueda por coincidencia para productos a granel, cálculo de cambio y generación de comprobantes digitales en PDF.
+Módulo UI Cliente: Interfaz para compradores que permite navegar el catálogo virtual, agregar productos al carrito con validación de stock en tiempo real y consultar al asistente virtual.
+Cliente API HTTP: Módulo centralizado de servicios que gestiona el envío de solicitudes y recepción de datos en formato JSON hacia el backend.
+Capa de Lógica de Negocio (Backend en Node.js):
+Es el núcleo operativo del sistema que procesa las reglas del negocio ferretero:
+Enrutadores y Controladores REST (Express.js): Procesan las peticiones HTTP (GET, POST, PUT, DELETE) para las operaciones de ventas, control de existencias, arqueo de caja y atención del chatbot.
+Módulo de Seguridad: Actúa como middleware protegiendo los endpoints mediante tokens criptográficos JWT, control de acceso basado en roles (RBAC), encriptación Bcrypt y protección contra saturación de peticiones (Rate Limiting).
+Motor de Analítica y Predicción: Componente encargado de ejecutar los algoritmos matemáticos de series de tiempo (Suavizado Exponencial Simple y Promedios Móviles) y la segmentación ABC de rentabilidad.
+Capa de Persistencia (ORM Sequelize): Modela y ejecuta las transacciones en la base de datos garantizando integridad referencial y atomicidad en las ventas y movimientos de inventario.
+Capa de Datos y Servicios Externos:
+Base de Datos Relacional (Microsoft SQL Server): Repositorio centralizado estructurado en tablas normalizadas para almacenar de forma persistente los registros de ventas, lotes, inventarios, clientes y usuarios.
+Motor de Inferencia Ollama (LLaMA 3): Componente local de inteligencia artificial que procesa las dudas de los usuarios en lenguaje natural y genera recomendaciones técnicas sobre materiales y herramientas.
+API de WhatsApp: Servicio externo de mensajería que recibe los pedidos compilados desde el catálogo para la coordinación directa entre el cliente y el personal de la ferretería.

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getProducts, getCategories, getBrands } from '../../services/api';
+import { getProducts, getCategories, getBrands, createOnlineOrder } from '../../services/api';
+import { generateInvoiceTicketPdf } from '../../utils/invoicePdfGenerator';
+import QRCode from 'qrcode';
 import { LOYALTY_TIERS } from '../../constants/loyalty';
 import ChatbotWidget from '../../components/chatbot/ChatbotWidget';
 
@@ -36,6 +38,22 @@ function ClientCatalog() {
   // Modal de Requerimiento de Inicio de Sesión para Carrito
   const [showAuthModal, setShowAuthModal] = useState(false);
 
+  // Estados de Checkout y Venta Online Real
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [showSuccessOrderModal, setShowSuccessOrderModal] = useState(false);
+  const [processingOrder, setProcessingOrder] = useState(false);
+  const [completedOrderData, setCompletedOrderData] = useState(null);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
+
+  // Formulario de Checkout Online
+  const [checkoutName, setCheckoutName] = useState('');
+  const [checkoutNit, setCheckoutNit] = useState('');
+  const [checkoutPhone, setCheckoutPhone] = useState('');
+  const [checkoutAddress, setCheckoutAddress] = useState('');
+  const [checkoutNotes, setCheckoutNotes] = useState('');
+  const [deliveryType, setDeliveryType] = useState('RECOJO'); // 'RECOJO' | 'DOMICILIO'
+  const [checkoutPaymentMethod, setCheckoutPaymentMethod] = useState('QR'); // 'QR' | 'CONTRA_ENTREGA' | 'TRANSFERENCIA'
+
   // Sesión de Usuario y Menú Desplegable
   const [currentUser, setCurrentUser] = useState(() => {
     try {
@@ -46,6 +64,19 @@ function ClientCatalog() {
     }
   });
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  // Auto-cargar datos del cliente desde su cuenta registrada (NIT, Teléfono, Nombre)
+  useEffect(() => {
+    if (currentUser) {
+      const registeredName = currentUser.Nombre || currentUser.nombre || currentUser.RazonSocial || '';
+      const registeredNit = currentUser.CI_NIT || currentUser.ciNit || currentUser.NIT || currentUser.nit || currentUser.ci || '';
+      const registeredPhone = currentUser.Telefono || currentUser.telefono || currentUser.phone || '';
+
+      if (registeredName) setCheckoutName(registeredName);
+      if (registeredNit && registeredNit !== '0') setCheckoutNit(registeredNit);
+      if (registeredPhone) setCheckoutPhone(registeredPhone);
+    }
+  }, [currentUser]);
 
   // Cerrar sesión
   const handleLogout = () => {
@@ -248,43 +279,184 @@ function ClientCatalog() {
   const cartFinalTotal = Math.max(0, cartSubtotal - cartLoyaltyDiscount);
   const cartTotalPrice = cartFinalTotal;
 
-  // Enviar pedido por WhatsApp
-  const handleWhatsAppCheckout = () => {
+  // Efecto para generar el Código QR dinámico al abrir el modal o cambiar el método a QR
+  useEffect(() => {
+    if (showCheckoutModal && checkoutPaymentMethod === 'QR' && cartFinalTotal > 0) {
+      const qrPayload = `BOLIVIA-PAGOSIMPLE|EMPRESA:CYC FERRETERIA|MONTO:${cartFinalTotal.toFixed(2)}|REF:PEDIDO-ONLINE|FECHA:${new Date().toISOString()}`;
+      QRCode.toDataURL(qrPayload, {
+        width: 260,
+        margin: 2,
+        color: {
+          dark: '#0f172a',
+          light: '#ffffff'
+        }
+      })
+      .then(url => setQrCodeDataUrl(url))
+      .catch(err => console.error("Error generando código QR:", err));
+    }
+  }, [showCheckoutModal, checkoutPaymentMethod, cartFinalTotal]);
+
+  // Abrir Modal de Checkout Online Real
+  const handleOpenCheckoutModal = () => {
+    if (cart.length === 0) {
+      setToastMessage("Tu carrito está vacío. Agrega productos antes de pagar.");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      return;
+    }
+    if (!currentUser) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    const registeredName = currentUser.Nombre || currentUser.nombre || currentUser.RazonSocial || '';
+    const registeredNit = currentUser.CI_NIT || currentUser.ciNit || currentUser.NIT || currentUser.nit || currentUser.ci || '';
+    const registeredPhone = currentUser.Telefono || currentUser.telefono || currentUser.phone || '';
+
+    setCheckoutName(registeredName);
+    setCheckoutNit(registeredNit && registeredNit !== '0' ? registeredNit : '');
+    setCheckoutPhone(registeredPhone);
+    setDeliveryType('RECOJO');
+    setShowCheckoutModal(true);
+  };
+
+  // Procesar Compra Real con Descuento Inmediato de Stock en Base de Datos (MSSQL)
+  const handleConfirmOrder = async (e) => {
+    if (e) e.preventDefault();
     if (cart.length === 0) return;
-    let message = `🛒 *HOLA C&C FERRETERÍA, DESEO REALIZAR UN PEDIDO:*\n\n`;
-    
-    if (currentUser) {
-      message += `👤 *Cliente:* ${currentUser.Nombre || 'Cliente Registrado'}\n`;
-      if (userDiscountPercent > 0) {
-        message += `🎖️ *Nivel Lealtad:* ${userTierInfo.name} (${userTierInfo.badge} - ${userDiscountPercent}% de Desc.)\n`;
-      }
-      message += `\n`;
+    if (!currentUser) {
+      setShowAuthModal(true);
+      return;
     }
 
-    cart.forEach((item, index) => {
-      const subtotal = (parseFloat(item.product.PrecioVenta || 0) * item.quantity).toFixed(2);
-      message += `${index + 1}. *${item.product.Nombre}*\n   Cantidad: ${item.quantity} ${item.product.Unidad?.Nombre || 'pza(s)'} x Bs. ${parseFloat(item.product.PrecioVenta).toFixed(2)} = *Bs. ${subtotal}*\n`;
+    if (!checkoutName.trim()) {
+      setToastMessage("Por favor ingresa tu Nombre o Razón Social.");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3500);
+      return;
+    }
+
+    setProcessingOrder(true);
+    try {
+      const itemsPayload = cart.map(item => ({
+        ProductoID: item.product.ProductoID,
+        Cantidad: item.quantity,
+        PrecioUnitario: parseFloat(item.product.PrecioVenta || 0)
+      }));
+
+      const pickupAddress = 'Recojo en mostrador central C&C Ferretería (Av. Beijing y Av. Tadeo Haenke)';
+      const hasNit = checkoutNit.trim() !== '' && checkoutNit.trim() !== '0';
+
+      const orderPayload = {
+        clienteID: currentUser?.ClienteID || currentUser?.id || null,
+        clienteNombre: checkoutName.trim(),
+        telefono: checkoutPhone.trim() || null,
+        nit: checkoutNit.trim() || '0',
+        tipoDocumento: checkoutNit.trim().length > 8 ? 'NIT' : 'CI',
+        descuento: cartLoyaltyDiscount,
+        requiereFactura: hasNit,
+        notas: 'Recojo en mostrador central',
+        items: itemsPayload
+      };
+
+      const response = await createOnlineOrder(orderPayload);
+      const orderResult = response?.order || {};
+
+      // Estructurar datos de la reserva online completada para la pantalla de confirmación
+      const completedData = {
+        orderId: orderResult.CodigoPedido || `PED-${orderResult.PedidoID || '0000'}`,
+        pedidoId: orderResult.PedidoID,
+        date: new Date().toLocaleString('es-BO'),
+        clientName: checkoutName.trim(),
+        nit: checkoutNit.trim() || '0',
+        telefono: checkoutPhone.trim() || 'No especificado',
+        total: cartFinalTotal,
+        subtotal: cartSubtotal,
+        discount: cartLoyaltyDiscount,
+        paymentMethod: 'Yape / QR Simple Bolivia',
+        deliveryType: 'RECOJO',
+        address: pickupAddress,
+        notes: 'Recojo en mostrador central (Av. Beijing y Av. Tadeo Haenke)',
+        isInvoice: hasNit,
+        isPreOrder: true,
+        items: cart.map(it => ({
+          nombre: it.product.Nombre,
+          cantidad: it.quantity,
+          unidad: it.product.Unidad?.Nombre || 'Pza',
+          precio: parseFloat(it.product.PrecioVenta || 0),
+          subtotal: it.quantity * parseFloat(it.product.PrecioVenta || 0)
+        }))
+      };
+
+      setCompletedOrderData(completedData);
+
+      // Limpiar carrito tras registrar la reserva
+      setCart([]);
+      localStorage.removeItem('cyc_client_cart');
+      setIsCartOpen(false);
+      setShowCheckoutModal(false);
+      setShowSuccessOrderModal(true);
+
+    } catch (err) {
+      console.error("Error al procesar la reserva del pedido online:", err);
+      const errMsg = err.response?.data?.message || err.message || "Error al procesar el pedido en el servidor.";
+      setToastMessage(errMsg);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 5000);
+    } finally {
+      setProcessingOrder(false);
+    }
+  };
+
+  // Descargar Comprobante de Reserva de Pedido PDF
+  const handleDownloadTicketPdf = async () => {
+    if (!completedOrderData) return;
+    try {
+      await generateInvoiceTicketPdf({
+        id: completedOrderData.orderId,
+        numeroFactura: completedOrderData.orderId,
+        time: completedOrderData.date,
+        nit: completedOrderData.nit,
+        cliente: completedOrderData.clientName,
+        subtotal: completedOrderData.subtotal,
+        discount: completedOrderData.discount,
+        total: completedOrderData.total,
+        isInvoice: false,
+        isPreOrder: true,
+        items: completedOrderData.items.map(it => ({
+          nombre: it.nombre,
+          cantidad: it.cantidad,
+          precio: it.precio,
+          subtotal: it.subtotal
+        }))
+      }, { openInTab: false, download: true });
+    } catch (e) {
+      console.error("Error al descargar comprobante PDF:", e);
+      setToastMessage("Error al generar el comprobante de reserva en PDF.");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    }
+  };
+
+  // Notificar o coordinar retiro por WhatsApp con el número de reserva oficial
+  const handleNotifyWhatsApp = () => {
+    if (!completedOrderData) return;
+    let msg = `🛒 *HOLA C&C FERRETERÍA, ACABO DE RESERVAR MI PEDIDO ONLINE CON PAGO QR*\n\n`;
+    msg += `🔖 *N° de Reserva:* ${completedOrderData.orderId}\n`;
+    msg += `👤 *Cliente:* ${completedOrderData.clientName}\n`;
+    msg += `📱 *Teléfono:* ${completedOrderData.telefono}\n`;
+    msg += `📄 *NIT/C.I.:* ${completedOrderData.nit}\n`;
+    msg += `💰 *Total a Cobrar con QR:* Bs. ${completedOrderData.total.toFixed(2)}\n`;
+    msg += `📱 *Método de Pago:* Pago QR Simple (Yape)\n`;
+    msg += `🏬 *Modalidad:* Recojo en mostrador central (Beijing y Tadeo Haenke)\n\n`;
+    msg += `📦 *Productos Reservados:*\n`;
+    completedOrderData.items.forEach((it, idx) => {
+      msg += `  ${idx + 1}. ${it.nombre} (${it.cantidad} unid.) = Bs. ${it.subtotal.toFixed(2)}\n`;
     });
+    msg += `\n_Tengo listo mi comprobante de transferencia Yape. Pasaré por el mostrador a verificar el pago, retirar los productos y recibir mi factura/recibo oficial._`;
 
-    message += `\n💵 *Subtotal:* Bs. ${cartSubtotal.toFixed(2)}`;
-    if (userDiscountPercent > 0) {
-      message += `\n🎁 *Descuento Lealtad (${userTierInfo.badge} - ${userDiscountPercent}%):* -Bs. ${cartLoyaltyDiscount.toFixed(2)}`;
-      message += `\n💰 *TOTAL FINAL DEL PEDIDO: Bs. ${cartFinalTotal.toFixed(2)}*\n`;
-    } else {
-      message += `\n💰 *TOTAL DEL PEDIDO: Bs. ${cartSubtotal.toFixed(2)}*\n`;
-    }
-
-    message += `\n📍 *Por favor confírmenme la disponibilidad y forma de entrega/pago.*`;
-
-    const encoded = encodeURIComponent(message);
+    const encoded = encodeURIComponent(msg);
     window.open(`https://wa.me/59167524675?text=${encoded}`, '_blank');
-
-    // Limpiar carrito y cerrar drawer tras enviar el pedido
-    setCart([]);
-    setIsCartOpen(false);
-    setToastMessage("¡Pedido enviado por WhatsApp! Tu carrito ha sido limpiado exitosamente.");
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 4000);
   };
 
   // Filtrado y Ordenamiento de Productos
@@ -649,7 +821,6 @@ function ClientCatalog() {
               const stock = p.Stock || 0;
               const isAvailable = stock > 0;
               const priceVenta = parseFloat(p.PrecioVenta || 0);
-              const priceSinFactura = parseFloat(p.PrecioSinFactura || 0);
               const currentQty = getItemQuantity(p.ProductoID);
 
               return (
@@ -723,20 +894,17 @@ function ClientCatalog() {
                       </h3>
                     </div>
 
-                    {/* Precios */}
+                    {/* Precio */}
                     <div className="pt-2 border-t border-slate-800/80">
                       <div className="flex items-baseline justify-between">
-                        <span className="text-[11px] text-slate-400 font-semibold">Con Factura:</span>
-                        <span className="text-base font-black text-emerald-400">
-                          Bs. {priceVenta.toFixed(2)}
-                        </span>
-                      </div>
-                      {priceSinFactura > 0 && (
-                        <div className="flex items-baseline justify-between text-[10px] text-slate-400 mt-0.5">
-                          <span>Sin Factura:</span>
-                          <span className="font-semibold text-slate-300">Bs. {priceSinFactura.toFixed(2)}</span>
+                        <span className="text-[11px] text-slate-400 font-bold">Precio:</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-base font-black text-cyan-400 font-mono">
+                            Bs. {priceVenta.toFixed(2)}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-medium">/ {p.Unidad?.Nombre || 'Pza'}</span>
                         </div>
-                      )}
+                      </div>
                     </div>
 
                     {/* Controles de Cantidad y Botón de Añadir */}
@@ -809,7 +977,9 @@ function ClientCatalog() {
               <div className="p-6 border-b border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold">
-                    🛒
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                    </svg>
                   </div>
                   <div>
                     <h3 className="text-base font-extrabold text-white">Carrito de Compras</h3>
@@ -828,7 +998,11 @@ function ClientCatalog() {
               <div className="p-6 flex-1 overflow-y-auto space-y-4">
                 {cart.length === 0 ? (
                   <div className="text-center py-16 space-y-3">
-                    <div className="text-4xl">🛒</div>
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-slate-500">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                      </svg>
+                    </div>
                     <p className="text-sm font-bold text-slate-300">Tu carrito está vacío</p>
                     <p className="text-xs text-slate-500">Agrega productos del catálogo para armar tu pedido.</p>
                   </div>
@@ -850,8 +1024,10 @@ function ClientCatalog() {
                             className="w-14 h-14 object-cover rounded-xl border border-slate-800 shrink-0"
                           />
                         ) : (
-                          <div className="w-14 h-14 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-xl shrink-0">
-                            📦
+                          <div className="w-14 h-14 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 shrink-0">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                            </svg>
                           </div>
                         )}
 
@@ -912,7 +1088,11 @@ function ClientCatalog() {
                   {currentUser && userDiscountPercent > 0 ? (
                     <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs text-amber-300">
                       <div className="flex items-center gap-2">
-                        <span className="text-base">🎁</span>
+                        <div className="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                          </svg>
+                        </div>
                         <div>
                           <p className="font-bold">{userTierInfo.badge} Activo</p>
                           <p className="text-[10px] text-amber-400/80">{userDiscountPercent}% de descuento aplicado a tu compra</p>
@@ -922,7 +1102,11 @@ function ClientCatalog() {
                     </div>
                   ) : !currentUser ? (
                     <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center gap-2.5 text-xs text-slate-300">
-                      <span className="text-base flex-shrink-0">💎</span>
+                      <div className="w-6 h-6 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 flex-shrink-0">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                        </svg>
+                      </div>
                       <p className="text-[11px] leading-tight">
                         <strong className="text-cyan-400">¿Eres cliente frecuente o contratista?</strong> Inicia sesión para aplicar tus descuentos de lealtad en cada pedido.
                       </p>
@@ -942,25 +1126,21 @@ function ClientCatalog() {
                       </div>
                     )}
 
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Impuestos (13% IVA)</span>
-                      <span className="font-semibold text-emerald-400">Incluido</span>
-                    </div>
                     <div className="flex justify-between pt-2 border-t border-slate-800 text-sm font-black">
                       <span className="text-white">Total a Pagar</span>
                       <span className="text-cyan-400">Bs. {cartFinalTotal.toFixed(2)}</span>
                     </div>
                   </div>
 
-                  {/* Botón WhatsApp Checkout */}
+                  {/* Botón Finalizar Compra y Pagar Online */}
                   <button
-                    onClick={handleWhatsAppCheckout}
-                    className="w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold rounded-xl shadow-lg shadow-emerald-500/20 text-xs flex items-center justify-center gap-2 transition-all"
+                    onClick={handleOpenCheckoutModal}
+                    className="w-full py-3.5 px-4 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-black rounded-xl shadow-lg shadow-cyan-500/25 text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                   >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                     </svg>
-                    <span>Enviar Pedido por WhatsApp</span>
+                    <span>Finalizar Compra y Pagar Online</span>
                   </button>
 
                   {/* Vaciar Carrito */}
@@ -998,7 +1178,11 @@ function ClientCatalog() {
                     className="w-full h-full object-contain"
                   />
                 ) : (
-                  <span className="text-5xl">📦</span>
+                  <div className="w-20 h-20 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-600">
+                    <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                    </svg>
+                  </div>
                 )}
               </div>
 
@@ -1025,16 +1209,11 @@ function ClientCatalog() {
                   {quickViewProduct.Descripcion || "Producto de alta calidad para construcción y ferretería en general."}
                 </p>
 
-                <div className="py-2 border-y border-slate-800 space-y-1">
-                  <div className="text-xs text-slate-400">Precio con Factura:</div>
-                  <div className="text-2xl font-black text-emerald-400">
+                <div className="py-2.5 border-y border-slate-800 space-y-1">
+                  <span className="text-xs text-slate-400 font-bold">Precio:</span>
+                  <div className="text-2xl font-black text-cyan-400 font-mono">
                     Bs. {parseFloat(quickViewProduct.PrecioVenta || 0).toFixed(2)}
                   </div>
-                  {quickViewProduct.PrecioSinFactura > 0 && (
-                    <div className="text-xs text-slate-400">
-                      Precio Sin Factura: <span className="text-slate-200 font-bold">Bs. {parseFloat(quickViewProduct.PrecioSinFactura).toFixed(2)}</span>
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-slate-400">
@@ -1064,6 +1243,9 @@ function ClientCatalog() {
                   }}
                   className="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold rounded-xl shadow-lg shadow-cyan-500/20 text-xs flex items-center justify-center gap-2 transition-all"
                 >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
                   <span>Añadir al Carrito</span>
                 </button>
               </div>
@@ -1108,8 +1290,10 @@ function ClientCatalog() {
             </button>
 
             {/* Ícono de Candado y Carrito */}
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center text-3xl shadow-lg shadow-cyan-500/10">
-              🛒🔒
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 border border-cyan-400/40 flex items-center justify-center text-white shadow-xl shadow-cyan-500/20">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
             </div>
 
             <div className="space-y-2">
@@ -1124,15 +1308,27 @@ function ClientCatalog() {
             {/* Beneficios rápidos */}
             <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-3.5 text-left space-y-2 text-xs">
               <div className="flex items-center gap-2.5 text-slate-300">
-                <span className="text-emerald-400 font-black">✓</span>
+                <div className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </div>
                 <span>Descuentos de cliente frecuente (hasta 10% OFF)</span>
               </div>
               <div className="flex items-center gap-2.5 text-slate-300">
-                <span className="text-emerald-400 font-black">✓</span>
+                <div className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </div>
                 <span>Facturación computarizada oficial con tu NIT / C.I.</span>
               </div>
               <div className="flex items-center gap-2.5 text-slate-300">
-                <span className="text-emerald-400 font-black">✓</span>
+                <div className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </div>
                 <span>Coordinación de despacho y entrega por WhatsApp</span>
               </div>
             </div>
@@ -1167,6 +1363,374 @@ function ClientCatalog() {
         </div>
       )}
 
+      {/* 8. MODAL DE CHECKOUT ONLINE REAL (FACTURACIÓN, ENTREGA Y PAGO CON QR) */}
+      {showCheckoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-5 sm:p-7 shadow-2xl relative my-auto max-h-[92vh] flex flex-col">
+            {/* Cabecera del Modal */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-800/80 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20 flex-shrink-0">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                  </svg>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                      Finalizar Compra Online
+                    </h3>
+                    <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      Inventario en Tiempo Real
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Tu pedido se registrará directamente en la base de datos de la ferretería y descontará el stock disponible.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => !processingOrder && setShowCheckoutModal(false)}
+                disabled={processingOrder}
+                className="text-slate-400 hover:text-white text-sm font-bold w-8 h-8 rounded-full bg-slate-800/60 hover:bg-slate-800 flex items-center justify-center transition-colors disabled:opacity-50"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Contenido en 2 Columnas */}
+            <form onSubmit={handleConfirmOrder} className="flex-1 overflow-y-auto py-4 space-y-6 sm:space-y-0 sm:grid sm:grid-cols-12 sm:gap-6">
+              {/* Columna Izquierda: Datos de Facturación y Entrega (7 cols) */}
+              <div className="sm:col-span-7 space-y-4">
+                <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3.5">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+                    <div className="w-5 h-5 rounded-md bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                      </svg>
+                    </div>
+                    <span className="text-white font-extrabold tracking-wide">1. Datos del Cliente y Facturación</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-bold text-slate-400">
+                          Nombre Completo o Razón Social <span className="text-rose-400">*</span>:
+                        </label>
+                        {currentUser && checkoutName && (
+                          <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                            <span>Cargado de tu cuenta</span>
+                          </span>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        value={checkoutName}
+                        onChange={(e) => setCheckoutName(e.target.value)}
+                        placeholder="Ej. Juan Pérez o Constructora San Miguel S.R.L."
+                        className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-medium"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[11px] font-bold text-slate-400">
+                            NIT o Cédula de Identidad:
+                          </label>
+                          {currentUser && checkoutNit && checkoutNit !== '0' && (
+                            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                              </svg>
+                              <span>De tu cuenta</span>
+                            </span>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={checkoutNit}
+                          onChange={(e) => setCheckoutNit(e.target.value)}
+                          placeholder="Tu NIT o CI para retiro"
+                          className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[11px] font-bold text-slate-400">
+                            Teléfono de Contacto:
+                          </label>
+                          {currentUser && checkoutPhone && (
+                            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                              </svg>
+                              <span>De tu cuenta</span>
+                            </span>
+                          )}
+                        </div>
+                        <input
+                          type="tel"
+                          value={checkoutPhone}
+                          onChange={(e) => setCheckoutPhone(e.target.value)}
+                          placeholder="Ej. 76543210"
+                          className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-medium"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modalidad de Entrega: Recojo en Tienda Directamente */}
+                <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-md bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75V21m-4.5 0H2.25A2.25 2.25 0 010 18.75V10.5m18 10.5h3.75A2.25 2.25 0 0024 18.75V10.5M12 3v18" />
+                        </svg>
+                      </div>
+                      <span className="text-white font-extrabold tracking-wide">2. Modalidad de Entrega</span>
+                    </div>
+                    <span className="bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                      Recojo Inmediato
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl border border-cyan-500/40 bg-gradient-to-br from-cyan-950/30 to-slate-900/60 text-left flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center flex-shrink-0 text-cyan-400">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.75A2.25 2.25 0 0024 18.75V10.5m-18 0V4.5a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 4.5v6" />
+                      </svg>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-white text-sm">Recojo en Tienda / Mostrador</span>
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">Sin Costo</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                        </svg>
+                        <span><strong>Ubicación:</strong> C&C Ferretería — Casa Matriz (Av. Beijing y Av. Tadeo Haenke, Cochabamba).</span>
+                      </p>
+                      <p className="text-[10px] text-slate-400 leading-tight">
+                        Tus productos se separan y empaquetan en mostrador inmediatamente tras la confirmación de la compra. Podrás retirarlos presentando tu comprobante digital o carnet de identidad.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Columna Derecha: Método de Pago Exclusivo con QR y Resumen (5 cols) */}
+              <div className="sm:col-span-5 space-y-4">
+                <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-md bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                        </svg>
+                      </div>
+                      <span className="text-white font-extrabold tracking-wide">3. Método de Pago</span>
+                    </div>
+                    <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
+                      <span>Yape / QR Simple</span>
+                    </span>
+                  </div>
+
+                  {/* Código QR Real de Yape / BCP */}
+                  <div className="p-4 bg-slate-900/90 border border-slate-800 rounded-xl text-center space-y-2.5 animate-fade-in">
+                    <div className="flex items-center justify-center gap-2 text-xs text-purple-200 font-bold bg-purple-950/60 border border-purple-500/40 py-1.5 px-3.5 rounded-xl w-fit mx-auto shadow-sm">
+                      <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                      </svg>
+                      <span>Paga con Yape o cualquier Banco</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300">
+                      Escanea este código QR desde tu app <strong>Yape</strong> o tu app bancaria móvil:
+                    </p>
+                    <div className="flex justify-center p-2.5 bg-white rounded-2xl mx-auto w-fit shadow-2xl shadow-purple-950/40 border-2 border-purple-500/40">
+                      <img src="/qr_yape_ferreteria.png" alt="QR Yape C&C Ferretería" className="w-48 h-48 object-contain" />
+                    </div>
+                    <div className="text-[11px] text-slate-300 font-mono bg-slate-950/90 py-2 px-3 rounded-xl border border-slate-800 flex items-center justify-between">
+                      <span className="text-slate-400">Monto exacto a transferir:</span>
+                      <strong className="text-cyan-400 text-sm font-black">Bs. {cartFinalTotal.toFixed(2)}</strong>
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-tight">
+                      Acepta pagos directos desde <strong>Yape Bolivia, BCP, Banco Unión, BNB, BancoSol, Fie, Mercantil Santa Cruz</strong> y todas las entidades de Pago Simple.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Resumen de Costos */}
+                <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Productos ({cartTotalItems} unid.):</span>
+                    <span className="text-white font-mono">Bs. {cartSubtotal.toFixed(2)}</span>
+                  </div>
+
+                  {userDiscountPercent > 0 && (
+                    <div className="flex justify-between text-amber-400 font-bold">
+                      <span>Descuento {userTierInfo.name} ({userTierInfo.badge} - {userDiscountPercent}%):</span>
+                      <span className="font-mono">-Bs. {cartLoyaltyDiscount.toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-slate-400">
+                    <span>Entrega en Tienda:</span>
+                    <span className="text-emerald-400 font-semibold">Gratis</span>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800 flex justify-between items-baseline">
+                    <span className="text-sm font-black text-white">Total a Pagar:</span>
+                    <span className="text-lg font-black text-cyan-400 font-mono">Bs. {cartFinalTotal.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Botón de Confirmación */}
+                <button
+                  type="submit"
+                  disabled={processingOrder}
+                  className="w-full py-3.5 px-4 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-black rounded-xl shadow-lg shadow-cyan-500/25 text-xs flex items-center justify-center gap-2 transition-all disabled:opacity-50 active:scale-[0.98]"
+                >
+                  {processingOrder ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Procesando y descontando inventario...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                      </svg>
+                      <span>Confirmar Compra (Bs. {cartFinalTotal.toFixed(2)})</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 9. MODAL DE ÉXITO DE COMPRA ONLINE (TICKET PDF + WHATSAPP) */}
+      {showSuccessOrderModal && completedOrderData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl relative text-center">
+            {/* Ícono de Éxito Festivo */}
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 border border-cyan-400/40 flex items-center justify-center text-white shadow-xl shadow-cyan-500/20">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-extrabold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                Reserva Registrada • Pendiente de Verificación
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                ¡Pedido Reservado con Éxito!
+              </h3>
+              <p className="text-xs text-slate-300 max-w-sm mx-auto leading-relaxed">
+                Tus materiales han sido apartados en cola. Acércate a nuestro mostrador central para verificar el comprobante de transferencia Yape y recibir tu <strong>Factura Oficial o Recibo</strong> junto a tus productos.
+              </p>
+            </div>
+
+            {/* Tarjeta de Resumen del Pedido */}
+            <div className="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-4 text-left space-y-2 text-xs">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-800/80">
+                <span className="text-slate-400">Código de Reserva:</span>
+                <span className="font-mono font-extrabold text-cyan-400 text-sm">#{completedOrderData.orderId}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Cliente:</span>
+                <span className="text-white font-semibold">{completedOrderData.clientName}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Teléfono:</span>
+                <span className="text-slate-300 font-mono">{completedOrderData.telefono || 'No especificado'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">NIT o C.I.:</span>
+                <span className="text-slate-300 font-mono">{completedOrderData.nit}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Método de Pago:</span>
+                <span className="text-purple-400 font-bold">{completedOrderData.paymentMethod}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Lugar de Retiro:</span>
+                <span className="text-slate-300 text-[11px]">Mostrador Central (Av. Beijing y Av. Tadeo Haenke)</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-slate-800/80">
+                <span className="text-slate-300 font-bold">Monto Transferido:</span>
+                <span className="font-mono font-black text-cyan-300 text-base">Bs. {completedOrderData.total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Nota de Verificación en Mostrador */}
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-left flex items-start gap-2.5">
+              <div className="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 flex-shrink-0 mt-0.5">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                </svg>
+              </div>
+              <p className="text-[11px] text-amber-200/90 leading-tight">
+                <strong>Paso final:</strong> Guarda la captura de tu transferencia Yape en tu celular. Al retirar tus productos en mostrador, el cajero verificará el depósito y te emitirá tu factura computarizada o recibo oficial.
+              </p>
+            </div>
+
+            {/* Acciones del Comprobante */}
+            <div className="space-y-2.5">
+              {/* Botón Descargar Ticket PDF */}
+              <button
+                type="button"
+                onClick={handleDownloadTicketPdf}
+                className="w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold rounded-xl shadow-lg shadow-cyan-500/25 text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Descargar Comprobante de Reserva (PDF)</span>
+              </button>
+
+              {/* Botón Notificar por WhatsApp */}
+              <button
+                type="button"
+                onClick={handleNotifyWhatsApp}
+                className="w-full py-2.5 px-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
+                </svg>
+                <span>Enviar Código a la Ferretería por WhatsApp</span>
+              </button>
+            </div>
+
+            {/* Cerrar y Continuar */}
+            <button
+              onClick={() => {
+                setShowSuccessOrderModal(false);
+                setCompletedOrderData(null);
+              }}
+              className="text-xs text-slate-400 hover:text-white font-medium transition-colors"
+            >
+              Cerrar y seguir explorando productos
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 9. FOOTER DEL PORTAL CLIENTE */}
       <footer className="bg-slate-900 border-t border-slate-800/80 py-8 mt-12 text-xs text-slate-500">
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center sm:justify-start">
@@ -1178,7 +1742,7 @@ function ClientCatalog() {
       </footer>
 
       {/* 9. WIDGET DE ASISTENTE VIRTUAL IA */}
-      <ChatbotWidget />
+      <ChatbotWidget hidden={isCartOpen || showCheckoutModal || showSuccessOrderModal || showAuthModal || !!quickViewProduct} />
     </div>
   );
 }

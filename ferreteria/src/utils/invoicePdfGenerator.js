@@ -367,24 +367,37 @@ export async function generateInvoiceTicketPdf(receiptData, options = { openInTa
   doc.line(margin, y, pageWidth - margin, y);
   y += 3.5;
 
-  // 2. Datos Fiscales
+  // 2. Datos del Documento / Fiscales
+  const isPreOrder = !!receiptData.isPreOrder;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.text(`NIT: 989530017`, margin, y);
   y += 3.5;
-  doc.text(isInvoice ? `FACTURA NRO: ${invoiceNum}` : `RECIBO NRO: ${invoiceNum}`, margin, y);
-  y += 3.5;
 
-  if (isInvoice) {
+  if (isPreOrder) {
+    doc.text(`RESERVA DE PEDIDO: #${receiptData.id || invoiceNum}`, margin, y);
+    y += 3.2;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.5);
-    doc.text('CÓD. AUTORIZACIÓN (CUF):', margin, y);
-    y += 2.8;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(5.5);
-    const splitCuf = doc.splitTextToSize(cuf, contentWidth);
-    doc.text(splitCuf, margin, y);
-    y += splitCuf.length * 2.4 + 1;
+    doc.setTextColor(180, 83, 9); // Amber/orange
+    doc.text('ESTADO: PENDIENTE (RECOJO EN TIENDA)', margin, y);
+    doc.setTextColor(0, 0, 0);
+    y += 3.5;
+  } else {
+    doc.text(isInvoice ? `FACTURA NRO: ${invoiceNum}` : `RECIBO NRO: ${invoiceNum}`, margin, y);
+    y += 3.5;
+
+    if (isInvoice) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.text('CÓD. AUTORIZACIÓN (CUF):', margin, y);
+      y += 2.8;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(5.5);
+      const splitCuf = doc.splitTextToSize(cuf, contentWidth);
+      doc.text(splitCuf, margin, y);
+      y += splitCuf.length * 2.4 + 1;
+    }
   }
 
   doc.line(margin, y, pageWidth - margin, y);
@@ -493,29 +506,51 @@ export async function generateInvoiceTicketPdf(receiptData, options = { openInTa
   doc.text(splitLiteral, margin, y);
   y += splitLiteral.length * 2.6 + 2;
 
-  // 6. QR Code Térmico
-  const qrString = `https://pilotosiat.impuestos.gob.bo/consulta/QR?nit=989530017&cuf=${cuf}&numero=${invoiceNum}&t=${total.toFixed(2)}`;
-  try {
-    const qrDataUrl = await QRCode.toDataURL(qrString, { width: 90, margin: 0 });
-    doc.addImage(qrDataUrl, 'PNG', (pageWidth - 22) / 2, y, 22, 22);
-    y += 24;
-  } catch (err) {
-    console.warn('QR error:', err);
+  // 6. QR Code / Leyenda
+  if (isPreOrder) {
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(180, 83, 9);
+    const legPre = 'COMPROBANTE DE RESERVA - NO VÁLIDO PARA CRÉDITO FISCAL';
+    doc.text(legPre, pageWidth / 2, y, { align: 'center' });
+    y += 3.5;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(50, 50, 50);
+    const legPreDesc = 'Presente este comprobante y su captura de pago Yape en nuestro mostrador central (Av. Beijing y Av. Tadeo Haenke) para verificar el pago y recibir su Factura Oficial o Recibo.';
+    const splitPre = doc.splitTextToSize(legPreDesc, contentWidth);
+    doc.text(splitPre, pageWidth / 2, y, { align: 'center' });
+    y += splitPre.length * 2.2 + 2;
+
+    doc.setFontSize(6);
+    doc.setFont('helvetica', 'bold');
+    doc.text('¡Gracias por su preferencia!', pageWidth / 2, y, { align: 'center' });
+  } else {
+    const qrString = `https://pilotosiat.impuestos.gob.bo/consulta/QR?nit=989530017&cuf=${cuf}&numero=${invoiceNum}&t=${total.toFixed(2)}`;
+    try {
+      const qrDataUrl = await QRCode.toDataURL(qrString, { width: 90, margin: 0 });
+      doc.addImage(qrDataUrl, 'PNG', (pageWidth - 22) / 2, y, 22, 22);
+      y += 24;
+    } catch (err) {
+      console.warn('QR error:', err);
+    }
+
+    // Leyenda oficial
+    doc.setFontSize(5);
+    doc.setTextColor(50, 50, 50);
+    const leg1 = '"ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAÍS, EL USO ILÍCITO SERÁ SANCIONADO PENALMENTE DE ACUERDO A LEY"';
+    const splitLeg = doc.splitTextToSize(leg1, contentWidth);
+    doc.text(splitLeg, pageWidth / 2, y, { align: 'center' });
+    y += splitLeg.length * 2.2 + 1;
+
+    doc.text('Ley Nº 453: Exige tus derechos como consumidor.', pageWidth / 2, y, { align: 'center' });
+    y += 3;
+    doc.text('¡Gracias por su compra!', pageWidth / 2, y, { align: 'center' });
   }
 
-  // Leyenda oficial
-  doc.setFontSize(5);
-  doc.setTextColor(50, 50, 50);
-  const leg1 = '"ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAÍS, EL USO ILÍCITO SERÁ SANCIONADO PENALMENTE DE ACUERDO A LEY"';
-  const splitLeg = doc.splitTextToSize(leg1, contentWidth);
-  doc.text(splitLeg, pageWidth / 2, y, { align: 'center' });
-  y += splitLeg.length * 2.2 + 1;
-
-  doc.text('Ley Nº 453: Exige tus derechos como consumidor.', pageWidth / 2, y, { align: 'center' });
-  y += 3;
-  doc.text('¡Gracias por su compra!', pageWidth / 2, y, { align: 'center' });
-
-  const fileName = `Ticket_${isInvoice ? 'Factura' : 'Recibo'}_Nro_${invoiceNum}.pdf`;
+  const fileName = isPreOrder
+    ? `Reserva_Pedido_${receiptData.id || invoiceNum}.pdf`
+    : `Ticket_${isInvoice ? 'Factura' : 'Recibo'}_Nro_${invoiceNum}.pdf`;
 
   if (options.download) {
     doc.save(fileName);

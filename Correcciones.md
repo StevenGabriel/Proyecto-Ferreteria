@@ -1319,3 +1319,236 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
   * **4.6. Costo Total y Viabilidad Financiera:** Consolidado en Bolivianos (BOB) y Dólares (\$us), complementado con el análisis de ahorro operativo anual y recuperación de la inversión (ROI).
 
 
+
+
+### 138. Transformación Integral del E-Commerce: Ventas Online Reales con Descuento Automático de Stock (MSSQL) y Comprobante Digital
+* **Objetivo y Justificación:**
+  * Reemplazar el flujo previo de compra informal (que se limitaba a enviar un texto a WhatsApp sin persistencia en base de datos) por un **sistema de ventas online 100% integrado y transaccional (ACID)**.
+  * Garantizar que las compras realizadas por clientes registrados en la web descuenten el inventario real en almacenes, queden registradas en el Kardex y en las ventas del sistema, y generen un comprobante oficial de compra con QR y opción de descarga en PDF.
+* **Solución Implementada:**
+  1. **Backend Transaccional ([`backend/api/routes/sales.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/sales.js)):**
+     * Se amplió el endpoint `POST /sales` para admitir el canal de venta `canalVenta: 'ONLINE'`, modalidades de entrega (`direccionEntrega`, `notaEntrega`) y métodos de pago (`QR`, `CONTRA_ENTREGA`, `TRANSFERENCIA`).
+     * Se implementó la numeración de documentos de pedido online `PED-${ventaID}` en lugar de ventas de mostrador.
+     * Se integró la validación estricta de stock disponible y la deducción automática por lotes activos mediante el algoritmo **FIFO**.
+     * Se registró cada ítem vendido en el Kardex oficial (`MovimientosInventario`) con tipo `SALIDA_VENTA`, motivo detallado y usuario responsable `Portal Web (Cliente Online)`.
+     * Se vinculó la venta con el perfil del cliente logueado (`ClienteID`), acumulando el monto en su historial y promoviendo su nivel de lealtad automáticamente si corresponde.
+     * En `GET /sales/recent`, se incorporó la detección automática de pedidos web para etiquetarlos en tiempo real con su respectiva insignia en el panel de ventas.
+  2. **Interfaz de Usuario y Checkout en la Landing Page ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+     * **Botón de Checkout:** Se actualizó el carrito para reemplazar el enlace simple de WhatsApp por el botón interactivo **"Finalizar Compra y Pagar Online"**.
+     * **Modal de Finalización de Compra:**
+       * **Datos del Cliente:** Razón Social, NIT/CI (precargados desde la sesión del usuario) y teléfono de contacto.
+       * **Modalidad de Entrega:** Selección entre *Recojo en Tienda* (Almacén Beijing) o *Despacho a Domicilio/Obra* (con dirección y notas para el transportista).
+       * **Métodos de Pago Bolivianos:**
+         * 📱 **QR Simple:** Generación dinámica y en tiempo real del código QR de pago interoperable para aplicaciones bancarias (Banco Unión, BCP, BNB, BancoSol, Fie, etc.).
+         * 🚚 **Pago Contra Entrega:** Opción para cancelar en efectivo o QR al recibir los materiales.
+         * 🏦 **Transferencia Bancaria:** Datos oficiales de la cuenta corriente de la ferretería.
+       * **Resumen y Lealtad:** Desglose con el subtotal, descuento por nivel de lealtad (`userTierInfo.badge`) y total final a pagar.
+     * **Modal de Éxito y Ticket Digital:**
+       * Presentación del código de pedido oficial confirmado (ej. `#PED-00125`).
+       * Confirmación visual de reserva y descuento de stock en almacén.
+       * Botón para **Descargar Comprobante / Ticket PDF** en formato térmico oficial utilizando `generateInvoiceTicketPdf` (`jsPDF`).
+       * Botón opcional para enviar la confirmación a la ferretería por WhatsApp con el número de pedido oficial y detalle de productos para coordinar la entrega.
+  3. **Visibilidad en el Punto de Venta ([`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx)):**
+     * Se agregó la insignia `🌐 Pedido Web` en la lista de ventas recientes del POS para que el personal de mostrador identifique inmediatamente qué compras provienen del portal online.
+* **Verificación:**
+  * Compilación exitosa del frontend con Vite (`✓ built in 5.68s` sin errores).
+  * Verificación sintáctica y funcional de las rutas del backend sin fallos de compilación ni advertencias.
+
+### 139. Simplificación del Checkout Online: Pago Exclusivo con QR y Recojo en Tienda
+* **Solicitud:**
+  * Configurar el modal de checkout para que la modalidad de entrega sea directa y fija como **Recojo en Tienda** (eliminando selectores y campos de dirección de envío a domicilio).
+  * Mostrar como único método de pago disponible el **Código QR Simple**, retirando las pestañas alternativas (Contra Entrega y Transferencia Bancaria).
+* **Solución Implementada ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+  * **Modalidad de Entrega:** Se reemplazó la botonera de selección por una tarjeta informativa fija y clara que destaca el retiro directo en el mostrador central de *C&C Ferretería* (Av. Beijing y Av. Tadeo Haenke, Cochabamba) sin costo adicional.
+  * **Método de Pago:** Se eliminaron las pestañas de selección múltiple, desplegando de manera limpia y directa el Código QR generado con `QRCode`, el monto total exacto en Bolivianos y la compatibilidad con todas las entidades bancarias del país.
+  * **Payload y Notificaciones:** Se fijaron los parámetros `metodoPago: 'QR'` y `direccionEntrega: 'Recojo en mostrador central C&C Ferretería'`, adaptando el mensaje de WhatsApp para indicar que el cliente recogerá los materiales en tienda.
+* **Verificación:**
+  * Compilación exitosa en Vite (`✓ built in 4.45s`). Interfaz mucho más directa, limpia y libre de pasos innecesarios.
+
+### 140. Integración del Código QR Oficial de Yape Bolivia para Pagos en Línea
+* **Solicitud:**
+  * Incorporar el código QR real proporcionado por el usuario perteneciente a la pasarela interbancaria **Yape / BCP Bolivia** para los cobros electrónicos de la ferretería.
+* **Solución Implementada ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+  * Se guardó la imagen del código QR oficial de Yape en el directorio público del proyecto (`/qr_yape_ferreteria.png`).
+  * Se actualizó la sección de método de pago en el modal de checkout para exhibir el QR con el distintivo oficial de **Yape / QR Simple Bolivia**.
+  * Se especificó la compatibilidad universal tanto con la aplicación **Yape** como con todas las bancas móviles del país bajo la red interoperable ASOBAN.
+  * Se actualizaron los datos del pedido y la notificación de WhatsApp para registrar el método como `Yape / QR Simple Bolivia`.
+* **Verificación:**
+  * Compilación exitosa con Vite (`✓ built in 4.37s`). El código QR real ya se visualiza nítidamente en el modal de compra para que cualquier cliente pueda transferir directamente escaneándolo con su celular.
+
+### 141. Flujo Seguro Click & Collect: Cola de Pedidos Online, Verificación QR en Mostrador y Facturación Fiscal Controlada
+* **Solicitud del Usuario:**
+  * Resolver la inquietud operativa y tributaria: evitar que un cliente en la web saque una factura oficial de crédito fiscal (13% IVA SIAT) sin pagar efectivamente por QR.
+  * Implementar un flujo donde el cliente genera una reserva online, la cual llega a una cola de **"Pedidos Online"** en el panel de Administrador y Empleado.
+  * Al momento del retiro en mostrador, el cajero y el cliente verifican el comprobante de transferencia Yape, y solo entonces el cajero presiona **"Confirmar Venta"**, descontando el inventario físico y emitiendo la Factura Computarizada oficial o el Recibo.
+* **Solución Implementada:**
+  * **Base de Datos MSSQL ([`onlineOrder.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/models/onlineOrder.js), [`onlineOrderDetail.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/models/onlineOrderDetail.js)):**
+    * Se crearon las tablas `PedidosOnline` y `DetallePedidosOnline` en SQL Server con compatibilidad `DATETIME2` para fechas y seguimiento de estados (`PENDIENTE`, `COMPLETADO`, `CANCELADO`), datos de cliente (Nombre, Teléfono, NIT), montos y trazabilidad con `VentaID`.
+  * **Backend ([`onlineOrders.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/onlineOrders.js)):**
+    * `POST /orders`: Registra la reserva en estado `PENDIENTE` validando disponibilidad de stock sin emitir factura previa ni descontar inventario antes del cobro verificado.
+    * `GET /orders`: Lista la cola de pedidos con filtros por estado, búsqueda en tiempo real y estadísticas KPI (pendientes, montos por cobrar, completados, cancelados).
+    * `POST /orders/:id/confirm`: Transacción atómica ACID que descuenta inventario por lotes FIFO, registra la venta oficial, movimientos en Kardex, emite la Factura SIAT o Recibo y marca el pedido como completado.
+    * `POST /orders/:id/cancel`: Cancela pedidos no retirados o no pagados sin afectar inventario ni impuestos.
+  * **Portal del Cliente ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+    * El checkout genera una **Reserva de Pedido** con código `#PED-XXXX`.
+    * La pantalla y el ticket descargable en PDF ([`invoicePdfGenerator.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/utils/invoicePdfGenerator.js)) indican claramente: *"Comprobante de Reserva - No válido para crédito fiscal. Presente este comprobante y su captura de Yape en mostrador para verificar el pago y recibir su Factura Oficial o Recibo."*
+  * **Panel de Administración y Empleados ([`OnlineOrdersView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/OnlineOrdersView.jsx)):**
+    * Nueva vista dedicada con cola en tiempo real, KPIs superiores, filtro por estado y auto-refresco.
+    * Modal interactivo de **"Revisar y Entregar Pedido"** con protocolo de verificación Yape paso a paso, selector para emitir Factura Computarizada con NIT o Recibo, y descarga inmediata del documento fiscal.
+  * **Navegación ([`sidebar.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/sidebar/sidebar.jsx), [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx), [`App.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/App.jsx)):**
+    * En el Sidebar se agregó **"📦 Pedidos Online"** con un contador/badge en tiempo real de pedidos pendientes.
+    * En la barra de herramientas del POS se incorporó el acceso directo a la cola de pedidos online.
+* **Verificación:**
+  * Pruebas de base de datos exitosas ejecutando creación, consulta, deducción de lotes FIFO y confirmación atómica con rollback en pruebas automatizadas.
+  * Compilación de producción con Vite (`npm run build`) completada con éxito en 4.49s sin errores.
+
+### 142. Eliminación de "Precio Sin Factura", Auto-Carga de NIT/Teléfono Registrado y Simplificación de Checkout
+* **Solicitud del Usuario:**
+  * Eliminar la indicación de "precio sin factura" en las tarjetas de productos y catálogo para cumplir con la legislación boliviana (todos los precios de venta al por menor deben incluir el 13% de IVA).
+  * Auto-cargar automáticamente el Nombre, NIT/CI y Teléfono registrados del cliente en el formulario de finalización de compra online para no tener que escribirlos nuevamente.
+  * Quitar el checkbox de "Emitir factura oficial computarizada (13% IVA incluido)" del modal de compra del cliente, dejando que el cajero en mostrador sea quien le consulte al cliente si desea Factura SIAT o Recibo oficial al momento de retirar su mercadería.
+* **Solución Implementada:**
+  * **Precios Oficiales Facturados ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+    * Se eliminó el bloque `Sin Factura: Bs. XX.XX` de las tarjetas del catálogo y del modal de Vista Rápida (`quickViewProduct`).
+    * Ahora se muestra exclusivamente el precio oficial único con la etiqueta `IVA Incluido (Facturado)` en cumplimiento con la normativa tributaria.
+  * **Auto-Carga Inteligente de Cuenta Registrada ([`auth.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/auth.js), [`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+    * El backend (`/auth/login` y `/auth/register`) ahora incluye `CI_NIT` y `Telefono` de la persona en el objeto de sesión del usuario.
+    * En `ClientCatalog.jsx`, al abrir el modal de checkout (`handleOpenCheckout`) y mediante un efecto reactivo, se pre-cargan automáticamente el Nombre, NIT/CI y Teléfono de la cuenta del cliente activo.
+    * En el formulario de compra se añadieron indicadores visuales `✓ Cargado de tu cuenta` y `✓ De tu cuenta`.
+  * **Eliminación del Checkbox de Factura y Aviso Informativo ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+    * Se removió el checkbox `chkInvoice` del modal de compra.
+    * Se incorporó una nota explicativa: *"Todos nuestros precios ya incluyen el 13% de IVA. Al recoger tus materiales en mostrador, el cajero te consultará directamente si deseas que se emita tu Factura Computarizada Oficial (SIAT) a tu NIT o tu Recibo de Venta Oficial."*
+* **Verificación:**
+  * Compilación exitosa en Vite (`npm run build`) en 4.46s con 0 errores.
+  * Verificación de persistencia y auto-llenado de campos comprobada.
+
+### 143. Limpieza Visual: Retiro de Etiquetas "IVA Incluido" en Precios y Cuadros Explicativos de Factura en Checkout
+* **Solicitud del Usuario:**
+  * Quitar el distintivo/etiqueta de `"IVA Incluido"` al lado del precio de cada producto en la vista del cliente.
+  * Eliminar el cuadro de texto informativo del modal de confirmación de compra: *"Todos nuestros precios ya incluyen el 13% de IVA. Al recoger tus materiales en mostrador, el cajero te consultará directamente si deseas que se emita tu Factura Computarizada Oficial (SIAT) a tu NIT o tu Recibo de Venta Oficial."*
+* **Solución Implementada:**
+  * **Catálogo de Productos y Vista Rápida ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+    * Se eliminaron las insignias `"IVA Incluido"` y `"13% IVA Incluido (Facturado)"` de las tarjetas de producto y del modal de Vista Rápida.
+    * Los precios se presentan ahora de manera limpia y directa: `Bs. XX.XX / Unidad` y `Precio: Bs. XX.XX`.
+  * **Resumen del Carrito y Modal de Checkout ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+    * Se removió la línea redundante de `Impuestos (13% IVA)` del carrito de compras.
+    * Se eliminó el recuadro informativo de facturación del paso 1 de checkout, dejando un formulario directo y libre de advertencias innecesarias (conservando la auto-carga del Nombre, NIT y Teléfono del cliente registrado).
+* **Verificación:**
+  * Compilación exitosa en Vite (`npm run build`) en 4.35s con 0 errores.
+  * Verificación de código sin referencias residuales a insignias de IVA en la interfaz del cliente.
+
+### 144. Precios Dinámicos (Con Factura vs Sin Factura) y Niveles de Lealtad en Modal de Entrega de Pedidos Online
+* **Solicitud del Usuario:**
+  * En la sección de **Pedidos Online** (`/pedidos-online`), al abrir el modal **"Revisar y Entregar"**:
+    * Si la casilla *"Emitir Factura Computarizada SIAT (13% IVA)"* está **activada**, mostrar los precios unitarios y subtotales **con factura** (`PrecioVenta`).
+    * Si dicha casilla está **desactivada**, alternar dinámicamente y mostrar los precios **sin factura** (`PrecioSinFactura` o `PrecioVenta * 0.87`).
+    * Manejar e integrar los niveles de lealtad del cliente (**Bronce: 0%**, **Plata: 3%**, **Oro: 6%**, **Diamante: 10%**) reflejando su insignia y calculando su descuento en tiempo real sobre el total liquidado.
+* **Solución Implementada:**
+  * **Backend ([`onlineOrders.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/onlineOrders.js)):**
+    * Se asoció el modelo `Cliente` y `Persona` en las rutas `GET /orders` y `GET /orders/:id` para proveer los datos de lealtad (`NivelLealtad`, `DescuentoPorcentaje`, `TotalComprasAcumulado`).
+    * En `POST /orders/:id/confirm`: ahora procesa montos recalculados (`total`, `subtotal`, `descuento` e `items`), registrando en `DetalleVenta` y en `Venta.Total` el precio unitario y subtotal exacto (según sea con o sin factura) y actualizando el histórico de compra del cliente.
+  * **Frontend ([`OnlineOrdersView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/OnlineOrdersView.jsx)):**
+    * Se incorporó la función de resolución de niveles de lealtad (`resolveClientLoyalty`) conectada a [`loyalty.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/constants/loyalty.js).
+    * En la cabecera del modal se muestra la insignia de lealtad del cliente (p. ej. `💎 Diamante (10% Dcto)`, `🥇 Oro (6% Dcto)`, `🥈 Plata (3% Dcto)`, `🥉 Bronce`).
+    * La tabla de materiales actualiza sus precios unitarios y subtotales en tiempo real al marcar o desmarcar la casilla de factura SIAT.
+    * Si no se emite factura y el total con descuento es menor al monto pagado por QR, se muestra un aviso resaltado con la diferencia a favor a entregar en mostrador.
+    * El botón de confirmación indica dinámicamente el monto y tipo de documento a emitir (Factura o Recibo).
+* **Verificación:**
+  * Compilación exitosa en Vite (`npm run build`) en 4.41s con 0 errores.
+  * Integración probada para ambos modos (Factura vs Recibo) con descuentos de lealtad.
+
+### 145. Popup Modal de Comprobante / Impresión en Entrega de Pedidos Online (Estilo POS)
+* **Solicitud del Usuario:**
+  * Evitar que al confirmar la entrega de un pedido online se abra automáticamente una pestaña entera con el PDF.
+  * Reemplazar la apertura automática por una ventana emergente modal (popup interactivo, igual que en la pantalla de ventas POS) que permita al usuario ver el comprobante, elegir si imprimir el ticket o descargar la Factura / Recibo en PDF.
+* **Solución Implementada:**
+  * **Frontend ([`OnlineOrdersView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/OnlineOrdersView.jsx)):**
+    * Se eliminó el comportamiento de auto-apertura forzada en nueva pestaña (`openInTab: false`).
+    * Se implementó el modal popup interactivo `showReceiptModal` con tarjeta estilizada de comprobante de venta (`#printable-receipt-online`).
+    * El popup muestra el resumen detallado del documento emitido (Factura Computarizada SIAT o Recibo Oficial), número de documento, código de pedido, cliente, NIT, desglose de ítems, descuentos y total pagado por QR Yape.
+    * Incorpora 3 botones de acción:
+      1. 🖨️ **Imprimir Comprobante:** Dispara la vista de impresión del navegador con estilos optimizados `@media print`.
+      2. 📥 **Descargar PDF:** Genera y descarga el archivo PDF oficial sin bloquear la pantalla ni abrir pestañas adicionales.
+      3. ❌ **Cerrar:** Permite volver de inmediato a la cola de pedidos.
+* **Verificación:**
+  * Compilación exitosa en Vite (`npm run build`) en 4.26s con 0 errores.
+  * Flujo de entrega probado sin apertura invasiva de pestañas en el navegador.
+
+### 146. Rediseño Visual Corporativo y Formal de la Vista de Pedidos Online
+* **Solicitud del Usuario:**
+  * Estandarizar la interfaz visual de la vista de **Pedidos Online** (`OnlineOrdersView.jsx` y su acceso desde `POSView.jsx`) para que sea formal, elegante y consistente con las demás vistas ejecutivas del sistema (`InvoiceListView.jsx`, `POSView.jsx`, `ProductView.jsx`).
+  * Reemplazar emojis informales por iconos SVG vectoriales de alta fidelidad (Heroicons), paleta corporativa Dark Executive Slate, tarjetas KPI refinadas y badges de estado profesionales.
+* **Solución Implementada:**
+  * **Cabecera y Métricas KPI ([`OnlineOrdersView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/OnlineOrdersView.jsx)):**
+    * Se reemplazó el encabezado con emoji por un contenedor con gradiente corporativo `from-cyan-500 to-blue-600` e icono vectorial de bolsa de compra.
+    * Los 4 KPIs superiores (Total Pedidos, En Espera/Pendientes, Entregados y Cancelados) ahora cuentan con badges vectoriales con relieve sutil (`ClockIcon`, `BanknotesIcon`, `CheckCircleIcon`, `XCircleIcon`) y contadores nítidos.
+  * **Pestañas y Filtros de Estado ([`OnlineOrdersView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/OnlineOrdersView.jsx)):**
+    * Se sustituyeron los círculos de emoji por indicadores de punto pulsante (`pulse-dot`) y botones con transiciones suaves y microinteracciones de hover/active.
+  * **Tarjetas de Pedidos y Modal de Entrega ([`OnlineOrdersView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/OnlineOrdersView.jsx)):**
+    * Iconografía formal en datos del cliente (usuario, CI/NIT, teléfono con enlace WhatsApp directo), estado del pago QR y desglose de materiales.
+    * Protocolo de verificación en mostrador estilizado con tarjeta de seguridad e icono de escudo (`ShieldCheckIcon`).
+    * Modal de comprobante / ticket con botones de acción ejecutivos para impresión y descarga en PDF.
+  * **Acceso desde Punto de Venta ([`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx)):**
+    * Botón de acceso rápido a "Pedidos Online" en la barra inferior del POS actualizado con icono vectorial SVG formal.
+* **Verificación:**
+  * Compilación exitosa en Vite (`npm run build`) en 4.54s con 0 errores.
+
+### 147. Rediseño Visual Corporativo y Formal en el Proceso de Checkout del Cliente
+* **Solicitud del Usuario:**
+  * Aplicar los logos e iconos formales (vectoriales SVG) en la vista del cliente durante el proceso de finalización de compra online (`ClientCatalog.jsx`).
+* **Solución Implementada:**
+  * **Modal de Checkout Online ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+    * Cabecera renovada con distintivo en gradiente `cyan-500` a `blue-600` e icono formal de tarjeta/pago seguro.
+    * Indicador de "Inventario en Tiempo Real" con punto pulsante esmeralda y badge estilizado.
+    * Sección 1 (*Datos del Cliente y Facturación*): Icono vectorial de usuario/identificación y badges ejecutivos para datos pre-cargados desde la cuenta.
+    * Sección 2 (*Modalidad de Entrega*): Icono formal de sucursal comercial y pines vectoriales de ubicación física.
+    * Sección 3 (*Método de Pago Yape / QR Simple*): Iconos vectoriales para QR y pagos bancarios móviles, eliminando emojis de colores.
+    * Botón de confirmación con icono de candado de seguridad vectorial (`LockClosedIcon`).
+  * **Modal de Éxito / Comprobante de Reserva ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+    * Icono de confirmación en gradiente de alta fidelidad (`CheckCircleIcon`).
+    * Resumen de reserva y advertencia de verificación con icono de dispositivo móvil formal.
+  * **Drawer del Carrito y Modal de Autenticación ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+    * Reemplazo de emojis `🛒`, `📦`, `🎁`, `💎` por iconos SVG vectoriales de compras, paquetes y beneficios de lealtad.
+* **Verificación:**
+  * Compilación exitosa en Vite (`npm run build`) en 4.28s con 0 errores.
+
+### 148. Ocultamiento Dinámico del Botón Flotante del Asistente Virtual al Abrir el Carrito y Checkout
+* **Solicitud del Usuario:**
+  * Ocultar el botón flotante "¿Necesitas ayuda?" (`ChatbotWidget`) al abrir el carrito de compras o los modales de checkout para que no obstaculice los botones de "Finalizar Compra y Pagar Online" y "Vaciar Carrito".
+* **Solución Implementada:**
+  * **Componente Asistente Virtual ([`ChatbotWidget.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/chatbot/ChatbotWidget.jsx)):**
+    * Se añadió la propiedad booleana opcional `hidden` que retorna `null` de forma limpia y segura evitando renderizados superpuestos.
+  * **Portal del Cliente ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+    * Se configuró `hidden={isCartOpen || showCheckoutModal || showSuccessOrderModal || showAuthModal || !!quickViewProduct}`.
+    * Al abrir el drawer lateral del carrito o los modales de pago/entrega, el botón flotante se oculta automáticamente despejando la interfaz por completo. Al cerrar el carrito o modal, el botón del asistente vuelve a estar disponible.
+* **Verificación:**
+  * Compilación exitosa en Vite (`npm run build`) en 4.50s con 0 errores.
+
+### 149. Ajuste Dinámico de Botones de Impresión en Entrega de Pedidos Online
+* **Solicitud del Usuario:**
+  * En el modal de comprobante generado al entregar un pedido online (`OnlineOrdersView.jsx`), el botón de impresión debe indicar **"Imprimir Factura"** cuando se emite factura oficial SIAT, o **"Imprimir Recibo"** cuando es una venta sin factura, en lugar de usar el término genérico "Imprimir Comprobante".
+* **Solución Implementada:**
+  * **Frontend ([`OnlineOrdersView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/OnlineOrdersView.jsx)):**
+    * Se actualizó el texto del botón de impresión para evaluar dinámicamente `lastSaleReceipt.isInvoice`:
+      * Si es Factura SIAT: `Imprimir Factura` (acompañado de `Descargar Factura (PDF)`).
+      * Si es Venta sin Factura: `Imprimir Recibo` (acompañado de `Descargar Recibo (PDF)`).
+* **Verificación:**
+  * Compilación exitosa en Vite (`npm run build`) en 4.31s con 0 errores.
+
+### 150. Actualización Documental del Capítulo II en "PROYECTO-REV XMJ.docx" (Texto en Rojo)
+* **Solicitud del Usuario:**
+  * Aplicar las actualizaciones técnicas y metodológicas del sistema en el documento Word `PROYECTO-REV XMJ.docx` (Capítulo II: Ingeniería del Proyecto), destacando todos los cambios y adiciones en **color rojo** para su fácil revisión y seguimiento.
+* **Solución Implementada:**
+  * **Copia de Respaldo de Seguridad:**
+    * Se creó la copia de seguridad intacta `DOCUMENTOS/PROYECTO-REV XMJ_BACKUP_ORIGINAL.docx`.
+  * **Actualizaciones Aplicadas con Color Rojo (`#FF0000`):**
+    1. **Tabla 2.6 (`RF-VTA-06`):** Reemplazo del texto obsoleto de WhatsApp por el requerimiento integral de *Catálogo web, pedidos en línea y pasarela de pago QR*, especificando el registro en `PedidosOnline`/`DetallePedidosOnline`, reserva de stock y comprobante PDF.
+    2. **Tabla 2.3 (`RF-VTA-03`):** Actualización a *Emisión de Facturas Computarizadas SIAT y Recibos Oficiales de Venta*, reflejando precios con factura (`PrecioVenta`), sin factura (`PrecioSinFactura`) y popups interactivos.
+    3. **Tabla 2.7 (`RF-VTA-07`):** Formalización del *Programa de fidelización y políticas de descuentos por niveles de lealtad* (Bronce 0%, Plata 3%, Oro 6%, Diamante 10%).
+    4. **Tabla 2.29 (`CU-02: Pedidos Online`):** Reestructuración completa del caso de uso a *Pedidos Online y Liquidación en Mostrador*, cubriendo el flujo de checkout, pre-carga de NIT/teléfono, pago QR Yape, verificación física y entrega con Factura o Recibo.
+    5. **Tabla 2.36 (`CU-09: Registrar cuenta de cliente`):** Incorporación de los datos tributarios (NIT/CI y Razón Social) en el registro de usuarios.
+    6. **Épica 1 (Historias 1.1 y 1.2):** Ajuste de criterios de aceptación con facturación dual SIAT/Recibo, pasarela QR y módulo de cola de pedidos.
+    7. **Diagrama de Secuencia 2.8 (Párrafo 691):** Redacción técnica del flujo cliente-servidor para `POST /api/orders`, deducción atómica de inventario y confirmación en mostrador (`POST /api/orders/:id/confirm`).
+    8. **Diagrama de Clases (Párrafos 724 y 727):** Integración en la descripción de las entidades `PedidosOnline`, `DetallePedidosOnline` y atributos de fidelización de `Cliente`.
+* **Verificación:**
+  * Script de validación ejecutado: todas las modificaciones se persistieron exitosamente con formato de fuente `RGBColor(255, 0, 0)`.

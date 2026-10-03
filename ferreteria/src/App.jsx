@@ -19,6 +19,7 @@ import UserManagement from './pages/Users/UserManagement';
 import InventoryControl from './pages/Inventory/InventoryControl';
 import POSView from './pages/Sales/POSView';
 import InvoiceListView from './pages/Sales/InvoiceListView';
+import OnlineOrdersView from './pages/Sales/OnlineOrdersView';
 import ClientView from './pages/Contacts/ClientView';
 import { SidebarProvider } from './context/SidebarContext';
 
@@ -60,6 +61,10 @@ function App() {
             {/* Módulo Punto de Venta POS / Vender (Dedicado Standalone) */}
             <Route path="/vender" element={<POSView />} />
             <Route path="/pos" element={<POSView />} />
+
+            {/* Módulo de Pedidos Online / Cola de Recojo en Tienda */}
+            <Route path="/pedidos-online" element={<OnlineOrdersView />} />
+            <Route path="/pedidos" element={<OnlineOrdersView />} />
 
             {/* Login Universal y Flujo de Recuperación con Token de 10 min */}
             <Route path="/login" element={<Login />} />

@@ -249,6 +249,32 @@ export const getRecentSales = async () => {
   return response.data;
 };
 
+// API de Pedidos Online (Click & Collect y Verificación de Pagos QR)
+export const createOnlineOrder = async (orderData) => {
+  const response = await api.post('/orders', orderData);
+  return response.data;
+};
+
+export const getOnlineOrders = async (params = {}) => {
+  const response = await api.get('/orders', { params });
+  return response.data;
+};
+
+export const getOnlineOrderById = async (id) => {
+  const response = await api.get(`/orders/${id}`);
+  return response.data;
+};
+
+export const confirmOnlineOrder = async (id, payload) => {
+  const response = await api.post(`/orders/${id}/confirm`, payload);
+  return response.data;
+};
+
+export const cancelOnlineOrder = async (id, payload) => {
+  const response = await api.post(`/orders/${id}/cancel`, payload);
+  return response.data;
+};
+
 export const getInvoices = async (params = {}) => {
   const response = await api.get('/sales/invoices', { params });
   return response.data;

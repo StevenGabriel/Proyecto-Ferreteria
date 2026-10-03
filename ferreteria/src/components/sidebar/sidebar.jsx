@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useSidebar } from '../../context/SidebarContext';
+import { getOnlineOrders } from '../../services/api';
 
 function Sidebar({ activeItem }) {
   const { isCollapsed, toggleSidebar } = useSidebar();
@@ -19,6 +20,25 @@ function Sidebar({ activeItem }) {
   // Inicializar el submenú de productos abierto si el elemento activo pertenece a él
   const isSubProductActive = ['productos-lista', 'productos-unidades', 'productos-categorias', 'productos-marcas', 'productos-almacenes', 'productos-ubicaciones'].includes(activeItem);
   const [isProductsOpen, setIsProductsOpen] = useState(isSubProductActive);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchPendingCount = async () => {
+      try {
+        const res = await getOnlineOrders({ estado: 'PENDIENTE' });
+        if (isMounted && res && res.stats) {
+          setPendingOrdersCount(res.stats.pendientes || 0);
+        }
+      } catch (e) {}
+    };
+    fetchPendingCount();
+    const interval = setInterval(fetchPendingCount, 25000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const toggleProducts = () => {
     setIsProductsOpen(!isProductsOpen);
@@ -275,7 +295,7 @@ function Sidebar({ activeItem }) {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
               isCollapsed ? 'justify-center px-0' : ''
             } ${
-              activeItem === 'vender'
+              activeItem === 'vender' || location.pathname === '/vender' || location.pathname === '/pos'
                 ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-md'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
@@ -284,6 +304,34 @@ function Sidebar({ activeItem }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
             {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Vender</span>}
+          </Link>
+
+          {/* Opción: Pedidos Online (Recojo en Tienda) */}
+          <Link
+            to="/pedidos-online"
+            title="Pedidos Online (Recojo en Tienda)"
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 relative ${
+              isCollapsed ? 'justify-center px-0' : ''
+            } ${
+              activeItem === 'pedidos-online' || location.pathname.includes('pedidos')
+                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Pedidos Online</span>}
+            </div>
+            {!isCollapsed && pendingOrdersCount > 0 && (
+              <span className="bg-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-full animate-pulse shadow-sm">
+                {pendingOrdersCount}
+              </span>
+            )}
+            {isCollapsed && pendingOrdersCount > 0 && (
+              <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+            )}
           </Link>
         </nav>
       </div>
