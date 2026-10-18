@@ -1552,3 +1552,20 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
     8. **Diagrama de Clases (Párrafos 724 y 727):** Integración en la descripción de las entidades `PedidosOnline`, `DetallePedidosOnline` y atributos de fidelización de `Cliente`.
 * **Verificación:**
   * Script de validación ejecutado: todas las modificaciones se persistieron exitosamente con formato de fuente `RGBColor(255, 0, 0)`.
+
+### 151. Fortalecimiento de Seguridad HTTP, SEO y Experiencia de Usuario (Página 404)
+* **Solicitud del Usuario:**
+  * Incorporar medidas clave de seguridad web, SEO con vista previa al compartir en redes y manejo de errores 404 personalizado.
+* **Solución Implementada:**
+  1. **Cabeceras de Seguridad HTTP con Helmet ([`backend/app.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/app.js)):**
+     * Se integró el middleware oficial `helmet` con política `crossOriginResourcePolicy: "cross-origin"` para servir archivos estáticos (`/uploads`).
+     * Protege la API de Node.js contra ataques de clickjacking (X-Frame-Options), sniffing de contenido MIME (X-Content-Type-Options), scripts maliciosos (XSS) y oculta la huella del framework (`X-Powered-By`).
+  2. **SEO y Metadatos Open Graph ([`ferreteria/index.html`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/index.html)):**
+     * Título formalizado: *"C&C Ferretería — Casa y Construcción | Catálogo y Ventas Online"*.
+     * Metaetiquetas de descripción, palabras clave temáticas, autor y color de interfaz móvil (`theme-color`).
+     * Metadatos de **Open Graph** (`og:type`, `og:title`, `og:description`, `og:image`, `og:locale`) para generación automática de tarjeta enriquecida al compartir enlaces por WhatsApp, Facebook o LinkedIn.
+  3. **Página 404 Personalizada ([`NotFound.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/NotFound/NotFound.jsx) y [`App.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/App.jsx)):**
+     * Se creó la vista ejecutiva 404 con paleta Dark Executive Slate, luces difusas, mensaje semántico de ruta no encontrada y acciones directas: *"Volver atrás"*, *"Ir a la Tienda / Catálogo"* y enlace a *"Iniciar Sesión"*.
+     * Se configuró la ruta comodín `<Route path="*" element={<NotFound />} />` en el router principal.
+* **Verificación:**
+  * Compilación exitosa en Vite (`npm run build`) en 6.20s con 0 errores.

@@ -21,6 +21,7 @@ import POSView from './pages/Sales/POSView';
 import InvoiceListView from './pages/Sales/InvoiceListView';
 import OnlineOrdersView from './pages/Sales/OnlineOrdersView';
 import ClientView from './pages/Contacts/ClientView';
+import NotFound from './pages/NotFound/NotFound';
 import { SidebarProvider } from './context/SidebarContext';
 
 function App() {
@@ -85,6 +86,9 @@ function App() {
             <Route path="/unidades" element={<UnitView />} />
             <Route path="/locations" element={<LocationView />} />
             <Route path="/almacenes" element={<WarehouseView />} />
+
+            {/* Ruta comodín 404 para cualquier URL inexistente */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
       </SidebarProvider>
