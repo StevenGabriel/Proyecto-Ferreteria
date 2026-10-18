@@ -273,24 +273,26 @@ function ProductEditForm() {
   };
 
   return (
-    <div className="bg-slate-950 text-white min-h-screen font-sans flex">
+    <div className="bg-[#0c0e12] text-zinc-100 min-h-screen font-sans flex">
       <Sidebar activeItem={activeMenu} />
 
-      <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-slate-950 flex flex-col`}>
+      <main className={`flex-1 transition-[margin-left] duration-220 ease-out-expo ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-[#0c0e12] flex flex-col`}>
         <Topbar />
 
         <div className="p-6 md:p-8 max-w-[1920px] w-full mx-auto space-y-6 flex-1">
           {/* Encabezado */}
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-extrabold tracking-tight text-zinc-100" style={{ textWrap: 'balance' }}>
                 Editar Producto
-              </h2>
-              <p className="text-slate-400 text-sm mt-1">Actualiza la información del producto (ID: {ProductoID}).</p>
+              </h1>
+              <p className="text-zinc-400 text-sm mt-1">
+                Actualiza la información del producto (ID: <span className="font-mono tabular-nums text-amber-400 font-semibold">{ProductoID}</span>).
+              </p>
             </div>
             <Link
               to="/productsView"
-              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-semibold rounded-xl text-xs transition-all flex items-center gap-2"
+              className="px-4 py-2 bg-[#12151c] hover:bg-zinc-800 border border-zinc-800/80 text-zinc-300 hover:text-zinc-100 font-semibold rounded-xl text-xs transition-colors duration-150 btn-press active:scale-[0.97] flex items-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -300,18 +302,18 @@ function ProductEditForm() {
           </div>
 
           {/* Formulario Principal Estilo ERP */}
-          <form onSubmit={handleSubmit} className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-2xl space-y-8">
+          <form onSubmit={handleSubmit} className="bg-[#12151c] border border-zinc-800/80 rounded-2xl p-6 md:p-8 shadow-xl space-y-8">
             {/* Sección 1: Datos Generales */}
             <div className="space-y-6">
-              <h3 className="text-sm font-extrabold uppercase tracking-widest text-cyan-400 border-b border-slate-800/80 pb-2">
+              <h3 className="text-sm font-extrabold uppercase tracking-wider text-amber-400 border-b border-zinc-800/80 pb-2">
                 1. Información General del Producto
               </h3>
 
               {/* Fila 1: Nombre, SKU/Código de Barras, Tipo Código, Stock Mínimo Alerta */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
-                  <label className="block mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Nombre del producto <span className="text-cyan-400">*</span>:
+                  <label className="block mb-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                    Nombre del producto <span className="text-amber-400">*</span>:
                   </label>
                   <input
                     type="text"
@@ -319,13 +321,13 @@ function ProductEditForm() {
                     value={producto.Nombre}
                     onChange={handleChange}
                     placeholder="Ej. PLACA SIMPLE SCHNEIDER BLANCO"
-                    className="bg-slate-950 border border-slate-800/80 rounded-xl focus:border-cyan-500/50 text-slate-200 outline-none w-full p-3 transition-all text-sm font-medium"
+                    className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl focus:border-amber-500/60 text-zinc-100 placeholder-zinc-600 outline-none w-full p-3 transition-colors duration-150 text-sm font-medium"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <label className="block mb-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
                     SKU / Código de Barras:
                   </label>
                   <input
@@ -334,30 +336,30 @@ function ProductEditForm() {
                     value={producto.CodigoBarras}
                     onChange={handleChange}
                     placeholder="Ej. *54 o 779123456789"
-                    className="bg-slate-950 border border-slate-800/80 rounded-xl focus:border-cyan-500/50 text-slate-200 outline-none w-full p-3 transition-all text-sm font-medium"
+                    className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl focus:border-amber-500/60 text-zinc-100 placeholder-zinc-600 outline-none w-full p-3 transition-colors duration-150 text-sm font-mono tabular-nums font-medium"
                   />
                 </div>
 
                 <div>
-                  <label className="block mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Tipo de código <span className="text-cyan-400">*</span>:
+                  <label className="block mb-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                    Tipo de código <span className="text-amber-400">*</span>:
                   </label>
                   <select
                     name="TipoCodigoBarras"
                     value={producto.TipoCodigoBarras}
                     onChange={handleChange}
-                    className="bg-slate-950 border border-slate-800/80 rounded-xl focus:border-cyan-500/50 text-slate-200 outline-none w-full p-3 transition-all text-sm font-medium cursor-pointer"
+                    className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl focus:border-amber-500/60 text-zinc-100 outline-none w-full p-3 transition-colors duration-150 text-sm font-mono tabular-nums font-medium cursor-pointer"
                   >
-                    <option value="Code 128 (C128)" className="bg-slate-900 text-white">Code 128 (C128)</option>
-                    <option value="Code 39" className="bg-slate-900 text-white">Code 39</option>
-                    <option value="EAN-13" className="bg-slate-900 text-white">EAN-13</option>
-                    <option value="EAN-8" className="bg-slate-900 text-white">EAN-8</option>
-                    <option value="UPC-A" className="bg-slate-900 text-white">UPC-A</option>
+                    <option value="Code 128 (C128)" className="bg-[#12151c] text-zinc-100">Code 128 (C128)</option>
+                    <option value="Code 39" className="bg-[#12151c] text-zinc-100">Code 39</option>
+                    <option value="EAN-13" className="bg-[#12151c] text-zinc-100">EAN-13</option>
+                    <option value="EAN-8" className="bg-[#12151c] text-zinc-100">EAN-8</option>
+                    <option value="UPC-A" className="bg-[#12151c] text-zinc-100">UPC-A</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <label className="block mb-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
                     Stock Mínimo (Alerta):
                   </label>
                   <input
@@ -367,7 +369,7 @@ function ProductEditForm() {
                     value={producto.LoteMinimo}
                     onChange={handleChange}
                     placeholder="Ej. 5"
-                    className="bg-slate-950 border border-slate-800/80 rounded-xl focus:border-cyan-500/50 text-amber-300 font-bold outline-none w-full p-3 transition-all text-sm"
+                    className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl focus:border-amber-500/60 text-amber-400 font-mono tabular-nums font-bold placeholder-zinc-600 outline-none w-full p-3 transition-colors duration-150 text-sm"
                   />
                 </div>
               </div>
@@ -375,19 +377,19 @@ function ProductEditForm() {
               {/* Fila 2: Selectores Agrupados (Unidad, Categoría, Marca, Ubicación) */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
-                  <label className="block mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Unidad <span className="text-cyan-400">*</span>:
+                  <label className="block mb-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                    Unidad <span className="text-amber-400">*</span>:
                   </label>
                   <select
                     name="UnidadID"
                     value={producto.UnidadID}
                     onChange={handleChange}
-                    className="bg-slate-950 border border-slate-800/80 rounded-xl focus:border-cyan-500/50 text-slate-200 outline-none w-full p-3 transition-all text-sm font-medium cursor-pointer"
+                    className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl focus:border-amber-500/60 text-zinc-100 outline-none w-full p-3 transition-colors duration-150 text-sm font-medium cursor-pointer"
                     required
                   >
-                    <option value="" disabled className="bg-slate-900 text-slate-500">Seleccione unidad...</option>
+                    <option value="" disabled className="bg-[#12151c] text-zinc-500">Seleccione unidad...</option>
                     {unidades.map((u) => (
-                      <option key={u.UnidadID} value={u.UnidadID.toString()} className="bg-slate-900 text-white">
+                      <option key={u.UnidadID} value={u.UnidadID.toString()} className="bg-[#12151c] text-zinc-100">
                         {u.Nombre}
                       </option>
                     ))}
@@ -395,19 +397,19 @@ function ProductEditForm() {
                 </div>
 
                 <div>
-                  <label className="block mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Categoría <span className="text-cyan-400">*</span>:
+                  <label className="block mb-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                    Categoría <span className="text-amber-400">*</span>:
                   </label>
                   <select
                     name="CategoriaID"
                     value={producto.CategoriaID}
                     onChange={handleChange}
-                    className="bg-slate-950 border border-slate-800/80 rounded-xl focus:border-cyan-500/50 text-slate-200 outline-none w-full p-3 transition-all text-sm font-medium cursor-pointer"
+                    className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl focus:border-amber-500/60 text-zinc-100 outline-none w-full p-3 transition-colors duration-150 text-sm font-medium cursor-pointer"
                     required
                   >
-                    <option value="" disabled className="bg-slate-900 text-slate-500">Seleccione categoría...</option>
+                    <option value="" disabled className="bg-[#12151c] text-zinc-500">Seleccione categoría...</option>
                     {categorias.map((c) => (
-                      <option key={c.CategoriaID} value={c.CategoriaID.toString()} className="bg-slate-900 text-white">
+                      <option key={c.CategoriaID} value={c.CategoriaID.toString()} className="bg-[#12151c] text-zinc-100">
                         {c.Nombre}
                       </option>
                     ))}
@@ -415,19 +417,19 @@ function ProductEditForm() {
                 </div>
 
                 <div>
-                  <label className="block mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Marca <span className="text-cyan-400">*</span>:
+                  <label className="block mb-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                    Marca <span className="text-amber-400">*</span>:
                   </label>
                   <select
                     name="MarcaID"
                     value={producto.MarcaID}
                     onChange={handleChange}
-                    className="bg-slate-950 border border-slate-800/80 rounded-xl focus:border-cyan-500/50 text-slate-200 outline-none w-full p-3 transition-all text-sm font-medium cursor-pointer"
+                    className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl focus:border-amber-500/60 text-zinc-100 outline-none w-full p-3 transition-colors duration-150 text-sm font-medium cursor-pointer"
                     required
                   >
-                    <option value="" disabled className="bg-slate-900 text-slate-500">Seleccione marca...</option>
+                    <option value="" disabled className="bg-[#12151c] text-zinc-500">Seleccione marca...</option>
                     {marcas.map((m) => (
-                      <option key={m.MarcaID} value={m.MarcaID.toString()} className="bg-slate-900 text-white">
+                      <option key={m.MarcaID} value={m.MarcaID.toString()} className="bg-[#12151c] text-zinc-100">
                         {m.Nombre}
                       </option>
                     ))}
@@ -435,19 +437,19 @@ function ProductEditForm() {
                 </div>
 
                 <div>
-                  <label className="block mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Ubicación en Almacén <span className="text-cyan-400">*</span>:
+                  <label className="block mb-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                    Ubicación en Almacén <span className="text-amber-400">*</span>:
                   </label>
                   <select
                     name="UbicacionID"
                     value={producto.UbicacionID}
                     onChange={handleChange}
-                    className="bg-slate-950 border border-slate-800/80 rounded-xl focus:border-cyan-500/50 text-slate-200 outline-none w-full p-3 transition-all text-sm font-medium cursor-pointer"
+                    className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl focus:border-amber-500/60 text-zinc-100 outline-none w-full p-3 transition-colors duration-150 text-sm font-medium cursor-pointer"
                     required
                   >
-                    <option value="" disabled className="bg-slate-900 text-slate-500">Seleccione ubicación...</option>
+                    <option value="" disabled className="bg-[#12151c] text-zinc-500">Seleccione ubicación...</option>
                     {ubicaciones.map((ub) => (
-                      <option key={ub.UbicacionID} value={ub.UbicacionID.toString()} className="bg-slate-900 text-white">
+                      <option key={ub.UbicacionID} value={ub.UbicacionID.toString()} className="bg-[#12151c] text-zinc-100">
                         {ub.Almacen ? `[${ub.Almacen.Nombre}] - ${ub.Descripcion}` : ub.Descripcion}
                       </option>
                     ))}
@@ -457,7 +459,7 @@ function ProductEditForm() {
 
               {/* Fila 3: Descripción */}
               <div>
-                <label className="block mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <label className="block mb-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
                   Descripción Corta:
                 </label>
                 <textarea
@@ -466,27 +468,27 @@ function ProductEditForm() {
                   onChange={handleChange}
                   placeholder="Detalles adicionales o características del producto..."
                   rows="2"
-                  className="bg-slate-950 border border-slate-800/80 rounded-xl focus:border-cyan-500/50 text-slate-200 outline-none w-full p-3 transition-all text-sm resize-none"
+                  className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl focus:border-amber-500/60 text-zinc-100 placeholder-zinc-600 outline-none w-full p-3 transition-colors duration-150 text-sm resize-none"
                 />
               </div>
 
               {/* Control de Caducidad y Vencimiento */}
-              <div className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-5 space-y-4">
+              <div className="bg-[#0c0e12] border border-zinc-800/80 rounded-2xl p-5 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 flex-shrink-0 mt-0.5">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 flex-shrink-0 mt-0.5">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
                         Control de Caducidad y Vencimiento
-                        <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-slate-800 text-amber-400 border border-amber-500/30">
+                        <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/25">
                           Lotes FEFO
                         </span>
                       </h4>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-xs text-zinc-400 mt-0.5">
                         Activa esta opción si el producto cuenta con fecha de vencimiento (ej. pinturas, siliconas, pegamentos, masillas, cemento, etc.).
                       </p>
                     </div>
@@ -500,22 +502,25 @@ function ProductEditForm() {
                       onChange={(e) => setProducto(prev => ({ ...prev, ManejaCaducidad: e.target.checked }))}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                    <span className="ml-3 text-xs font-bold text-slate-300 whitespace-nowrap">
+                    <div className="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-transform after:duration-150 peer-checked:bg-amber-500 transition-colors duration-150"></div>
+                    <span className="ml-3 text-xs font-bold text-zinc-300 whitespace-nowrap">
                       {producto.ManejaCaducidad ? "Con Caducidad" : "Sin Caducidad"}
                     </span>
                   </label>
                 </div>
 
                 {producto.ManejaCaducidad && (
-                  <div className="pt-4 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in text-xs">
-                    <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl text-amber-300/90 text-xs">
+                  <div className="pt-4 border-t border-zinc-800/80 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div className="p-3 bg-amber-500/10 border border-amber-500/25 rounded-xl text-amber-300/90 text-xs flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                       <p className="font-semibold">
-                        ℹ️ Al activar la caducidad, el sistema solicitará la <strong>Fecha de Vencimiento</strong> de cada lote físico al ingresar <strong>Stock de Apertura</strong> o registrar <strong>Compras</strong>.
+                        Al activar la caducidad, el sistema solicitará la <strong>Fecha de Vencimiento</strong> de cada lote físico al ingresar <strong>Stock de Apertura</strong> o registrar <strong>Compras</strong>.
                       </p>
                     </div>
                     <div>
-                      <label className="block mb-1.5 font-bold text-slate-400 uppercase tracking-wider text-[11px]">
+                      <label className="block mb-1.5 font-bold text-zinc-400 uppercase tracking-wider text-[11px]">
                         Alerta preventiva previa (Días antes de vencer):
                       </label>
                       <div className="flex items-center gap-2">
@@ -526,9 +531,9 @@ function ProductEditForm() {
                           name="DiasAlertaCaducidad"
                           value={producto.DiasAlertaCaducidad}
                           onChange={handleChange}
-                          className="w-28 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white font-bold text-xs outline-none focus:border-amber-500"
+                          className="w-28 px-3 py-2 bg-[#12151c] border border-zinc-800 rounded-xl text-zinc-100 font-mono tabular-nums font-bold text-xs outline-none focus:border-amber-500/60 transition-colors duration-150"
                         />
-                        <span className="text-slate-400 font-semibold">días de anticipación en el semáforo</span>
+                        <span className="text-zinc-400 font-semibold">días de anticipación en el semáforo</span>
                       </div>
                     </div>
                   </div>
@@ -536,15 +541,15 @@ function ProductEditForm() {
               </div>
             </div>
 
-            {/* Sección 2: Panel Inteligente de Precios e Imagen (Barra Verde ERP) */}
+            {/* Sección 2: Panel Inteligente de Precios e Imagen */}
             <div className="space-y-4">
-              <h3 className="text-sm font-extrabold uppercase tracking-widest text-cyan-400 border-b border-slate-800/80 pb-2">
+              <h3 className="text-sm font-extrabold uppercase tracking-wider text-amber-400 border-b border-zinc-800/80 pb-2">
                 2. Configuración de Precios e Imagen del Producto
               </h3>
 
-              <div className="bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-slate-900/40 border border-cyan-500/30 rounded-2xl overflow-hidden shadow-xl">
-                {/* Cabecera Verde ERP */}
-                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-white font-extrabold text-xs uppercase tracking-wider grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="bg-[#0c0e12] border border-zinc-800/80 rounded-2xl overflow-hidden">
+                {/* Cabecera Técnica estilo ERP */}
+                <div className="bg-[#12151c] border-b border-zinc-800/80 px-6 py-3 text-zinc-300 font-extrabold text-xs uppercase tracking-wider grid grid-cols-1 md:grid-cols-5 gap-4">
                   <div>Precio Compra (Costo)</div>
                   <div>x Margen (%)</div>
                   <div>Precio Con Factura *</div>
@@ -556,7 +561,7 @@ function ProductEditForm() {
                 <div className="p-6 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
                   {/* Precio Compra */}
                   <div>
-                    <label className="block mb-1.5 text-[10px] font-extrabold text-slate-300 uppercase">
+                    <label className="block mb-1.5 text-[10px] font-extrabold text-zinc-400 uppercase">
                       Costo (Bs.)
                     </label>
                     <input
@@ -566,13 +571,13 @@ function ProductEditForm() {
                       name="PrecioCompra"
                       value={producto.PrecioCompra}
                       onChange={(e) => handlePrecioCompraChange(e.target.value)}
-                      className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white font-bold outline-none focus:border-emerald-500 w-full"
+                      className="bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2.5 text-sm text-zinc-100 font-mono tabular-nums font-bold outline-none focus:border-amber-500/60 transition-colors duration-150 w-full"
                     />
                   </div>
 
                   {/* Margen */}
                   <div>
-                    <label className="block mb-1.5 text-[10px] font-extrabold text-slate-300 uppercase">
+                    <label className="block mb-1.5 text-[10px] font-extrabold text-zinc-400 uppercase">
                       Margen (%)
                     </label>
                     <input
@@ -582,13 +587,13 @@ function ProductEditForm() {
                       name="Margen"
                       value={producto.Margen}
                       onChange={(e) => handleMargenChange(e.target.value)}
-                      className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-emerald-400 font-bold outline-none focus:border-emerald-500 w-full"
+                      className="bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2.5 text-sm text-emerald-400 font-mono tabular-nums font-bold outline-none focus:border-emerald-500/60 transition-colors duration-150 w-full"
                     />
                   </div>
 
                   {/* Precio Con Factura */}
                   <div>
-                    <label className="block mb-1.5 text-[10px] font-extrabold text-cyan-400 uppercase">
+                    <label className="block mb-1.5 text-[10px] font-extrabold text-amber-400 uppercase">
                       Venta Con Factura (Bs) *
                     </label>
                     <input
@@ -598,14 +603,14 @@ function ProductEditForm() {
                       name="Precio"
                       value={producto.Precio}
                       onChange={(e) => handlePrecioChange(e.target.value)}
-                      className="bg-slate-950 border border-cyan-500/50 rounded-xl px-3 py-2.5 text-sm text-cyan-300 font-extrabold outline-none focus:border-cyan-400 w-full shadow-inner"
+                      className="bg-[#12151c] border border-amber-500/40 rounded-xl px-3 py-2.5 text-sm text-amber-400 font-mono tabular-nums font-extrabold outline-none focus:border-amber-500 transition-colors duration-150 w-full"
                       required
                     />
                   </div>
 
                   {/* Precio Sin Factura */}
                   <div>
-                    <label className="block mb-1.5 text-[10px] font-extrabold text-amber-400 uppercase">
+                    <label className="block mb-1.5 text-[10px] font-extrabold text-zinc-300 uppercase">
                       Sin Factura (Bs.)
                     </label>
                     <input
@@ -615,13 +620,13 @@ function ProductEditForm() {
                       name="PrecioSinFactura"
                       value={producto.PrecioSinFactura}
                       onChange={handleChange}
-                      className="bg-slate-950 border border-amber-500/40 rounded-xl px-3 py-2.5 text-sm text-amber-300 font-extrabold outline-none focus:border-amber-400 w-full"
+                      className="bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2.5 text-sm text-zinc-200 font-mono tabular-nums font-extrabold outline-none focus:border-amber-500/60 transition-colors duration-150 w-full"
                     />
                   </div>
 
                   {/* Imagen */}
                   <div>
-                    <label className="block mb-1.5 text-[10px] font-extrabold text-slate-300 uppercase">
+                    <label className="block mb-1.5 text-[10px] font-extrabold text-zinc-400 uppercase">
                       Examinar Archivo
                     </label>
                     <input
@@ -635,22 +640,29 @@ function ProductEditForm() {
                     {!producto.Imagen ? (
                       <label
                         htmlFor="fileInputProductEdit"
-                        className="cursor-pointer bg-slate-950 border border-slate-800 hover:border-cyan-500/50 p-2.5 rounded-xl flex items-center justify-between text-xs text-slate-300 transition-all"
+                        className="cursor-pointer bg-[#12151c] border border-zinc-800 hover:border-amber-500/50 p-2.5 rounded-xl flex items-center justify-between text-xs text-zinc-300 transition-colors duration-150"
                       >
-                        <span className="truncate">Elegir foto...</span>
-                        <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 font-bold rounded-md text-[10px]">Buscar</span>
+                        <span className="truncate flex items-center gap-1.5">
+                          <svg className="w-4 h-4 text-zinc-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                          </svg>
+                          <span>Elegir foto...</span>
+                        </span>
+                        <span className="px-2 py-0.5 bg-amber-500/10 border border-amber-500/25 text-amber-400 font-bold rounded-md text-[10px]">Buscar</span>
                       </label>
                     ) : (
-                      <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-emerald-500/40">
-                        <img src={producto.Imagen} alt="Preview" className="w-7 h-7 rounded-lg object-cover border border-slate-800" />
-                        <span className="text-[10px] text-slate-300 truncate flex-1">Foto cargada</span>
+                      <div className="flex items-center gap-2 bg-[#12151c] p-1.5 rounded-xl border border-emerald-500/40">
+                        <img src={producto.Imagen} alt="Preview" className="w-7 h-7 rounded-lg object-cover border border-zinc-800" />
+                        <span className="text-[10px] text-zinc-300 truncate flex-1">Foto cargada</span>
                         <button
                           type="button"
                           onClick={() => setProducto((prev) => ({ ...prev, Imagen: "" }))}
-                          className="text-rose-400 hover:text-rose-300 p-1 font-bold text-xs"
+                          className="text-red-400 hover:text-red-300 p-1 font-bold text-xs transition-colors duration-150 btn-press active:scale-[0.97]"
                           title="Quitar imagen"
                         >
-                          ✕
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
                         </button>
                       </div>
                     )}
@@ -663,7 +675,7 @@ function ProductEditForm() {
             <div className="pt-4">
               <button
                 type="submit"
-                className="w-full text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 font-bold rounded-xl text-sm px-5 py-3.5 text-center shadow-lg shadow-cyan-500/20 transition-all transform hover:-translate-y-0.5"
+                className="w-full text-zinc-950 bg-amber-500 hover:bg-amber-400 font-extrabold rounded-xl text-sm px-5 py-3.5 text-center shadow-sm transition-colors duration-150 btn-press active:scale-[0.97]"
               >
                 Guardar Cambios del Producto
               </button>

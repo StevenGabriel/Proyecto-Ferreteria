@@ -1414,56 +1414,56 @@ function POSView() {
     const activeUserName = currentUser?.Nombre || 'OSCAR EDGAR CLAROS DAVALOS';
 
     return (
-      <div className="bg-slate-950 text-white min-h-screen font-sans flex">
+      <div className="bg-[#0c0e12] text-zinc-100 min-h-screen font-sans flex selection:bg-amber-500/30 selection:text-amber-200">
         <Sidebar activeItem="vender" />
 
-        <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-slate-950 flex flex-col`}>
+        <main className={`flex-1 transition-[margin-left] duration-220 ease-out-expo ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-[#0c0e12] flex flex-col`}>
           <Topbar />
 
-          <div className="p-6 md:p-8 max-w-[1920px] w-full mx-auto space-y-6 flex-1 flex flex-col justify-between">
+          <div className="p-6 md:p-8 max-w-[1600px] w-full mx-auto space-y-6 flex-1 flex flex-col justify-between">
             <div className="space-y-6">
               {/* Encabezado Superior */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex items-baseline gap-3">
-                  <h1 className="text-3xl font-extrabold tracking-tight text-white">
-                    Abrir caja registradora
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 border-b border-zinc-800/80">
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-100 text-balance">
+                    Apertura de Caja Registradora
                   </h1>
-                  <span className="text-slate-400 text-sm font-medium">
-                    Ingrese el monto de efectivo inicial para iniciar el turno de ventas POS
-                  </span>
+                  <p className="text-zinc-400 text-xs sm:text-sm mt-1">
+                    Declare el fondo de efectivo inicial en gaveta para habilitar la terminal de ventas POS.
+                  </p>
                 </div>
 
                 <button
                   type="button"
                   onClick={handleOpenLastRegisterModal}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 font-bold rounded-xl text-xs transition-all cursor-pointer shadow-md"
+                  className="btn-press flex items-center gap-2 px-4 py-2.5 bg-[#12151c] hover:bg-zinc-800/90 text-zinc-200 border border-zinc-800 hover:border-zinc-700 font-bold rounded-xl text-xs transition-colors duration-150 ease-out-expo cursor-pointer"
                   title="Consultar detalles del último cierre de caja"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <span>Mi último registro</span>
+                  <span>Mi último arqueo</span>
                 </button>
               </div>
 
               {/* Tarjeta Central del Formulario */}
-              <div className="bg-slate-900/70 border border-slate-800/80 rounded-2xl p-6 sm:p-8 max-w-2xl w-full mx-auto shadow-2xl space-y-6 mt-8">
-                <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-                  <div className="text-xs sm:text-sm font-bold text-slate-300">
-                    Usuario Responsable: <span className="text-cyan-400 font-extrabold">{activeUserName}</span>
+              <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl p-6 sm:p-8 max-w-xl w-full mx-auto shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-6 mt-8">
+                <div className="flex items-center justify-between pb-4 border-b border-zinc-800/80">
+                  <div className="text-xs sm:text-sm font-semibold text-zinc-400">
+                    Operador responsable: <span className="text-zinc-100 font-bold">{activeUserName}</span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 text-[10px] font-mono font-bold uppercase">
+                  <span className="px-2.5 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/25 text-[10px] font-mono font-bold uppercase tracking-wider">
                     {currentUser?.Rol || 'ADMINISTRADOR'}
                   </span>
                 </div>
 
                 <form onSubmit={handleOpenRegisterSubmit} className="space-y-6">
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                      Efectivo inicial:*
+                    <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-2">
+                      Efectivo inicial en gaveta (Bs.) *
                     </label>
                     <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-cyan-400 font-mono font-bold text-sm">
+                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-amber-400 font-mono font-bold text-sm">
                         Bs.
                       </span>
                       <input
@@ -1472,13 +1472,13 @@ function POSView() {
                         min="0"
                         value={initialCashInput}
                         onChange={(e) => setInitialCashInput(e.target.value)}
-                        placeholder="Ingresar cantidad (Ej: 0.00 o 200.00)"
+                        placeholder="0.00 (Ej: 200.00)"
                         autoFocus
-                        className="w-full pl-12 pr-4 py-3 bg-slate-950 border border-slate-700/80 focus:border-cyan-500 rounded-xl text-white font-mono text-base outline-none shadow-inner transition-all placeholder:text-slate-600"
+                        className="w-full pl-12 pr-4 py-3 bg-[#0c0e12] border border-zinc-800 focus:border-amber-500 rounded-xl text-zinc-100 font-mono tabular-nums text-base font-bold outline-none transition-colors duration-150 placeholder:text-zinc-600"
                       />
                     </div>
-                    <p className="text-[11px] text-slate-500 mt-1.5 font-medium">
-                      Indique con cuánto dinero en efectivo cuenta en gaveta para cambio o vuelto.
+                    <p className="text-[11px] text-zinc-500 mt-1.5 font-medium">
+                      Indique el monto en monedas y billetes disponible para cambio al iniciar el turno.
                     </p>
                   </div>
 
@@ -1486,21 +1486,21 @@ function POSView() {
                     <button
                       type="submit"
                       disabled={openingRegisterLoading}
-                      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 text-sm cursor-pointer transition-all disabled:opacity-50"
+                      className="btn-press flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold rounded-xl shadow-sm text-sm cursor-pointer disabled:opacity-50"
                     >
                       {openingRegisterLoading ? (
                         <>
-                          <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
-                          <span>Abriendo Registro...</span>
+                          <span>Habilitando terminal...</span>
                         </>
                       ) : (
                         <>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
-                          <span>Abrir registro</span>
+                          <span>Abrir turno de caja</span>
                         </>
                       )}
                     </button>
@@ -1508,26 +1508,29 @@ function POSView() {
                 </form>
               </div>
             </div>
-
           </div>
         </main>
 
         {/* Modal Mi último registro */}
         {showLastRegisterModal && (
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-            <div className="bg-slate-900 text-white rounded-2xl max-w-lg w-full border border-slate-800 shadow-2xl overflow-hidden animate-scale-up">
-              <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-emerald-400 text-lg">💵</span>
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-[#12151c] text-zinc-100 rounded-2xl max-w-lg w-full border border-zinc-800 shadow-2xl overflow-hidden animate-modal-in">
+              <div className="p-4 bg-[#0c0e12] border-b border-zinc-800/80 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white">Detalle de Mi Último Registro de Caja</h3>
-                    <p className="text-[11px] text-slate-400 font-mono">Registro No. #{lastRegisterData?.id || '1042'}</p>
+                    <h3 className="text-sm font-bold text-zinc-100">Detalle del Último Arqueo de Caja</h3>
+                    <p className="text-[11px] text-zinc-400 font-mono tabular-nums">Registro #{lastRegisterData?.id || '1042'}</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowLastRegisterModal(false)}
-                  className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 text-lg transition-colors cursor-pointer"
+                  className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800 transition-colors cursor-pointer"
                 >
                   ✕
                 </button>
@@ -1535,73 +1538,73 @@ function POSView() {
 
               <div className="p-6 space-y-4 text-xs">
                 {loadingLastRegister ? (
-                  <div className="py-8 text-center text-slate-500 font-medium text-xs">
-                    Cargando información del último registro...
+                  <div className="py-8 text-center text-zinc-500 font-medium text-xs">
+                    Cargando información del último arqueo...
                   </div>
                 ) : (
                   <div className="space-y-3.5">
-                    <div className="flex justify-between items-center p-3 bg-slate-950/60 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 font-medium">Estado de la Caja:</span>
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/30">
+                    <div className="flex justify-between items-center p-3 bg-[#0c0e12] rounded-xl border border-zinc-800/80">
+                      <span className="text-zinc-400 font-medium">Estado de sesión:</span>
+                      <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 font-mono font-bold border border-emerald-500/25 text-[11px]">
                         CERRADA
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-[11px]">
-                      <div className="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800 space-y-0.5">
-                        <span className="text-slate-400 block font-semibold">Fecha Apertura</span>
-                        <strong className="text-white font-mono">{lastRegisterData?.fechaApertura || '2026-09-10 08:30:00'}</strong>
+                    <div className="grid grid-cols-2 gap-2.5 text-[11px]">
+                      <div className="p-3 bg-[#0c0e12] rounded-xl border border-zinc-800/80 space-y-0.5">
+                        <span className="text-zinc-500 block font-semibold">Fecha Apertura</span>
+                        <strong className="text-zinc-200 font-mono tabular-nums">{lastRegisterData?.fechaApertura || '2026-09-10 08:30:00'}</strong>
                       </div>
-                      <div className="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800 space-y-0.5">
-                        <span className="text-slate-400 block font-semibold">Fecha Cierre</span>
-                        <strong className="text-white font-mono">{lastRegisterData?.fechaCierre || '2026-09-10 19:45:00'}</strong>
+                      <div className="p-3 bg-[#0c0e12] rounded-xl border border-zinc-800/80 space-y-0.5">
+                        <span className="text-zinc-500 block font-semibold">Fecha Cierre</span>
+                        <strong className="text-zinc-200 font-mono tabular-nums">{lastRegisterData?.fechaCierre || '2026-09-10 19:45:00'}</strong>
                       </div>
                     </div>
 
-                    <div className="p-3.5 bg-slate-950/70 rounded-xl border border-slate-800 space-y-2">
-                      <div className="flex justify-between items-center text-slate-300">
+                    <div className="p-4 bg-[#0c0e12] rounded-xl border border-zinc-800/80 space-y-2.5">
+                      <div className="flex justify-between items-center text-zinc-300">
                         <span>Efectivo Inicial en Caja:</span>
-                        <strong className="font-mono text-white">Bs. {parseFloat(lastRegisterData?.montoInicial || 0).toFixed(2)}</strong>
+                        <strong className="font-mono tabular-nums text-zinc-100">Bs. {parseFloat(lastRegisterData?.montoInicial || 0).toFixed(2)}</strong>
                       </div>
-                      <div className="flex justify-between items-center text-slate-300">
+                      <div className="flex justify-between items-center text-zinc-300">
                         <span>Ventas en Efectivo:</span>
-                        <strong className="font-mono text-emerald-400">+ Bs. {parseFloat(lastRegisterData?.totalVentasEfectivo || 0).toFixed(2)}</strong>
+                        <strong className="font-mono tabular-nums text-emerald-400">+ Bs. {parseFloat(lastRegisterData?.totalVentasEfectivo || 0).toFixed(2)}</strong>
                       </div>
-                      <div className="flex justify-between items-center text-slate-300">
-                        <span>Ventas Tarjeta / QR:</span>
-                        <strong className="font-mono text-cyan-400">+ Bs. {parseFloat(lastRegisterData?.totalVentasDigital || 0).toFixed(2)}</strong>
+                      <div className="flex justify-between items-center text-zinc-300">
+                        <span>Ventas Digitales (QR / Tarjeta):</span>
+                        <strong className="font-mono tabular-nums text-amber-400">+ Bs. {parseFloat(lastRegisterData?.totalVentasDigital || 0).toFixed(2)}</strong>
                       </div>
-                      <div className="border-t border-slate-800 pt-2 flex justify-between items-center text-white font-bold">
-                        <span>Total Esperado en Caja:</span>
-                        <span className="font-mono text-cyan-300 text-sm">Bs. {parseFloat(lastRegisterData?.totalEsperado || 0).toFixed(2)}</span>
+                      <div className="border-t border-zinc-800 pt-2.5 flex justify-between items-center text-zinc-100 font-bold">
+                        <span>Total Esperado en Gaveta:</span>
+                        <span className="font-mono tabular-nums text-amber-400 text-sm">Bs. {parseFloat(lastRegisterData?.totalEsperado || 0).toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between items-center text-white font-bold">
-                        <span>Efectivo Real Entregado:</span>
-                        <span className="font-mono text-emerald-300 text-sm">Bs. {parseFloat(lastRegisterData?.montoFinal || 0).toFixed(2)}</span>
+                      <div className="flex justify-between items-center text-zinc-100 font-bold">
+                        <span>Efectivo Real Declarado:</span>
+                        <span className="font-mono tabular-nums text-emerald-400 text-sm">Bs. {parseFloat(lastRegisterData?.montoFinal || 0).toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between items-center text-slate-300">
+                      <div className="flex justify-between items-center text-zinc-300">
                         <span>Diferencia / Cuadre:</span>
-                        <strong className={`font-mono ${parseFloat(lastRegisterData?.diferencia || 0) === 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <strong className={`font-mono tabular-nums ${parseFloat(lastRegisterData?.diferencia || 0) === 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                           Bs. {parseFloat(lastRegisterData?.diferencia || 0).toFixed(2)} (Cuadrado)
                         </strong>
                       </div>
                     </div>
 
                     {lastRegisterData?.observaciones && (
-                      <div className="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800 text-[11px]">
-                        <span className="text-slate-400 block font-semibold mb-0.5">Observaciones:</span>
-                        <p className="text-slate-300 italic">{lastRegisterData.observaciones}</p>
+                      <div className="p-3 bg-[#0c0e12] rounded-xl border border-zinc-800/80 text-[11px]">
+                        <span className="text-zinc-500 block font-semibold mb-0.5">Observaciones:</span>
+                        <p className="text-zinc-300">{lastRegisterData.observaciones}</p>
                       </div>
                     )}
                   </div>
                 )}
               </div>
 
-              <div className="p-4 bg-slate-950 border-t border-slate-800 flex justify-end">
+              <div className="p-4 bg-[#0c0e12] border-t border-zinc-800/80 flex justify-end">
                 <button
                   type="button"
                   onClick={() => setShowLastRegisterModal(false)}
-                  className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+                  className="btn-press px-5 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-bold text-xs rounded-xl transition-colors cursor-pointer"
                 >
                   Cerrar
                 </button>
@@ -1614,53 +1617,53 @@ function POSView() {
   }
 
   return (
-    <div className="bg-slate-950 text-white min-h-screen font-sans flex flex-col select-none overflow-hidden h-screen">
+    <div className="bg-[#0c0e12] text-zinc-100 min-h-screen font-sans flex flex-col select-none overflow-hidden h-screen">
       {/* ========================================================================= */}
-      {/* 1. BARRA SUPERIOR DE ENCABEZADO POS (ESTILO FOTO ERP)                     */}
+      {/* 1. BARRA SUPERIOR DE ENCABEZADO POS                                       */}
       {/* ========================================================================= */}
-      <header className="bg-slate-900 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between shadow-md flex-shrink-0 z-20">
-        <div className="flex items-center gap-4">
+      <header className="bg-[#12151c] border-b border-zinc-800/80 px-4 py-2 flex items-center justify-between flex-shrink-0 z-20">
+        <div className="flex items-center gap-3">
           <Link
             to="/dashboard"
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition-all border border-slate-700"
+            className="btn-press flex items-center gap-2 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 rounded-lg text-xs font-bold transition-colors border border-zinc-800"
             title="Salir del Punto de Venta y volver al Panel"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             <span>Salir del POS</span>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-400">Ubicación:</span>
-            <span className="text-xs font-extrabold text-cyan-400 uppercase tracking-wider bg-cyan-500/10 px-2.5 py-1 rounded-md border border-cyan-500/20">
-              CASA Y CONSTRUCCION (SUCURSAL CENTRAL)
+          <div className="hidden xl:flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-zinc-500">Sucursal:</span>
+            <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20">
+              CASA Y CONSTRUCCIÓN (CENTRAL)
             </span>
           </div>
 
-          <div className="hidden sm:flex items-center gap-2 bg-slate-800/80 px-3 py-1 rounded-md border border-slate-700 text-xs font-mono font-bold text-slate-300">
-            <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <div className="hidden sm:flex items-center gap-2 bg-[#0c0e12] px-3 py-1 rounded-md border border-zinc-800/80 text-xs font-mono tabular-nums font-bold text-zinc-300">
+            <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span>{currentDateTime}</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-2 bg-slate-800/90 px-3 py-1 rounded-md border border-slate-700 text-xs font-bold text-slate-200">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="text-slate-400">Atiende:</span>
-            <span className="text-white font-extrabold">{currentUser?.Nombre || 'Cajero / Vendedor'}</span>
-            <span className="text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800 px-1.5 py-0.5 rounded font-mono uppercase">
+          <div className="hidden md:flex items-center gap-2 bg-[#0c0e12] px-3 py-1 rounded-md border border-zinc-800/80 text-xs font-semibold text-zinc-300">
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span className="text-zinc-500">Operador:</span>
+            <span className="text-zinc-100 font-bold">{currentUser?.Nombre || 'Cajero'}</span>
+            <span className="text-[10px] bg-zinc-800 text-zinc-300 border border-zinc-700 px-1.5 py-0.5 rounded font-mono uppercase">
               {currentUser?.Rol || 'VENDEDOR'}
             </span>
           </div>
 
           {cashRegisterData && (
-            <div className="hidden lg:flex items-center gap-1.5 bg-emerald-950/70 border border-emerald-700/60 px-2.5 py-1 rounded-md text-xs font-bold text-emerald-300">
-              <span>💵 Caja Inicial:</span>
-              <span className="font-mono text-white">Bs. {parseFloat(cashRegisterData.montoInicial || 0).toFixed(2)}</span>
+            <div className="hidden lg:flex items-center gap-1.5 bg-emerald-950/30 border border-emerald-500/25 px-2.5 py-1 rounded-md text-xs font-semibold text-emerald-400">
+              <span>Fondo Caja:</span>
+              <span className="font-mono tabular-nums font-bold text-zinc-100">Bs. {parseFloat(cashRegisterData.montoInicial || 0).toFixed(2)}</span>
               {parseFloat(cashRegisterData.totalAumentos || 0) > 0 && (
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded font-mono ml-1" title="Aumentos de cambio acumulados en el turno">
-                  +{parseFloat(cashRegisterData.totalAumentos).toFixed(2)} aumento
+                <span className="text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded font-mono tabular-nums ml-1" title="Aumentos de cambio acumulados en el turno">
+                  +{parseFloat(cashRegisterData.totalAumentos).toFixed(2)}
                 </span>
               )}
             </div>
@@ -1673,18 +1676,18 @@ function POSView() {
           <button
             type="button"
             onClick={() => setShowCashInModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white rounded-lg text-xs font-bold transition-all shadow-md shadow-emerald-700/20 cursor-pointer border border-emerald-600 mr-1"
+            className="btn-press flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-emerald-500/30 mr-1"
             title="Ingresar aumento de efectivo o cambio a la caja"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            <span>Aumento a caja</span>
+            <span>Ingreso a caja</span>
           </button>
 
           <button
             onClick={() => setShowCalculatorModal(true)}
-            className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all border border-slate-700"
+            className="btn-press p-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 rounded-lg transition-colors border border-zinc-800"
             title="Calculadora de mostrador"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -1700,7 +1703,7 @@ function POSView() {
                 document.exitFullscreen().catch(() => {});
               }
             }}
-            className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all border border-slate-700"
+            className="btn-press p-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 rounded-lg transition-colors border border-zinc-800"
             title="Pantalla Completa"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -1712,13 +1715,13 @@ function POSView() {
           <button
             type="button"
             onClick={handleOpenCloseRegisterModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white rounded-lg text-xs font-bold transition-all shadow-md shadow-rose-600/20 cursor-pointer border border-rose-500 ml-1"
+            className="btn-press flex items-center gap-1.5 px-3 py-1.5 bg-red-600/15 hover:bg-red-600/25 text-red-400 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-red-500/30 ml-1"
             title="Cerrar caja registradora del turno"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            <span>Cerrar caja</span>
+            <span>Arqueo y Cierre</span>
           </button>
         </div>
       </header>
@@ -1728,16 +1731,16 @@ function POSView() {
       {/* ========================================================================= */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* ======================================================================= */}
-        {/* PANEL IZQUIERDO: TICKET / MOSTRADOR DE COBRO (AMPLIADO Y MÁS CÓMODO)   */}
+        {/* PANEL IZQUIERDO: TICKET / MOSTRADOR DE COBRO                            */}
         {/* ======================================================================= */}
-        <div className="w-full lg:w-[50%] xl:w-[48%] 2xl:w-[46%] bg-slate-900/70 border-r border-slate-800 flex flex-col justify-between overflow-hidden">
+        <div className="w-full lg:w-[50%] xl:w-[48%] 2xl:w-[46%] bg-[#12151c] border-r border-zinc-800/80 flex flex-col justify-between overflow-hidden">
           {/* Fila 1: Selector de Cliente y Recibo No en Edición */}
-          <div className="p-3.5 border-b border-slate-800 bg-slate-900/60 space-y-2.5">
+          <div className="p-3.5 border-b border-zinc-800/80 bg-[#0c0e12]/60 space-y-2.5">
             {editingSaleId && (
-              <div className="flex items-center justify-between bg-cyan-500/10 border border-cyan-500/30 rounded-xl px-3.5 py-2 text-xs text-cyan-300 font-bold animate-fade-in">
-                <span className="flex items-center gap-1.5 font-mono">
-                  <span>Recibo no.:</span>
-                  <strong className="text-white text-sm">{editingSaleId}</strong>
+              <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/30 rounded-xl px-3.5 py-2 text-xs text-amber-300 font-bold">
+                <span className="flex items-center gap-1.5 font-mono tabular-nums">
+                  <span>Editando Recibo No.:</span>
+                  <strong className="text-zinc-100 text-sm">#{editingSaleId}</strong>
                 </span>
                 <button
                   type="button"
@@ -1746,7 +1749,7 @@ function POSView() {
                     setCart([]);
                     showToast('Edición de venta cancelada', 'info');
                   }}
-                  className="text-xs text-slate-400 hover:text-rose-400 font-normal transition-colors underline"
+                  className="text-xs text-zinc-400 hover:text-red-400 font-semibold transition-colors underline"
                   title="Cancelar edición de venta"
                 >
                   ✕ Cancelar edición
@@ -1755,8 +1758,8 @@ function POSView() {
             )}
 
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 flex-shrink-0">
-                <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-amber-400 flex-shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
@@ -1770,14 +1773,14 @@ function POSView() {
                     setManualDiscount(null);
                   }
                 }}
-                className="flex-1 bg-slate-800/90 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-bold focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
+                className="flex-1 bg-[#0c0e12] border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-zinc-100 font-bold focus:outline-none focus:border-amber-500 transition-colors cursor-pointer"
               >
                 {clients.map((c) => {
-                  const tierBadge = c.NivelLealtad === 'Mayorista' ? '💎 Diamante' : c.NivelLealtad === 'Constructor' ? '🥇 Oro' : c.NivelLealtad === 'Frecuente' ? '🥈 Plata' : '🥉 Bronce';
-                  const pct = c.DescuentoPorcentaje ? ` (${c.DescuentoPorcentaje}% Dcto)` : '';
+                  const tierBadge = c.NivelLealtad === 'Mayorista' ? '[MAYORISTA]' : c.NivelLealtad === 'Constructor' ? '[CONSTRUCTOR]' : c.NivelLealtad === 'Frecuente' ? '[FRECUENTE]' : '[MOSTRADOR]';
+                  const pct = c.DescuentoPorcentaje ? ` — ${c.DescuentoPorcentaje}% Dcto.` : '';
                   return (
                     <option key={c.id} value={c.id}>
-                      {tierBadge} - {c.name} {c.nit !== '0' ? `(NIT: ${c.nit})` : ''} {pct}
+                      {tierBadge} {c.name} {c.nit !== '0' ? `(NIT: ${c.nit})` : ''}{pct}
                     </option>
                   );
                 })}
@@ -1785,7 +1788,7 @@ function POSView() {
 
               <button
                 onClick={() => setShowNewClientModal(true)}
-                className="w-9 h-9 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/40 flex items-center justify-center font-black text-lg transition-all"
+                className="btn-press w-9 h-9 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 flex items-center justify-center font-black text-base transition-colors"
                 title="Registrar nuevo cliente rápido"
               >
                 +
@@ -1794,117 +1797,118 @@ function POSView() {
 
             {/* Insignia de Fidelidad / Lealtad del Cliente Seleccionado */}
             {selectedClient && selectedClient.id !== 1 && (
-              <div className="flex items-center justify-between px-3 py-1.5 bg-slate-950/90 rounded-xl border border-amber-500/30 text-[11px] animate-fade-in">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-amber-400">
-                    {selectedClient.NivelLealtad === 'Mayorista' ? '💎 Diamante' : selectedClient.NivelLealtad === 'Constructor' ? '🥇 Oro' : selectedClient.NivelLealtad === 'Frecuente' ? '🥈 Plata' : '🥉 Bronce'}
+              <div className="flex items-center justify-between px-3 py-1.5 bg-[#0c0e12] rounded-xl border border-amber-500/25 text-[11px]">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span className="font-bold text-amber-400 uppercase tracking-wider">
+                    Nivel: {selectedClient.NivelLealtad || 'Estándar'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {loyaltyDiscountPercent > 0 ? (
-                    <span className="text-emerald-400 font-extrabold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg">
-                      {loyaltyDiscountPercent}% Dcto. Automático (-Bs. {loyaltyDiscountAmount.toFixed(2)})
+                    <span className="text-emerald-400 font-mono tabular-nums font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">
+                      {loyaltyDiscountPercent}% Dcto. (-Bs. {loyaltyDiscountAmount.toFixed(2)})
                     </span>
                   ) : (
-                    <span className="text-slate-500 font-semibold">Precios regulares</span>
+                    <span className="text-zinc-500 font-semibold">Tarifa regular</span>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Fila 2: Buscador / Escáner de Código de Barras */}
+            {/* Fila 2: Buscador / Escáner de Código de Barras (CERO ANIMACIÓN LENTA - RESPUESTA INSTANTÁNEA) */}
             <form onSubmit={handleBarcodeSubmit} className="flex items-center gap-2">
               <div className="relative flex-1">
                 <input
                   ref={barcodeInputRef}
                   type="text"
-                  placeholder="Introduzca el nombre del producto / SKU / código de barras de escaneo..."
+                  placeholder="Escanee código de barras, ingrese SKU o nombre y presione Enter..."
                   value={barcodeInput}
                   onChange={(e) => setBarcodeInput(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-medium transition-all"
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-500 font-medium transition-colors duration-100"
                 />
-                <svg className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
 
               <button
                 type="submit"
-                className="w-9 h-9 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white flex items-center justify-center font-black text-base shadow-md shadow-cyan-600/20 transition-all"
-                title="Buscar o añadir"
+                className="btn-press w-9 h-9 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 flex items-center justify-center font-black text-base transition-colors"
+                title="Buscar o añadir al ticket"
               >
                 +
               </button>
             </form>
           </div>
 
-          {/* Tabla de Productos en Ticket (Más espaciosa y legible) */}
+          {/* Tabla de Productos en Ticket (Respuesta instantánea en filas y contadores) */}
           <div className="flex-1 overflow-y-auto p-3">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-slate-400 border-b border-slate-800 text-xs uppercase tracking-wider font-extrabold">
-                  <th className="pb-3 pl-2 font-bold">Producto ⓘ</th>
-                  <th className="pb-3 text-center w-36 font-bold">Cantidad</th>
-                  <th className="pb-3 text-right w-32 font-bold">Subtotal</th>
-                  <th className="pb-3 text-center w-12 font-bold">✖</th>
+                <tr className="text-zinc-400 border-b border-zinc-800/80 text-[11px] uppercase tracking-wider font-bold">
+                  <th className="pb-2.5 pl-2">Producto / Precio Unit.</th>
+                  <th className="pb-2.5 text-center w-36">Cantidad</th>
+                  <th className="pb-2.5 text-right w-32">Subtotal</th>
+                  <th className="pb-2.5 text-center w-10"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-medium">
+              <tbody className="divide-y divide-zinc-800/60 font-medium">
                 {cart.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="py-20 text-center text-slate-500">
-                      <div className="w-14 h-14 rounded-2xl bg-slate-800/40 border border-slate-700/60 flex items-center justify-center text-slate-500 mx-auto mb-3">
-                        <svg className="w-7 h-7 opacity-60" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <td colSpan="4" className="py-20 text-center text-zinc-500">
+                      <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 mx-auto mb-3">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                       </div>
-                      <p className="text-sm font-bold text-slate-400">El ticket de venta está vacío</p>
-                      <p className="text-xs text-slate-500 mt-1">Escanea un código de barras o pulsa un producto del catálogo táctil</p>
+                      <p className="text-sm font-bold text-zinc-300">Ticket de venta vacío</p>
+                      <p className="text-xs text-zinc-500 mt-1">Escanee un código de barras o seleccione un ítem del catálogo derecho</p>
                     </td>
                   </tr>
                 ) : (
                   cart.map((item) => (
-                    <tr key={item.ProductoID} className="hover:bg-slate-800/40 transition-colors group">
+                    <tr key={item.ProductoID} className="hover:bg-zinc-800/35 transition-colors duration-75 group">
                       <td
                         onClick={() => handleOpenItemDetails(item)}
-                        className="py-3.5 pl-2 cursor-pointer"
-                        title="Haga clic para ver detalles, cambiar precio o agregar notas"
+                        className="py-3 pl-2 cursor-pointer"
+                        title="Haga clic para ajustar precio unitario o agregar nota"
                       >
-                        <div className="font-extrabold text-slate-100 group-hover:text-cyan-300 text-sm leading-snug uppercase max-w-[220px] sm:max-w-[280px] transition-colors flex items-center gap-2">
-                          <span className="text-[11px] font-black px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 font-mono border border-cyan-500/30">
-                            Ver
+                        <div className="font-bold text-zinc-100 group-hover:text-amber-400 text-xs sm:text-sm leading-snug uppercase max-w-[220px] sm:max-w-[280px] transition-colors duration-75 flex items-center gap-2">
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-amber-400 border border-zinc-700">
+                            Editar
                           </span>
                           <span className="truncate">{item.name}</span>
                         </div>
-                        <div className="text-xs text-slate-400 flex items-center gap-2 mt-1">
-                          <span className="font-mono text-cyan-400 font-semibold">{item.code}</span>
-                          <span className="text-slate-600">•</span>
-                          <span className="font-bold text-slate-300">Bs. {item.price.toFixed(2)} c/u</span>
+                        <div className="text-xs text-zinc-400 flex items-center gap-2 mt-1 font-mono tabular-nums">
+                          <span className="text-zinc-500">{item.code}</span>
+                          <span className="text-zinc-700">•</span>
+                          <span className="font-semibold text-zinc-300">Bs. {item.price.toFixed(2)} c/u</span>
                           {item.customNote && (
-                            <span className="text-[11px] text-amber-400 italic bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20 truncate max-w-[140px]">
-                              📝 {item.customNote}
+                            <span className="text-[10px] font-sans text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 truncate max-w-[140px]">
+                              Nota: {item.customNote}
                             </span>
                           )}
                         </div>
                       </td>
 
-                      {/* Contador de Cantidad (Más Grande y Táctil) */}
-                      <td className="py-3.5 text-center">
-                        <div className="inline-flex items-center border border-slate-700 bg-slate-950 rounded-xl overflow-hidden shadow-inner p-0.5">
+                      {/* Contador de Cantidad (Instantáneo) */}
+                      <td className="py-3 text-center">
+                        <div className="inline-flex items-center border border-zinc-800 bg-[#0c0e12] rounded-xl overflow-hidden p-0.5">
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.ProductoID, -1)}
-                            className="w-8 h-8 flex items-center justify-center hover:bg-slate-800 text-slate-300 hover:text-white font-black text-base transition-colors rounded-lg"
+                            className="w-8 h-8 flex items-center justify-center hover:bg-zinc-800 active:bg-zinc-700 text-zinc-300 hover:text-zinc-100 font-bold text-base transition-colors duration-75 rounded-lg"
                           >
-                            -
+                            −
                           </button>
-                          <span className="px-3 text-sm font-black text-white min-w-[32px] text-center font-mono">
+                          <span className="px-2.5 text-sm font-bold text-zinc-100 min-w-[34px] text-center font-mono tabular-nums">
                             {item.quantity}
                           </span>
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.ProductoID, 1)}
-                            className="w-8 h-8 flex items-center justify-center hover:bg-slate-800 text-slate-300 hover:text-white font-black text-base transition-colors rounded-lg"
+                            className="w-8 h-8 flex items-center justify-center hover:bg-zinc-800 active:bg-zinc-700 text-zinc-300 hover:text-zinc-100 font-bold text-base transition-colors duration-75 rounded-lg"
                           >
                             +
                           </button>
@@ -1912,16 +1916,16 @@ function POSView() {
                       </td>
 
                       {/* Subtotal del item */}
-                      <td className="py-3.5 text-right font-black text-slate-100 text-sm font-mono">
+                      <td className="py-3 text-right font-bold text-zinc-100 text-sm font-mono tabular-nums">
                         Bs. {item.subtotal.toFixed(2)}
                       </td>
 
                       {/* Botón Borrar fila */}
-                      <td className="py-3.5 text-center">
+                      <td className="py-3 text-center">
                         <button
                           type="button"
                           onClick={() => removeFromCart(item.ProductoID)}
-                          className="w-7 h-7 rounded-lg inline-flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          className="w-7 h-7 rounded-lg inline-flex items-center justify-center text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors duration-75"
                           title="Quitar del ticket"
                         >
                           ✕
@@ -1935,27 +1939,23 @@ function POSView() {
           </div>
 
           {/* Subtotales y Modificadores del Ticket */}
-          <div className="p-3 border-t border-slate-800 bg-slate-900/90 space-y-2 text-xs">
-            <div className="flex justify-between items-center text-slate-400 font-semibold">
-              <span>Productos: {totalQuantity.toFixed(2)}</span>
-              <span className="text-sm font-bold text-white font-mono">Subtotal: Bs. {subtotalProducts.toFixed(2)}</span>
+          <div className="p-3.5 border-t border-zinc-800/80 bg-[#0c0e12]/90 space-y-2 text-xs">
+            <div className="flex justify-between items-center text-zinc-400 font-semibold">
+              <span>Ítems en ticket: <strong className="font-mono tabular-nums text-zinc-200">{totalQuantity.toFixed(2)}</strong></span>
+              <span className="text-sm font-bold text-zinc-100 font-mono tabular-nums">Subtotal: Bs. {subtotalProducts.toFixed(2)}</span>
             </div>
 
-            {/* Modificador: Descuento por Lealtad y Total con Descuento (Solo Lectura) */}
-            <div className="pt-1 border-t border-slate-800/60 space-y-1.5 text-[11px]">
+            <div className="pt-1.5 border-t border-zinc-800/60 space-y-1.5 text-[11px]">
               {loyaltyDiscountPercent > 0 && (
-                <div className="flex items-center justify-between text-amber-400 px-2 py-1 font-semibold bg-amber-500/5 rounded-lg border border-amber-500/20">
-                  <span className="flex items-center gap-1">
-                    <span>👑 Lealtad {selectedClient?.NivelLealtad === 'Mayorista' ? 'Diamante' : selectedClient?.NivelLealtad === 'Constructor' ? 'Oro' : selectedClient?.NivelLealtad === 'Frecuente' ? 'Plata' : 'Bronce'} ({loyaltyDiscountPercent}%):</span>
-                  </span>
-                  <span className="font-mono font-bold">-Bs. {effectiveDiscount.toFixed(2)}</span>
+                <div className="flex items-center justify-between text-amber-400 px-2.5 py-1 font-semibold bg-amber-500/10 rounded-lg border border-amber-500/20">
+                  <span>Descuento Nivel {selectedClient?.NivelLealtad} ({loyaltyDiscountPercent}%):</span>
+                  <span className="font-mono tabular-nums font-bold">-Bs. {effectiveDiscount.toFixed(2)}</span>
                 </div>
               )}
 
-              {/* Fila del Total con Descuento Aplicado (Informativo No Editable) */}
-              <div className="w-full flex items-center justify-between px-3 py-1.5 bg-slate-800/90 rounded-lg border border-slate-700 text-slate-300">
-                <span className="font-bold text-cyan-300">Total con Descuento:</span>
-                <b className="text-cyan-400 font-black font-mono text-xs">Bs. {finalTotal.toFixed(2)}</b>
+              <div className="w-full flex items-center justify-between px-3 py-1.5 bg-[#12151c] rounded-lg border border-zinc-800 text-zinc-300">
+                <span className="font-bold text-zinc-300">Total Neto Ticket:</span>
+                <b className="text-amber-400 font-extrabold font-mono tabular-nums text-sm">Bs. {finalTotal.toFixed(2)}</b>
               </div>
             </div>
           </div>
@@ -1964,20 +1964,20 @@ function POSView() {
         {/* ======================================================================= */}
         {/* PANEL DERECHO: CATÁLOGO TÁCTIL Y GALERÍA DE PRODUCTOS                   */}
         {/* ======================================================================= */}
-        <div className="flex-1 bg-slate-950 flex flex-col justify-between overflow-hidden">
+        <div className="flex-1 bg-[#0c0e12] flex flex-col justify-between overflow-hidden">
           {/* Botones de Categorías y Marcas Superiores */}
-          <div className="p-3 border-b border-slate-800 flex items-center justify-between gap-3 bg-slate-900/30 flex-shrink-0">
+          <div className="p-3 border-b border-zinc-800/80 flex items-center justify-between gap-3 bg-[#12151c]/60 flex-shrink-0">
             <div className="flex items-center gap-2 flex-1">
               {/* Botón Filtro de Categoría */}
               <button
                 onClick={() => setShowCategoryFilterModal(true)}
-                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`btn-press flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-colors ${
                   selectedCategory !== 'ALL'
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
-                    : 'bg-purple-600/80 hover:bg-purple-600 text-white'
+                    ? 'bg-amber-500/15 text-amber-400 border-amber-500/40'
+                    : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-800'
                 }`}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
                 <span>Categoría {selectedCategory !== 'ALL' ? `(${selectedCategory})` : ''}</span>
@@ -1986,13 +1986,13 @@ function POSView() {
               {/* Botón Filtro de Marcas */}
               <button
                 onClick={() => setShowBrandFilterModal(true)}
-                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`btn-press flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-colors ${
                   selectedBrand !== 'ALL'
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                    : 'bg-blue-600/80 hover:bg-blue-600 text-white'
+                    ? 'bg-amber-500/15 text-amber-400 border-amber-500/40'
+                    : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-800'
                 }`}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                 </svg>
                 <span>Marcas {selectedBrand !== 'ALL' ? `(${selectedBrand})` : ''}</span>
@@ -2004,43 +2004,43 @@ function POSView() {
                     setSelectedCategory('ALL');
                     setSelectedBrand('ALL');
                   }}
-                  className="text-xs text-rose-400 hover:text-rose-300 font-bold px-2 py-1 rounded bg-rose-500/10 border border-rose-500/20"
+                  className="text-xs text-red-400 hover:text-red-300 font-bold px-2.5 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 transition-colors"
                 >
-                  ✕ Quitar filtros
+                  ✕ Limpiar
                 </button>
               )}
             </div>
 
-            {/* Buscador de Grid */}
+            {/* Buscador de Grid (Instantáneo sin transiciones lentas) */}
             <div className="relative w-48 sm:w-64">
               <input
                 type="text"
-                placeholder="Filtrar catálogo..."
+                placeholder="Filtrar catálogo rápido..."
                 value={gridSearch}
                 onChange={(e) => setGridSearch(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-500 transition-colors duration-100"
               />
-              <svg className="w-4 h-4 text-slate-500 absolute left-2.5 top-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-zinc-500 absolute left-2.5 top-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
           </div>
 
-          {/* Grilla Táctil de Productos (Tarjetas como la foto ERP) */}
+          {/* Grilla Táctil de Productos */}
           <div className="flex-1 overflow-y-auto p-4">
             {loading ? (
-              <div className="py-24 flex flex-col items-center justify-center gap-3 text-slate-500">
-                <div className="w-8 h-8 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
-                <span className="text-xs font-semibold">Cargando inventario táctil...</span>
+              <div className="py-24 flex flex-col items-center justify-center gap-3 text-zinc-500">
+                <div className="w-8 h-8 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin"></div>
+                <span className="text-xs font-semibold">Sincronizando inventario POS...</span>
               </div>
             ) : filteredGridProducts.length === 0 ? (
-              <div className="py-24 text-center text-slate-500">
-                <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto mb-2 text-slate-600">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="py-24 text-center text-zinc-500">
+                <div className="w-12 h-12 rounded-2xl bg-[#12151c] border border-zinc-800 flex items-center justify-center mx-auto mb-2 text-zinc-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <p className="text-xs font-bold text-slate-400">No hay productos que coincidan con la búsqueda</p>
+                <p className="text-xs font-bold text-zinc-400">No hay productos que coincidan con el filtro</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-4 gap-3">
@@ -2053,18 +2053,18 @@ function POSView() {
                     <div
                       key={p.ProductoID}
                       onClick={() => !isOut && addToCart(p)}
-                      className={`group bg-slate-900/70 border rounded-2xl p-3 flex flex-col items-center justify-between text-center transition-all relative overflow-hidden ${
+                      className={`group bg-[#12151c] border rounded-2xl p-3 flex flex-col items-center justify-between text-center transition-[border-color,background-color,transform] duration-100 ease-out-expo relative overflow-hidden ${
                         isOut
-                          ? 'border-rose-500/30 opacity-60 cursor-not-allowed'
-                          : 'border-slate-800 hover:border-cyan-500/50 hover:bg-slate-900 cursor-pointer shadow-md hover:shadow-cyan-500/10'
+                          ? 'border-red-500/25 opacity-55 cursor-not-allowed'
+                          : 'border-zinc-800/90 hover:border-amber-500/50 hover:bg-zinc-900/90 active:scale-[0.97] cursor-pointer'
                       }`}
                     >
                       {/* Imagen o Icono del Producto */}
-                      <div className="w-20 h-20 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-center p-1 mb-2 overflow-hidden flex-shrink-0">
+                      <div className="w-20 h-20 rounded-xl bg-[#0c0e12] border border-zinc-800/80 flex items-center justify-center p-1.5 mb-2 overflow-hidden flex-shrink-0">
                         {p.Imagen ? (
-                          <img src={p.Imagen} alt={p.Nombre} className="w-full h-full object-contain group-hover:scale-105 transition-transform" />
+                          <img src={p.Imagen} alt={p.Nombre} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-150 ease-out-expo" />
                         ) : (
-                          <svg className="w-8 h-8 text-cyan-400/40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                          <svg className="w-8 h-8 text-zinc-600" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                           </svg>
                         )}
@@ -2072,30 +2072,30 @@ function POSView() {
 
                       {/* Nombre y SKU */}
                       <div className="w-full space-y-1">
-                        <p className="text-[11px] font-extrabold text-slate-200 uppercase line-clamp-2 leading-tight">
+                        <p className="text-[11px] font-bold text-zinc-100 uppercase line-clamp-2 leading-tight">
                           {p.Nombre}
                         </p>
-                        <p className="text-[10px] font-mono text-slate-500">
-                          ({p.Codigo || p.CodigoBarras || `PRD-${p.ProductoID}`})
+                        <p className="text-[10px] font-mono tabular-nums text-zinc-500">
+                          {p.Codigo || p.CodigoBarras || `PRD-${p.ProductoID}`}
                         </p>
                       </div>
 
                       {/* Precio y Stock */}
-                      <div className="w-full mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                        <span className="font-extrabold text-cyan-400">
+                      <div className="w-full mt-2 pt-2 border-t border-zinc-800/80 flex items-center justify-between text-xs">
+                        <span className="font-mono tabular-nums font-extrabold text-amber-400">
                           Bs. {price.toFixed(2)}
                         </span>
 
                         <span
-                          className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border ${
+                          className={`text-[10px] font-mono tabular-nums font-bold px-2 py-0.5 rounded-md border ${
                             isOut
-                              ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                              ? 'bg-red-500/10 text-red-400 border-red-500/25'
                               : stock <= (p.LoteMinimo || 5)
-                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/25'
+                              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
                           }`}
                         >
-                          {isOut ? 'Agotado' : `(${stock.toFixed(2)} ud)`}
+                          {isOut ? 'Agotado' : `${stock} ud`}
                         </span>
                       </div>
                     </div>
@@ -2108,44 +2108,48 @@ function POSView() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. BARRA INFERIOR DE COBRO RÁPIDO POS (ESTILO EXACTO A LA FOTO ERP)       */}
+      {/* 3. BARRA INFERIOR DE COBRO RÁPIDO POS                                     */}
       {/* ========================================================================= */}
-      <footer className="bg-slate-900 border-t border-slate-800 p-2.5 flex flex-wrap items-center justify-between gap-3 shadow-2xl flex-shrink-0 z-20">
+      <footer className="bg-[#12151c] border-t border-zinc-800/80 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 z-20">
         {/* Acciones Rápidas Izquierda */}
-        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           <button
             onClick={handleQuotationClick}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-cyan-400 rounded-xl font-bold border border-slate-700 transition-all shadow-sm"
-            title="Guardar como cotización sin descontar inventario"
+            className="btn-press flex items-center gap-2 px-3.5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 hover:text-amber-400 rounded-xl font-bold border border-zinc-800 transition-colors"
+            title="Guardar como proforma/cotización sin descontar inventario"
           >
-            <span>✏️</span>
-            <span>Cotización</span>
+            <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Guardar Cotización</span>
           </button>
         </div>
 
         {/* Botones de Cobro y Total Destacado */}
         <div className="flex items-center gap-3">
-          {/* Botón Efectivo (Registra la venta y abre el formulario de factura si se desea) */}
+          {/* Botón Efectivo (Sin animate-pulse fatigante; respuesta táctil firme) */}
           <button
             onClick={handleCashClick}
-            className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-extrabold text-sm shadow-lg shadow-emerald-500/20 transition-all animate-pulse"
-            title="Registrar venta en efectivo y abrir datos de factura"
+            className="btn-press flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-extrabold text-sm shadow-sm transition-colors cursor-pointer"
+            title="Registrar venta y abrir emisión de factura"
           >
-            <span>💵</span>
-            <span>Efectivo</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <span>Cobrar (Efectivo / QR)</span>
           </button>
 
           <button
             onClick={clearCart}
-            className="px-4 py-2 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl font-bold text-xs transition-all"
+            className="btn-press px-4 py-2.5 bg-red-600/15 hover:bg-red-600/25 text-red-400 border border-red-500/30 rounded-xl font-bold text-xs transition-colors"
           >
             Cancelar
           </button>
 
           {/* Gran Total Visual */}
-          <div className="bg-slate-950 px-5 py-2 rounded-xl border border-slate-800 text-right">
-            <span className="text-[10px] uppercase font-extrabold text-slate-400 block tracking-wider">Total a Pagar</span>
-            <span className="text-xl font-black text-cyan-400 tracking-tight">
+          <div className="bg-[#0c0e12] px-5 py-1.5 rounded-xl border border-zinc-800 text-right min-w-[165px]">
+            <span className="text-[10px] uppercase font-bold text-zinc-500 block tracking-wider">Total a Pagar</span>
+            <span className="text-xl font-black text-amber-400 font-mono tabular-nums tracking-tight">
               Bs. {finalTotal.toFixed(2)}
             </span>
           </div>
@@ -2158,22 +2162,24 @@ function POSView() {
               if (!lastSaleReceipt) return showToast('No hay ventas previas en esta sesión', 'error');
               setShowReceiptModal(true);
             }}
-            className="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold transition-all shadow-md"
+            className="btn-press px-3.5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 rounded-xl font-bold transition-colors"
           >
-            Facturar última venta
+            Último Recibo
           </button>
 
           <button
             onClick={handleOpenRecentSales}
-            className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-md flex items-center gap-1.5"
+            className="btn-press px-3.5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 rounded-xl font-bold transition-colors flex items-center gap-1.5"
           >
-            <span>🟣</span>
-            <span>Transacciones Recientes</span>
+            <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Historial Turno</span>
           </button>
 
           <Link
             to="/pedidos-online"
-            className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl transition-all shadow-md flex items-center gap-2"
+            className="btn-press px-3.5 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold rounded-xl transition-colors flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -2184,19 +2190,24 @@ function POSView() {
       </footer>
 
       {/* ========================================================================= */}
-      {/* 4. MODAL: DATOS PARA FACTURA (EXACTO A LA CAPTURA ERP)                     */}
+      {/* 4. MODAL: DATOS PARA FACTURA                                              */}
       {/* ========================================================================= */}
       {showCashModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 text-white my-8 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-[#12151c] border border-zinc-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 text-zinc-100 my-8 max-h-[90vh] overflow-y-auto animate-modal-in">
             {/* Cabecera del Modal */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="font-extrabold text-white text-base tracking-wide">
-                Datos para Factura
-              </h3>
+            <div className="flex items-center justify-between pb-3.5 border-b border-zinc-800/80">
+              <div>
+                <h3 className="font-extrabold text-zinc-100 text-base tracking-tight">
+                  Emisión de Factura / Comprobante
+                </h3>
+                <p className="text-[11px] text-zinc-400">
+                  La venta ya fue registrada en inventario. Complete los datos fiscales o cierre para comprobante de mostrador.
+                </p>
+              </div>
               <button
                 onClick={handleCloseInvoiceModal}
-                className="text-slate-400 hover:text-white text-lg p-1 rounded-lg hover:bg-slate-800 transition-colors"
+                className="text-zinc-400 hover:text-zinc-100 text-base p-1.5 rounded-lg hover:bg-zinc-800 transition-colors"
                 title="Cerrar modal (la venta ya está registrada)"
               >
                 ✕
@@ -2205,38 +2216,38 @@ function POSView() {
 
             {/* SECCIÓN 1: DATOS DE CLIENTE */}
             <div className="space-y-3">
-              <h4 className="text-center text-xs font-extrabold text-cyan-400 uppercase tracking-wider">
-                Datos de Cliente
+              <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                1. Datos del Cliente / Razón Social
               </h4>
 
               {/* Radio buttons: Normal, Sin Nombre */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-semibold text-slate-300">
-                <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-slate-800/60 transition-colors">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-semibold text-zinc-300">
+                <label className={`flex items-center gap-2.5 cursor-pointer p-2.5 rounded-xl border transition-colors ${invoiceCustomerType === 'NORMAL' ? 'bg-amber-500/10 border-amber-500/30 text-zinc-100' : 'bg-[#0c0e12] border-zinc-800 hover:border-zinc-700'}`}>
                   <input
                     type="radio"
                     name="customerType"
                     checked={invoiceCustomerType === 'NORMAL'}
                     onChange={() => handleCustomerTypeChange('NORMAL')}
-                    className="accent-cyan-500 w-4 h-4 cursor-pointer"
+                    className="accent-amber-500 w-4 h-4 cursor-pointer"
                   />
-                  <span>Normal</span>
+                  <span>Cliente Nominal (NIT / CI)</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-slate-800/60 transition-colors">
+                <label className={`flex items-center gap-2.5 cursor-pointer p-2.5 rounded-xl border transition-colors ${invoiceCustomerType === 'SIN_NOMBRE' ? 'bg-amber-500/10 border-amber-500/30 text-zinc-100' : 'bg-[#0c0e12] border-zinc-800 hover:border-zinc-700'}`}>
                   <input
                     type="radio"
                     name="customerType"
                     checked={invoiceCustomerType === 'SIN_NOMBRE'}
                     onChange={() => handleCustomerTypeChange('SIN_NOMBRE')}
-                    className="accent-cyan-500 w-4 h-4 cursor-pointer"
+                    className="accent-amber-500 w-4 h-4 cursor-pointer"
                   />
-                  <span>Sin Nombre <span className="text-[10px] text-slate-400">(ventas menores o iguales a Bs. 10.000)</span></span>
+                  <span>Sin Nombre <span className="text-[10px] text-zinc-500">(≤ Bs. 10.000)</span></span>
                 </label>
               </div>
 
               {/* Campo: Razón Social */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">
+                <label className="block text-xs font-bold text-zinc-400 mb-1">
                   Razón social *
                 </label>
                 <input
@@ -2244,7 +2255,7 @@ function POSView() {
                   value={invoiceRazonSocial}
                   onChange={(e) => setInvoiceRazonSocial(e.target.value)}
                   placeholder="SIN NOMBRE o Nombre del cliente / Empresa"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white uppercase focus:outline-none focus:border-cyan-400 transition-all font-semibold"
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-4 py-2 text-xs text-zinc-100 uppercase focus:outline-none focus:border-amber-500 transition-colors font-semibold"
                   required
                 />
               </div>
@@ -2252,13 +2263,13 @@ function POSView() {
               {/* Fila: Tipo de Documento, Número de Impuesto, Complemento */}
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                 <div className="sm:col-span-6">
-                  <label className="block text-xs font-bold text-slate-400 mb-1">
+                  <label className="block text-xs font-bold text-zinc-400 mb-1">
                     Tipo de Documento *
                   </label>
                   <select
                     value={invoiceDocType}
                     onChange={(e) => setInvoiceDocType(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-semibold cursor-pointer"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-amber-500 font-semibold cursor-pointer"
                   >
                     <option value="NIT">NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA</option>
                     <option value="CI">CI - CÉDULA DE IDENTIDAD</option>
@@ -2269,44 +2280,43 @@ function POSView() {
                 </div>
 
                 <div className="sm:col-span-4">
-                  <label className="block text-xs font-bold text-slate-400 mb-1 flex items-center justify-between">
-                    <span>Número de impuesto *:</span>
-                    <span className="w-3.5 h-3.5 rounded-full bg-cyan-500/20 text-cyan-400 text-[9px] font-bold inline-flex items-center justify-center cursor-help" title="NIT o Cédula de Identidad del cliente">i</span>
+                  <label className="block text-xs font-bold text-zinc-400 mb-1">
+                    Número NIT / CI *
                   </label>
                   <input
                     type="text"
                     value={invoiceDocNumber}
                     onChange={(e) => setInvoiceDocNumber(e.target.value)}
                     placeholder="0000"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono font-bold"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-amber-500 font-mono tabular-nums font-bold"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-400 mb-1">
-                    Com
+                  <label className="block text-xs font-bold text-zinc-400 mb-1">
+                    Compl.
                   </label>
                   <input
                     type="text"
                     value={invoiceComplemento}
                     onChange={(e) => setInvoiceComplemento(e.target.value)}
                     placeholder="Ej. 1A"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-amber-500 font-mono"
                   />
                 </div>
               </div>
 
               {/* Campo: Correo Electrónico */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">
-                  Correo electrónico
+                <label className="block text-xs font-bold text-zinc-400 mb-1">
+                  Correo electrónico (opcional)
                 </label>
                 <input
                   type="email"
                   value={invoiceEmail}
                   onChange={(e) => setInvoiceEmail(e.target.value)}
-                  placeholder="correo@ejemplo.com (Opcional para envío digital)"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+                  placeholder="correo@ejemplo.com"
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-4 py-2 text-xs text-zinc-100 focus:outline-none focus:border-amber-500 transition-colors"
                 />
               </div>
             </div>
@@ -2318,29 +2328,29 @@ function POSView() {
               const modalSaleDiscount = lastSaleReceipt?.discount ?? effectiveDiscount;
 
               return (
-                <div className="space-y-2 pt-2 border-t border-slate-800">
-                  <h4 className="text-center text-xs font-extrabold text-cyan-400 uppercase tracking-wider">
-                    Resumen de Factura
+                <div className="space-y-2 pt-3 border-t border-zinc-800/80">
+                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                    2. Liquidación Fiscal
                   </h4>
 
-                  <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 divide-y divide-slate-800/80 text-xs">
-                    <div className="flex justify-between py-1.5 text-slate-300">
-                      <span className="font-semibold">Subtotal:</span>
-                      <span className="font-mono font-bold text-white">Bs. {modalSaleSubtotal.toFixed(2)}</span>
+                  <div className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl p-3.5 divide-y divide-zinc-800/70 text-xs">
+                    <div className="flex justify-between py-1.5 text-zinc-300">
+                      <span className="font-semibold">Subtotal Bruto:</span>
+                      <span className="font-mono tabular-nums font-bold text-zinc-100">Bs. {modalSaleSubtotal.toFixed(2)}</span>
                     </div>
                     {modalSaleDiscount > 0 && (
-                      <div className="flex justify-between py-1.5 text-rose-400">
-                        <span className="font-semibold">Descuento (-):</span>
-                        <span className="font-mono font-bold">-Bs. {modalSaleDiscount.toFixed(2)}</span>
+                      <div className="flex justify-between py-1.5 text-amber-400">
+                        <span className="font-semibold">Descuento Aplicado (-):</span>
+                        <span className="font-mono tabular-nums font-bold">-Bs. {modalSaleDiscount.toFixed(2)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between py-1.5 text-slate-300">
-                      <span className="font-semibold">Total Base Crédito Fiscal:</span>
-                      <span className="font-mono font-bold text-cyan-400">Bs. {modalSaleTotal.toFixed(2)}</span>
+                    <div className="flex justify-between py-1.5 text-zinc-200">
+                      <span className="font-bold">Total Base Crédito Fiscal:</span>
+                      <span className="font-mono tabular-nums font-extrabold text-amber-400 text-sm">Bs. {modalSaleTotal.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between py-1.5 text-slate-400 text-[11px]">
-                      <span>Crédito fiscal (13% IVA):</span>
-                      <span className="font-mono font-bold text-emerald-400">Bs. {(modalSaleTotal * 0.13).toFixed(2)}</span>
+                    <div className="flex justify-between py-1.5 text-zinc-400 text-[11px]">
+                      <span>Crédito fiscal IVA (13%):</span>
+                      <span className="font-mono tabular-nums font-bold text-emerald-400">Bs. {(modalSaleTotal * 0.13).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -2348,67 +2358,38 @@ function POSView() {
             })()}
 
             {/* SECCIÓN 3: MÉTODO DE PAGO */}
-            <div className="space-y-3 pt-2 border-t border-slate-800">
-              <h4 className="text-center text-xs font-extrabold text-cyan-400 uppercase tracking-wider">
-                Método de Pago
+            <div className="space-y-3 pt-3 border-t border-zinc-800/80">
+              <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                3. Modalidad de Cobro
               </h4>
 
               {/* Radio buttons de métodos */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-semibold text-slate-300">
-                <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-slate-800/60">
-                  <input
-                    type="radio"
-                    name="payMethod"
-                    checked={invoicePaymentMethod === 'EFECTIVO'}
-                    onChange={() => setInvoicePaymentMethod('EFECTIVO')}
-                    className="accent-cyan-500 w-4 h-4 cursor-pointer"
-                  />
-                  <span>EFECTIVO</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-slate-800/60">
-                  <input
-                    type="radio"
-                    name="payMethod"
-                    checked={invoicePaymentMethod === 'TRANSFERENCIA'}
-                    onChange={() => setInvoicePaymentMethod('TRANSFERENCIA')}
-                    className="accent-cyan-500 w-4 h-4 cursor-pointer"
-                  />
-                  <span>TRANSFERENCIA BANCARIA</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-slate-800/60">
-                  <input
-                    type="radio"
-                    name="payMethod"
-                    checked={invoicePaymentMethod === 'TARJETA'}
-                    onChange={() => setInvoicePaymentMethod('TARJETA')}
-                    className="accent-cyan-500 w-4 h-4 cursor-pointer"
-                  />
-                  <span>TARJETA</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-slate-800/60">
-                  <input
-                    type="radio"
-                    name="payMethod"
-                    checked={invoicePaymentMethod === 'BILLETERA_MOVIL'}
-                    onChange={() => setInvoicePaymentMethod('BILLETERA_MOVIL')}
-                    className="accent-cyan-500 w-4 h-4 cursor-pointer"
-                  />
-                  <span>BILLETERA MOVIL (QR)</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-slate-800/60">
-                  <input
-                    type="radio"
-                    name="payMethod"
-                    checked={invoicePaymentMethod === 'GIFT_CARD'}
-                    onChange={() => setInvoicePaymentMethod('GIFT_CARD')}
-                    className="accent-cyan-500 w-4 h-4 cursor-pointer"
-                  />
-                  <span>GIFT-CARD</span>
-                </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-semibold text-zinc-300">
+                {[
+                  { id: 'EFECTIVO', label: 'EFECTIVO' },
+                  { id: 'TRANSFERENCIA', label: 'TRANSFERENCIA' },
+                  { id: 'TARJETA', label: 'TARJETA POS' },
+                  { id: 'BILLETERA_MOVIL', label: 'QR SIMPLE' },
+                  { id: 'GIFT_CARD', label: 'VALE / GIFT-CARD' }
+                ].map((m) => (
+                  <label
+                    key={m.id}
+                    className={`flex items-center gap-2 cursor-pointer p-2 rounded-xl border transition-colors ${
+                      invoicePaymentMethod === m.id
+                        ? 'bg-amber-500/10 border-amber-500/35 text-zinc-100'
+                        : 'bg-[#0c0e12] border-zinc-800 hover:border-zinc-700'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="payMethod"
+                      checked={invoicePaymentMethod === m.id}
+                      onChange={() => setInvoicePaymentMethod(m.id)}
+                      className="accent-amber-500 w-3.5 h-3.5 cursor-pointer"
+                    />
+                    <span className="text-[11px] font-bold">{m.label}</span>
+                  </label>
+                ))}
               </div>
 
               {/* Si es EFECTIVO: Monto Recibido y Cambio / Vuelto exacto */}
@@ -2418,25 +2399,25 @@ function POSView() {
                 const changeVal = Math.max(0, recVal - targetTotal);
 
                 return (
-                  <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 space-y-2">
+                  <div className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl p-3.5 space-y-2">
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-400 mb-1">Monto Recibido (Bs.):</label>
+                        <label className="block text-[11px] font-bold text-zinc-400 mb-1">Monto Recibido (Bs.):</label>
                         <input
                           type="number"
                           step="0.10"
                           value={receivedCash}
                           onChange={(e) => setReceivedCash(e.target.value)}
                           placeholder="0.00"
-                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-base font-black text-white focus:outline-none focus:border-cyan-400 font-mono"
+                          className="w-full bg-[#12151c] border border-zinc-700 rounded-xl px-3 py-2 text-base font-black text-zinc-100 focus:outline-none focus:border-amber-500 font-mono tabular-nums"
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-400 mb-1">Cambio / Vuelto:</label>
-                        <div className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-base font-black text-emerald-400 font-mono flex items-center justify-between">
+                        <label className="block text-[11px] font-bold text-zinc-400 mb-1">Cambio / Vuelto a Entregar:</label>
+                        <div className="w-full bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2 text-base font-black text-emerald-400 font-mono tabular-nums flex items-center justify-between">
                           <span>Bs. {changeVal.toFixed(2)}</span>
                           {recVal >= targetTotal && targetTotal > 0 && changeVal === 0 && (
-                            <span className="text-[10px] text-cyan-400 font-semibold px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20">
+                            <span className="text-[10px] font-sans text-amber-400 font-bold px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
                               Exacto
                             </span>
                           )}
@@ -2449,7 +2430,7 @@ function POSView() {
             </div>
 
             {/* BOTONES DE ACCIÓN: IMPRESIÓN, CERRAR, FACTURAR */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800/80">
               <button
                 type="button"
                 onClick={() => {
@@ -2459,26 +2440,31 @@ function POSView() {
                   }
                   setShowReceiptModal(true);
                 }}
-                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold border border-slate-700 transition-all flex items-center gap-1.5"
+                className="btn-press px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 rounded-xl text-xs font-bold border border-zinc-800 transition-colors flex items-center gap-1.5"
               >
-                <span>🖨</span>
-                <span>Impresión</span>
+                <svg className="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                <span>Vista Previa Recibo</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleCloseInvoiceModal}
-                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all"
+                className="btn-press px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-bold transition-colors"
               >
-                Cerrar
+                Solo Nota de Venta
               </button>
 
               <button
                 type="button"
                 onClick={confirmInvoice}
-                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-extrabold shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
+                className="btn-press px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-2"
               >
-                <span>Facturar</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Emitir Factura Fiscal</span>
               </button>
             </div>
           </div>
@@ -2486,46 +2472,46 @@ function POSView() {
       )}
 
       {/* ========================================================================= */}
-      {/* 5. RECIBO DE LA VENTA (ESTILO EXACTO A LA FOTO ERP)                       */}
+      {/* 5. RECIBO DE LA VENTA                                                     */}
       {/* ========================================================================= */}
       {lastSaleReceipt && (
-        <div className={showReceiptModal ? "fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto" : "hidden print:block"}>
+        <div className={showReceiptModal ? "fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto" : "hidden print:block"}>
           <div
             id="printable-receipt"
-            className="bg-white text-slate-900 rounded-2xl max-w-xl w-full p-6 sm:p-8 shadow-2xl space-y-4 font-sans text-xs max-h-[95vh] overflow-y-auto"
+            className="bg-white text-zinc-900 rounded-2xl max-w-xl w-full p-6 sm:p-8 shadow-2xl space-y-4 font-sans text-xs max-h-[95vh] overflow-y-auto animate-modal-in"
           >
             {/* 1. Cabecera Empresa */}
-            <div className="text-center space-y-0.5 border-b border-slate-300 pb-3">
-              <h2 className="font-extrabold text-base tracking-wider uppercase text-black">CASA Y CONSTRUCCION</h2>
-              <p className="text-[10px] text-slate-600 font-medium">AV. BEIJING Y AV. TADEO AHENKE, COCHABAMBA, COCHABAMBA, 0000, Bolivia</p>
-              <p className="text-[10px] text-slate-600 font-medium">NIT: 1028394021 • Teléfono: 78221469</p>
+            <div className="text-center space-y-0.5 border-b border-zinc-300 pb-3">
+              <h2 className="font-extrabold text-base tracking-wider uppercase text-black">CASA Y CONSTRUCCIÓN</h2>
+              <p className="text-[10px] text-zinc-600 font-medium">AV. BEIJING Y AV. TADEO HAENKE, COCHABAMBA, BOLIVIA</p>
+              <p className="text-[10px] text-zinc-600 font-mono tabular-nums font-medium">NIT: 1028394021 • Teléfono: 78221469</p>
               <h3 className="font-bold text-sm text-black pt-1 uppercase">
                 {lastSaleReceipt.isInvoice ? 'Factura Electrónica de Venta' : 'Recibo / Nota de Venta'}
               </h3>
             </div>
 
             {/* 2. Metadatos: Factura / Recibo No, Cliente, Fecha */}
-            <div className="flex justify-between items-start text-[11px] pb-2 border-b border-slate-300 text-slate-800">
+            <div className="flex justify-between items-start text-[11px] pb-2 border-b border-zinc-300 text-zinc-800">
               <div className="space-y-0.5">
                 <p className="font-bold text-black text-xs">
-                  {lastSaleReceipt.isInvoice ? 'Factura No.' : 'Recibo No.'} <span className="font-mono font-bold">{lastSaleReceipt.id}</span>
+                  {lastSaleReceipt.isInvoice ? 'Factura No.' : 'Recibo No.'} <span className="font-mono tabular-nums font-bold">{lastSaleReceipt.id}</span>
                 </p>
                 <p>
                   <span className="font-semibold">Cliente:</span> {lastSaleReceipt.client || 'SIN NOMBRE'}
                   {lastSaleReceipt.nit && lastSaleReceipt.nit !== '0' ? ` (NIT/CI: ${lastSaleReceipt.nit})` : ''}
                 </p>
                 {lastSaleReceipt.email && (
-                  <p className="text-[10px] text-slate-600">
+                  <p className="text-[10px] text-zinc-600">
                     <span className="font-semibold">Correo:</span> {lastSaleReceipt.email}
                   </p>
                 )}
               </div>
-              <div className="text-right font-mono text-[11px]">
+              <div className="text-right font-mono tabular-nums text-[11px]">
                 <p><span className="font-semibold">Fecha:</span> {lastSaleReceipt.time}</p>
-                {lastSaleReceipt.empleado && <p className="text-slate-500 text-[10px]">Atendido por: {lastSaleReceipt.empleado}</p>}
+                {lastSaleReceipt.empleado && <p className="text-zinc-500 text-[10px] font-sans">Operador: {lastSaleReceipt.empleado}</p>}
                 {lastSaleReceipt.isInvoice && (
-                  <span className="inline-block mt-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold rounded">
-                    Factura Electrónica
+                  <span className="inline-block mt-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-sans font-bold rounded">
+                    Factura Fiscal
                   </span>
                 )}
               </div>
@@ -2534,24 +2520,24 @@ function POSView() {
             {/* 3. Tabla de Productos */}
             <table className="w-full text-left text-[11px] border-collapse my-2">
               <thead>
-                <tr className="border-t border-b border-slate-900 font-bold text-black text-[11px]">
+                <tr className="border-t border-b border-zinc-900 font-bold text-black text-[11px]">
                   <th className="py-1.5 text-left">Producto</th>
                   <th className="py-1.5 text-center w-28">Cantidad</th>
-                  <th className="py-1.5 text-right w-24">Precio unitario</th>
+                  <th className="py-1.5 text-right w-24">P. Unitario</th>
                   <th className="py-1.5 text-right w-24">Subtotal</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-zinc-200">
                 {lastSaleReceipt.items.map((it, idx) => (
-                  <tr key={idx} className="text-slate-800">
+                  <tr key={idx} className="text-zinc-800">
                     <td className="py-1.5 pr-2 uppercase font-medium">{it.name || it.producto}</td>
-                    <td className="py-1.5 text-center font-mono">
+                    <td className="py-1.5 text-center font-mono tabular-nums">
                       {parseFloat(it.quantity || 1).toFixed(2)} {it.unit || 'UNID'}
                     </td>
-                    <td className="py-1.5 text-right font-mono">
+                    <td className="py-1.5 text-right font-mono tabular-nums">
                       {parseFloat(it.price || it.PrecioVenta || it.precioUnitario || 0).toFixed(2)}
                     </td>
-                    <td className="py-1.5 text-right font-mono font-semibold text-black">
+                    <td className="py-1.5 text-right font-mono tabular-nums font-semibold text-black">
                       {parseFloat(it.subtotal || 0).toFixed(2)}
                     </td>
                   </tr>
@@ -2560,70 +2546,69 @@ function POSView() {
             </table>
 
             {/* 4. Resumen de Pagos y Totales */}
-            <div className="border-t border-slate-400 pt-2 grid grid-cols-2 gap-4 text-[11px]">
+            <div className="border-t border-zinc-400 pt-2 grid grid-cols-2 gap-4 text-[11px]">
               {/* Izquierda: Pagos */}
               <div className="space-y-1">
-                <div className="flex justify-between text-slate-700">
+                <div className="flex justify-between text-zinc-700">
                   <span>{lastSaleReceipt.paymentMethod || 'Efectivo'}</span>
-                  <span className="font-mono font-semibold">Bs. {lastSaleReceipt.total.toFixed(2)}</span>
-                  <span className="text-slate-500 text-[10px]">{lastSaleReceipt.time?.split(' ')[0] || ''}</span>
+                  <span className="font-mono tabular-nums font-semibold">Bs. {lastSaleReceipt.total.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between font-bold text-black border-t border-slate-300 pt-1">
+                <div className="flex justify-between font-bold text-black border-t border-zinc-300 pt-1">
                   <span>Total pagado</span>
-                  <span className="font-mono">Bs. {lastSaleReceipt.total.toFixed(2)}</span>
+                  <span className="font-mono tabular-nums">Bs. {lastSaleReceipt.total.toFixed(2)}</span>
                 </div>
                 {lastSaleReceipt.isInvoice && (
-                  <div className="text-[10px] text-slate-500 pt-1">
-                    Base Crédito Fiscal: <strong className="text-slate-800">Bs. {lastSaleReceipt.total.toFixed(2)}</strong>
+                  <div className="text-[10px] text-zinc-500 pt-1">
+                    Base Crédito Fiscal: <strong className="text-zinc-800 font-mono tabular-nums">Bs. {lastSaleReceipt.total.toFixed(2)}</strong>
                   </div>
                 )}
               </div>
 
               {/* Derecha: Subtotal y Total */}
               <div className="space-y-1 text-right">
-                <div className="flex justify-between text-slate-700">
+                <div className="flex justify-between text-zinc-700">
                   <span className="font-semibold">Subtotal:</span>
-                  <span className="font-mono">Bs. {lastSaleReceipt.subtotal.toFixed(2)}</span>
+                  <span className="font-mono tabular-nums">Bs. {lastSaleReceipt.subtotal.toFixed(2)}</span>
                 </div>
                 {lastSaleReceipt.discount > 0 && (
-                  <div className="flex justify-between text-rose-600 font-semibold">
+                  <div className="flex justify-between text-red-600 font-semibold">
                     <span>Descuento:</span>
-                    <span className="font-mono">-Bs. {lastSaleReceipt.discount.toFixed(2)}</span>
+                    <span className="font-mono tabular-nums">-Bs. {lastSaleReceipt.discount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-black text-black border-t border-black pt-1 text-xs">
                   <span>Total:</span>
-                  <span className="font-mono">Bs. {lastSaleReceipt.total.toFixed(2)}</span>
+                  <span className="font-mono tabular-nums">Bs. {lastSaleReceipt.total.toFixed(2)}</span>
                 </div>
               </div>
             </div>
 
             {/* Botones de Acción en Pantalla (ocultos al imprimir) */}
-            <div className="grid grid-cols-3 gap-2 pt-4 no-print border-t border-slate-200">
+            <div className="grid grid-cols-3 gap-2 pt-4 no-print border-t border-zinc-200">
               <button
                 type="button"
                 onClick={() => setShowReceiptModal(false)}
-                className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition-colors cursor-pointer text-center"
+                className="btn-press py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded-xl text-xs transition-colors cursor-pointer text-center"
               >
                 Cerrar
               </button>
               <button
                 type="button"
                 onClick={handleDownloadReceipt}
-                className="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+                className="btn-press py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 title="Descargar comprobante oficial en PDF y abrir en visor"
               >
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                <span>{lastSaleReceipt.isInvoice ? 'Descargar Factura (PDF)' : 'Descargar Recibo (PDF)'}</span>
+                <span>{lastSaleReceipt.isInvoice ? 'Descargar PDF' : 'Recibo PDF'}</span>
               </button>
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-cyan-600/20 transition-all cursor-pointer"
+                className="btn-press py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
                 <span>{lastSaleReceipt.isInvoice ? 'Imprimir Factura' : 'Imprimir Recibo'}</span>
@@ -2677,109 +2662,40 @@ function POSView() {
       `}</style>
 
       {/* ========================================================================= */}
-      {/* 6. MODAL: REGISTRAR NUEVO CLIENTE RÁPIDO                                  */}
-      {/* ========================================================================= */}
-      {showNewClientModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <form onSubmit={handleCreateClient} className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="font-extrabold text-white text-base flex items-center gap-2">
-                <span>👤</span>
-                <span>Nuevo Cliente Rápido</span>
-              </h3>
-              <button type="button" onClick={() => setShowNewClientModal(false)} className="text-slate-400 hover:text-white">✕</button>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-400 mb-1">Nombre Completo o Razón Social *</label>
-              <input
-                type="text"
-                required
-                value={newClientForm.name}
-                onChange={(e) => setNewClientForm({ ...newClientForm, name: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
-                placeholder="Ej. Juan Pérez / Empresa S.A."
-                autoFocus
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">CI / NIT</label>
-                <input
-                  type="text"
-                  value={newClientForm.nit}
-                  onChange={(e) => setNewClientForm({ ...newClientForm, nit: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
-                  placeholder="0 para sin NIT"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">Teléfono / Celular</label>
-                <input
-                  type="text"
-                  value={newClientForm.phone}
-                  onChange={(e) => setNewClientForm({ ...newClientForm, phone: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
-                  placeholder="70000000"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowNewClientModal(false)}
-                className="w-1/2 py-2.5 bg-slate-800 text-slate-300 font-bold rounded-xl text-xs hover:bg-slate-700"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="w-1/2 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs"
-              >
-                Guardar Cliente
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
       {/* 6.5 MODAL CONFIRMACIÓN: CANCELAR Y VACIAR TICKET                          */}
       {/* ========================================================================= */}
       {showCancelConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto text-2xl shadow-inner">
-              <svg className="w-7 h-7 text-rose-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="bg-[#12151c] border border-zinc-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center animate-modal-in">
+            <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/25 text-red-400 flex items-center justify-center mx-auto">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
             
             <div className="space-y-1">
-              <h3 className="font-extrabold text-white text-base">
-                ¿Cancelar ticket de venta?
+              <h3 className="font-extrabold text-zinc-100 text-base">
+                ¿Vaciar ticket de venta?
               </h3>
-              <p className="text-xs text-slate-400">
-                Se quitarán todos los productos cargados en el ticket actual y se reiniciará la operación.
+              <p className="text-xs text-zinc-400">
+                Se removerán todos los productos cargados actualmente en el mostrador.
               </p>
             </div>
 
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={() => setShowCancelConfirmModal(false)}
-                className="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors"
+                className="btn-press w-1/2 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-xl text-xs transition-colors"
               >
-                No, mantener
+                Conservar
               </button>
               <button
                 type="button"
                 onClick={handleConfirmClearCart}
-                className="w-1/2 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl text-xs shadow-lg shadow-rose-600/20 transition-all"
+                className="btn-press w-1/2 py-2.5 bg-red-600 hover:bg-red-500 text-white font-extrabold rounded-xl text-xs transition-colors"
               >
-                Sí, vaciar ticket
+                Vaciar ticket
               </button>
             </div>
           </div>
@@ -2787,49 +2703,48 @@ function POSView() {
       )}
 
       {/* ========================================================================= */}
-      {/* 6.8 MODAL: DETALLES DE PRODUCTO, PRECIO UNITARIO Y DESCUENTOS             */}
+      {/* 6.8 MODAL: DETALLES DE PRODUCTO, PRECIO UNITARIO Y OBSERVACIONES          */}
       {/* ========================================================================= */}
       {editingCartItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
           <form
             onSubmit={handleSaveItemDetails}
-            className="bg-slate-900 border border-slate-700/90 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 text-white my-auto max-h-[92vh] overflow-y-auto"
+            className="bg-[#12151c] border border-zinc-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 text-zinc-100 my-auto max-h-[92vh] overflow-y-auto animate-modal-in"
           >
             {/* Cabecera */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800/80">
               <div>
-                <h3 className="font-extrabold text-white text-base leading-tight uppercase">
+                <h3 className="font-extrabold text-zinc-100 text-base leading-tight uppercase">
                   {editingCartItem.name}
                 </h3>
-                <span className="text-[11px] font-mono text-cyan-400">
-                  {editingCartItem.code}
+                <span className="text-[11px] font-mono tabular-nums text-amber-400">
+                  SKU: {editingCartItem.code}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setEditingCartItem(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors text-lg"
+                className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800 transition-colors"
               >
                 ✕
               </button>
             </div>
 
             {/* SECCIÓN INFORMATIVA: PRECIO CON Y SIN FACTURA REGISTRADOS */}
-            <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3.5 space-y-2">
-              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
-                Precios Registrados del Producto (Referencia Informativa)
+            <div className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl p-3.5 space-y-2.5">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
+                Tarifas de Referencia (clic para aplicar)
               </span>
               <div className="grid grid-cols-2 gap-3">
                 <div
                   onClick={() => setItemUnitPrice((editingCartItem.PrecioVenta || editingCartItem.price || 0).toFixed(2))}
-                  className="bg-slate-900/90 border border-slate-700/80 hover:border-cyan-500/60 p-2.5 rounded-xl cursor-pointer transition-all group"
-                  title="Haga clic para aplicar este precio al campo de Precio Unitario"
+                  className="bg-[#12151c] border border-zinc-800 hover:border-amber-500/50 p-3 rounded-xl cursor-pointer transition-colors group"
                 >
-                  <div className="text-[10px] text-slate-400 font-bold flex items-center justify-between">
+                  <div className="text-[10px] text-zinc-400 font-bold flex items-center justify-between">
                     <span>Precio CON Factura</span>
-                    <span className="text-[9px] text-cyan-400 group-hover:underline">Aplicar ↲</span>
+                    <span className="text-[10px] text-amber-400 group-hover:underline">Aplicar ↲</span>
                   </div>
-                  <div className="text-sm font-black text-cyan-400 font-mono mt-0.5">
+                  <div className="text-sm font-black text-amber-400 font-mono tabular-nums mt-0.5">
                     Bs. {(editingCartItem.PrecioVenta || editingCartItem.price || 0).toFixed(2)}
                   </div>
                 </div>
@@ -2839,26 +2754,24 @@ function POSView() {
                     const sinFac = editingCartItem.PrecioSinFactura || ((editingCartItem.PrecioVenta || editingCartItem.price || 0) * 0.87);
                     setItemUnitPrice(parseFloat(sinFac || 0).toFixed(2));
                   }}
-                  className="bg-slate-900/90 border border-slate-700/80 hover:border-emerald-500/60 p-2.5 rounded-xl cursor-pointer transition-all group"
-                  title="Haga clic para aplicar este precio al campo de Precio Unitario"
+                  className="bg-[#12151c] border border-zinc-800 hover:border-emerald-500/50 p-3 rounded-xl cursor-pointer transition-colors group"
                 >
-                  <div className="text-[10px] text-slate-400 font-bold flex items-center justify-between">
+                  <div className="text-[10px] text-zinc-400 font-bold flex items-center justify-between">
                     <span>Precio SIN Factura</span>
-                    <span className="text-[9px] text-emerald-400 group-hover:underline">Aplicar ↲</span>
+                    <span className="text-[10px] text-emerald-400 group-hover:underline">Aplicar ↲</span>
                   </div>
-                  <div className="text-sm font-black text-emerald-400 font-mono mt-0.5">
+                  <div className="text-sm font-black text-emerald-400 font-mono tabular-nums mt-0.5">
                     Bs. {(editingCartItem.PrecioSinFactura || ((editingCartItem.PrecioVenta || editingCartItem.price || 0) * 0.87)).toFixed(2)}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* FORMULARIO EDITABLE: PRECIO UNITARIO, DESCUENTOS Y DESCRIPCIÓN */}
+            {/* FORMULARIO EDITABLE: PRECIO UNITARIO Y DESCRIPCIÓN */}
             <div className="space-y-4">
-              {/* Precio Unitario Editable por el Vendedor */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Precio unitario (Bs.) *
+                <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                  Precio unitario aplicado (Bs.) *
                 </label>
                 <input
                   type="number"
@@ -2866,43 +2779,40 @@ function POSView() {
                   required
                   value={itemUnitPrice}
                   onChange={(e) => setItemUnitPrice(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-black text-white focus:outline-none focus:border-cyan-400 font-mono"
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm font-black text-zinc-100 focus:outline-none focus:border-amber-500 font-mono tabular-nums"
                   placeholder="0.00"
                   autoFocus
                 />
               </div>
 
-
-
-              {/* Descripción / Notas del ítem */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Descripción / Observaciones
+                <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                  Nota técnica / Número de serie / Observación
                 </label>
                 <textarea
                   rows="3"
                   value={itemDescription}
                   onChange={(e) => setItemDescription(e.target.value)}
-                  placeholder="Agregue el IMEI del producto, el número de serie u otra información aquí."
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                  placeholder="Ej. Número de serie, corte a medida o especificación de despacho..."
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-500"
                 ></textarea>
               </div>
             </div>
 
             {/* BOTONES DE ACCIÓN */}
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800/80">
               <button
                 type="button"
                 onClick={() => setEditingCartItem(null)}
-                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors"
+                className="btn-press px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-xl text-xs transition-colors"
               >
-                Cerrar
+                Cancelar
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold rounded-xl text-xs shadow-lg shadow-cyan-600/20 transition-all"
+                className="btn-press px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold rounded-xl text-xs transition-colors"
               >
-                Guardar Cambios
+                Aplicar al Ticket
               </button>
             </div>
           </form>
@@ -2913,11 +2823,11 @@ function POSView() {
       {/* 7. MODAL: FILTRAR POR CATEGORÍA                                           */}
       {/* ========================================================================= */}
       {showCategoryFilterModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="font-extrabold text-white text-base">Seleccionar Categoría</h3>
-              <button onClick={() => setShowCategoryFilterModal(false)} className="text-slate-400 hover:text-white">✕</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="bg-[#12151c] border border-zinc-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-modal-in">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800/80">
+              <h3 className="font-extrabold text-zinc-100 text-base">Filtrar por Categoría</h3>
+              <button onClick={() => setShowCategoryFilterModal(false)} className="text-zinc-400 hover:text-zinc-100 p-1 rounded-lg hover:bg-zinc-800 transition-colors">✕</button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-72 overflow-y-auto">
               <button
@@ -2925,13 +2835,13 @@ function POSView() {
                   setSelectedCategory('ALL');
                   setShowCategoryFilterModal(false);
                 }}
-                className={`p-3 rounded-xl text-xs font-bold text-left border transition-all ${
+                className={`btn-press p-3 rounded-xl text-xs font-bold text-left border transition-colors ${
                   selectedCategory === 'ALL'
-                    ? 'bg-purple-600 text-white border-purple-500'
-                    : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                    ? 'bg-amber-500 text-zinc-950 border-amber-400'
+                    : 'bg-[#0c0e12] text-zinc-300 border-zinc-800 hover:bg-zinc-800'
                 }`}
               >
-                ⊞ Todas las categorías
+                Todas las categorías
               </button>
               {categories.map((c) => (
                 <button
@@ -2940,10 +2850,10 @@ function POSView() {
                     setSelectedCategory(c.Nombre);
                     setShowCategoryFilterModal(false);
                   }}
-                  className={`p-3 rounded-xl text-xs font-bold text-left border transition-all truncate ${
+                  className={`btn-press p-3 rounded-xl text-xs font-bold text-left border transition-colors truncate ${
                     selectedCategory === c.Nombre
-                      ? 'bg-purple-600 text-white border-purple-500'
-                      : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                      ? 'bg-amber-500 text-zinc-950 border-amber-400'
+                      : 'bg-[#0c0e12] text-zinc-300 border-zinc-800 hover:bg-zinc-800'
                   }`}
                 >
                   {c.Nombre}
@@ -2958,11 +2868,11 @@ function POSView() {
       {/* 8. MODAL: FILTRAR POR MARCA                                               */}
       {/* ========================================================================= */}
       {showBrandFilterModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="font-extrabold text-white text-base">Seleccionar Marca</h3>
-              <button onClick={() => setShowBrandFilterModal(false)} className="text-slate-400 hover:text-white">✕</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="bg-[#12151c] border border-zinc-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-modal-in">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800/80">
+              <h3 className="font-extrabold text-zinc-100 text-base">Filtrar por Marca</h3>
+              <button onClick={() => setShowBrandFilterModal(false)} className="text-zinc-400 hover:text-zinc-100 p-1 rounded-lg hover:bg-zinc-800 transition-colors">✕</button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-72 overflow-y-auto">
               <button
@@ -2970,13 +2880,13 @@ function POSView() {
                   setSelectedBrand('ALL');
                   setShowBrandFilterModal(false);
                 }}
-                className={`p-3 rounded-xl text-xs font-bold text-left border transition-all ${
+                className={`btn-press p-3 rounded-xl text-xs font-bold text-left border transition-colors ${
                   selectedBrand === 'ALL'
-                    ? 'bg-blue-600 text-white border-blue-500'
-                    : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                    ? 'bg-amber-500 text-zinc-950 border-amber-400'
+                    : 'bg-[#0c0e12] text-zinc-300 border-zinc-800 hover:bg-zinc-800'
                 }`}
               >
-                🏷 Todas las marcas
+                Todas las marcas
               </button>
               {brands.map((b) => (
                 <button
@@ -2985,10 +2895,10 @@ function POSView() {
                     setSelectedBrand(b.Nombre);
                     setShowBrandFilterModal(false);
                   }}
-                  className={`p-3 rounded-xl text-xs font-bold text-left border transition-all truncate ${
+                  className={`btn-press p-3 rounded-xl text-xs font-bold text-left border transition-colors truncate ${
                     selectedBrand === b.Nombre
-                      ? 'bg-blue-600 text-white border-blue-500'
-                      : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                      ? 'bg-amber-500 text-zinc-950 border-amber-400'
+                      : 'bg-[#0c0e12] text-zinc-300 border-zinc-800 hover:bg-zinc-800'
                   }`}
                 >
                   {b.Nombre}
@@ -3000,38 +2910,40 @@ function POSView() {
       )}
 
       {/* ========================================================================= */}
-      {/* 9. MODAL: TRANSACCIONES RECIENTES (DISEÑO EXACTO A LA FOTO ERP)           */}
+      {/* 9. MODAL: TRANSACCIONES RECIENTES Y COTIZACIONES                          */}
       {/* ========================================================================= */}
       {showRecentSalesModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-700/90 rounded-2xl max-w-4xl w-full p-5 sm:p-6 shadow-2xl space-y-4 my-auto max-h-[92vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-[#12151c] border border-zinc-800 rounded-2xl max-w-4xl w-full p-5 sm:p-6 shadow-2xl space-y-4 my-auto max-h-[92vh] flex flex-col animate-modal-in">
             {/* Cabecera del Modal */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 flex-shrink-0">
-              <h3 className="font-extrabold text-white text-base tracking-wide flex items-center gap-2">
-                <span>Transacciones Recientes</span>
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800/80 flex-shrink-0">
+              <h3 className="font-extrabold text-zinc-100 text-base tracking-tight flex items-center gap-2">
+                <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Historial de Ventas y Cotizaciones</span>
               </h3>
               <button
                 onClick={() => setShowRecentSalesModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors text-lg"
+                className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800 transition-colors"
               >
                 ✕
               </button>
             </div>
 
             {/* Pestañas Superiores: Final y Cotización */}
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-2 flex-shrink-0 text-xs font-bold">
+            <div className="flex items-center gap-2 border-b border-zinc-800/80 pb-2.5 flex-shrink-0 text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setRecentSalesTab('FINAL')}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg transition-all ${
+                className={`btn-press flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${
                   recentSalesTab === 'FINAL'
-                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    ? 'bg-amber-500 text-zinc-950 font-extrabold'
+                    : 'text-zinc-400 hover:text-zinc-100 bg-[#0c0e12] border border-zinc-800'
                 }`}
               >
-                <span>✔</span>
-                <span>Final</span>
-                <span className="ml-1 px-1.5 py-0.2 bg-slate-800 text-[10px] rounded-full text-slate-300">
+                <span>Ventas Cerradas</span>
+                <span className={`px-1.5 py-0.5 text-[10px] font-mono tabular-nums rounded-md ${recentSalesTab === 'FINAL' ? 'bg-zinc-950/20 text-zinc-950' : 'bg-zinc-800 text-zinc-300'}`}>
                   {recentSales.length}
                 </span>
               </button>
@@ -3039,24 +2951,26 @@ function POSView() {
               <button
                 type="button"
                 onClick={() => setRecentSalesTab('COTIZACION')}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg transition-all ${
+                className={`btn-press flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${
                   recentSalesTab === 'COTIZACION'
-                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    ? 'bg-amber-500 text-zinc-950 font-extrabold'
+                    : 'text-zinc-400 hover:text-zinc-100 bg-[#0c0e12] border border-zinc-800'
                 }`}
               >
-                <span>&gt;_</span>
-                <span>Cotización</span>
+                <span>Proformas / Cotizaciones</span>
+                <span className={`px-1.5 py-0.5 text-[10px] font-mono tabular-nums rounded-md ${recentSalesTab === 'COTIZACION' ? 'bg-zinc-950/20 text-zinc-950' : 'bg-zinc-800 text-zinc-300'}`}>
+                  {quotations.length}
+                </span>
               </button>
             </div>
 
             {/* Lista de Transacciones Recientes */}
-            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
               {recentSalesTab === 'FINAL' ? (
                 recentSales.length === 0 ? (
-                  <div className="py-12 text-center text-slate-400 text-xs space-y-2">
-                    <p className="text-base font-bold text-slate-300">No hay transacciones registradas aún</p>
-                    <p>Las ventas realizadas en caja se mostrarán automáticamente en este listado.</p>
+                  <div className="py-12 text-center text-zinc-500 text-xs space-y-1">
+                    <p className="text-sm font-bold text-zinc-300">No hay transacciones registradas aún</p>
+                    <p>Las ventas cobradas en caja aparecerán listadas aquí.</p>
                   </div>
                 ) : (
                   recentSales.map((s, idx) => {
@@ -3067,31 +2981,30 @@ function POSView() {
                     return (
                       <div
                         key={idx}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-2.5 bg-slate-950/60 hover:bg-slate-800/40 rounded-xl border border-slate-800/70 transition-all gap-2 text-xs"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-[#0c0e12] hover:bg-zinc-900/80 rounded-xl border border-zinc-800/80 transition-colors gap-2 text-xs"
                       >
-                        {/* 1. Número de Fila + Código de Venta + (Cliente / Razón Social) */}
+                        {/* 1. Número de Fila + Código de Venta + Cliente */}
                         <div className="flex items-start sm:items-center gap-2.5 min-w-[220px]">
-                          <span className="font-extrabold text-slate-500 text-[11px] w-5 text-right flex-shrink-0">
+                          <span className="font-mono tabular-nums font-bold text-zinc-500 text-[11px] w-6 text-right flex-shrink-0">
                             {idx + 1}.
                           </span>
                           <div>
-                            <div className="font-extrabold text-white text-xs tracking-tight flex items-center gap-1.5 flex-wrap">
-                              <span className="font-mono text-cyan-300">{saleNum}</span>
+                            <div className="font-bold text-zinc-100 text-xs tracking-tight flex items-center gap-2 flex-wrap">
+                              <span className="font-mono tabular-nums text-amber-400">#{saleNum}</span>
                               {(s.canalVenta === 'ONLINE' || (s.id && s.id.toString().startsWith('PED-'))) && (
-                                <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                                  <span>🌐</span> Pedido Web
+                                <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+                                  Pedido Online
                                 </span>
                               )}
-                              <span className={`text-[11px] uppercase font-bold px-1.5 py-0.2 rounded ${isNamed ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-500/30' : 'text-slate-400'}`}>
-                                ({clientDisplay})
+                              <span className={`text-[11px] uppercase font-bold px-1.5 py-0.5 rounded ${isNamed ? 'bg-zinc-800 text-zinc-200 border border-zinc-700' : 'text-zinc-500'}`}>
+                                {clientDisplay}
                               </span>
                             </div>
-                            {/* Fecha y Empleado */}
-                            <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5 font-mono">
-                              <span className="text-cyan-400/90 font-semibold">{s.time}</span>
+                            <div className="text-[11px] text-zinc-500 flex items-center gap-1.5 mt-0.5 font-mono tabular-nums">
+                              <span className="text-zinc-400">{s.time}</span>
                               {s.empleado && (
-                                <span className="text-slate-400">
-                                  • <span className="text-slate-300">{s.empleado}</span>
+                                <span className="font-sans text-zinc-500">
+                                  • <span className="text-zinc-300">{s.empleado}</span>
                                 </span>
                               )}
                             </div>
@@ -3099,56 +3012,45 @@ function POSView() {
                         </div>
 
                         {/* 2. Total de la Venta */}
-                        <div className="text-left sm:text-right font-black text-white text-sm sm:px-3 flex-shrink-0 font-mono">
-                          {typeof s.total === 'number'
+                        <div className="text-left sm:text-right font-extrabold text-zinc-100 text-sm sm:px-3 flex-shrink-0 font-mono tabular-nums">
+                          Bs. {typeof s.total === 'number'
                             ? s.total.toFixed(2)
                             : parseFloat(s.total || 0).toFixed(2)}
                         </div>
 
-                        {/* 3. Botones de Acción: Editar, Impresión, Borrar, Facturar */}
+                        {/* 3. Botones de Acción */}
                         <div className="flex flex-wrap items-center gap-1.5 flex-shrink-0">
-                          {/* Editar */}
                           <button
                             type="button"
                             onClick={() => handleEditRecentSale(s)}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-cyan-500/70 text-cyan-400 hover:bg-cyan-500/10 font-bold text-[11px] transition-all"
-                            title="Ver detalles de la venta"
+                            className="btn-press px-2.5 py-1.5 rounded-lg border border-zinc-700 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 font-bold text-[11px] transition-colors"
                           >
-                            <span>✏️</span>
-                            <span>Editar</span>
+                            Cargar / Editar
                           </button>
 
-                          {/* Impresión */}
                           <button
                             type="button"
                             onClick={() => handlePrintRecentSale(s)}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-cyan-500/70 text-cyan-400 hover:bg-cyan-500/10 font-bold text-[11px] transition-all"
-                            title="Imprimir comprobante / recibo térmico"
+                            className="btn-press px-2.5 py-1.5 rounded-lg border border-zinc-700 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 font-bold text-[11px] transition-colors"
                           >
-                            <span>🖨️</span>
-                            <span>Impresión</span>
+                            Imprimir
                           </button>
 
-                          {/* Borrar */}
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteRecentSale(s)}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-500/70 text-rose-400 hover:bg-rose-500/10 font-bold text-[11px] transition-all"
-                            title="Eliminar o anular venta"
-                          >
-                            <span>🗑️</span>
-                            <span>Borrar</span>
-                          </button>
-
-                          {/* Facturar */}
                           <button
                             type="button"
                             onClick={() => handleInvoiceRecentSale(s)}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-emerald-500/70 text-emerald-400 hover:bg-emerald-500/10 font-bold text-[11px] transition-all"
-                            title="Emitir o actualizar datos de factura"
+                            className="btn-press px-2.5 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 font-bold text-[11px] transition-colors"
                           >
-                            <span>📄</span>
-                            <span>Facturar</span>
+                            Facturar
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteRecentSale(s)}
+                            className="btn-press px-2 py-1.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 font-bold text-[11px] transition-colors"
+                            title="Consultar estado fiscal"
+                          >
+                            ✕
                           </button>
                         </div>
                       </div>
@@ -3158,68 +3060,57 @@ function POSView() {
               ) : (
                 /* LISTA DE COTIZACIONES */
                 quotations.length === 0 ? (
-                  <div className="py-12 text-center text-slate-400 text-xs space-y-2">
-                    <div className="w-12 h-12 rounded-full bg-slate-800 text-cyan-400 flex items-center justify-center mx-auto text-xl">
-                      ✏️
-                    </div>
-                    <p className="text-base font-bold text-slate-300">No hay cotizaciones registradas</p>
-                    <p>Agregue productos al ticket y presione "Cotización" en la barra inferior para guardar una proforma sin descontar inventario.</p>
+                  <div className="py-12 text-center text-zinc-500 text-xs space-y-1">
+                    <p className="text-sm font-bold text-zinc-300">No hay cotizaciones guardadas</p>
+                    <p>Use el botón "Guardar Cotización" en el pie de página para generar una proforma sin descontar stock.</p>
                   </div>
                 ) : (
                   quotations.map((q, idx) => {
                     const isNamed = q.client && q.client !== 'SIN NOMBRE';
-                    const clientDisplay = isNamed ? q.client : '';
+                    const clientDisplay = isNamed ? q.client : 'CLIENTE MOSTRADOR';
 
                     return (
                       <div
                         key={idx}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-2.5 bg-slate-950/60 hover:bg-slate-800/40 rounded-xl border border-slate-800/70 transition-all gap-2 text-xs"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-[#0c0e12] hover:bg-zinc-900/80 rounded-xl border border-zinc-800/80 transition-colors gap-2 text-xs"
                       >
-                        {/* 1. Número de Fila + Código de Cotización + Cliente */}
                         <div className="flex items-start sm:items-center gap-2.5 min-w-[220px]">
-                          <span className="font-extrabold text-slate-500 text-[11px] w-5 text-right flex-shrink-0">
+                          <span className="font-mono tabular-nums font-bold text-zinc-500 text-[11px] w-6 text-right flex-shrink-0">
                             {idx + 1}.
                           </span>
                           <div>
-                            <div className="font-extrabold text-white text-xs tracking-tight">
-                              <span className="font-mono text-amber-400">COT-{q.quoteID || q.id}</span>
-                              <span className="ml-1 text-slate-300 uppercase">
+                            <div className="font-bold text-zinc-100 text-xs tracking-tight flex items-center gap-2">
+                              <span className="font-mono tabular-nums text-amber-400">COT-{q.quoteID || q.id}</span>
+                              <span className="text-zinc-300 uppercase text-[11px]">
                                 ({clientDisplay})
                               </span>
                             </div>
-                            {/* Fecha y Empleado */}
-                            <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5 font-mono">
-                              <span className="text-amber-400/90 font-semibold">{q.time}</span>
+                            <div className="text-[11px] text-zinc-500 flex items-center gap-1.5 mt-0.5 font-mono tabular-nums">
+                              <span>{q.time}</span>
                               {q.empleado && (
-                                <span className="text-slate-400">
-                                  • <span className="text-slate-300">{q.empleado}</span>
+                                <span className="font-sans">
+                                  • <span className="text-zinc-300">{q.empleado}</span>
                                 </span>
                               )}
                             </div>
                           </div>
                         </div>
 
-                        {/* 2. Total de la Cotización */}
-                        <div className="text-left sm:text-right font-black text-amber-300 text-sm sm:px-3 flex-shrink-0 font-mono">
+                        <div className="text-left sm:text-right font-extrabold text-amber-400 text-sm sm:px-3 flex-shrink-0 font-mono tabular-nums">
                           Bs. {typeof q.total === 'number'
                             ? q.total.toFixed(2)
                             : parseFloat(q.total || 0).toFixed(2)}
                         </div>
 
-                        {/* 3. Botones de Acción: Cargar al Ticket, Imprimir Cotización, Borrar */}
                         <div className="flex flex-wrap items-center gap-1.5 flex-shrink-0">
-                          {/* Cargar al ticket / Editar */}
                           <button
                             type="button"
                             onClick={() => handleLoadQuotation(q)}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-cyan-500/70 text-cyan-400 hover:bg-cyan-500/10 font-bold text-[11px] transition-all"
-                            title="Cargar cotización al ticket activo para cobrar o editar"
+                            className="btn-press px-2.5 py-1.5 rounded-lg bg-amber-500/15 border border-amber-500/35 text-amber-400 hover:bg-amber-500/25 font-bold text-[11px] transition-colors"
                           >
-                            <span>🛒</span>
-                            <span>Cargar al Ticket</span>
+                            Cargar al Ticket
                           </button>
 
-                          {/* Imprimir */}
                           <button
                             type="button"
                             onClick={() => {
@@ -3258,22 +3149,17 @@ function POSView() {
                                 window.print();
                               }, 100);
                             }}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-amber-500/70 text-amber-400 hover:bg-amber-500/10 font-bold text-[11px] transition-all"
-                            title="Imprimir proforma / cotización"
+                            className="btn-press px-2.5 py-1.5 rounded-lg border border-zinc-700 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 font-bold text-[11px] transition-colors"
                           >
-                            <span>🖨️</span>
-                            <span>Impresión</span>
+                            Imprimir
                           </button>
 
-                          {/* Borrar */}
                           <button
                             type="button"
                             onClick={() => handleDeleteQuotation(q)}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-500/70 text-rose-400 hover:bg-rose-500/10 font-bold text-[11px] transition-all"
-                            title="Eliminar cotización"
+                            className="btn-press px-2.5 py-1.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 font-bold text-[11px] transition-colors"
                           >
-                            <span>🗑️</span>
-                            <span>Borrar</span>
+                            Eliminar
                           </button>
                         </div>
                       </div>
@@ -3287,45 +3173,45 @@ function POSView() {
       )}
 
       {/* ========================================================================= */}
-      {/* 9. MODAL: REGISTRAR NUEVO CLIENTE RÁPIDO PARA FACTURACIÓN                 */}
+      {/* 10. MODAL: REGISTRAR NUEVO CLIENTE RÁPIDO PARA FACTURACIÓN                */}
       {/* ========================================================================= */}
       {showNewClientModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="font-extrabold text-white text-base flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
-                Agregar un nuevo contacto
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="bg-[#12151c] border border-zinc-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto animate-modal-in">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800/80">
+              <h3 className="font-extrabold text-zinc-100 text-base flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                Registrar Nuevo Cliente / NIT
               </h3>
-              <button onClick={() => setShowNewClientModal(false)} className="text-slate-400 hover:text-white">✕</button>
+              <button onClick={() => setShowNewClientModal(false)} className="text-zinc-400 hover:text-zinc-100 p-1 rounded-lg hover:bg-zinc-800 transition-colors">✕</button>
             </div>
 
             <form onSubmit={handleSaveQuickClient} className="space-y-3.5 text-xs">
               {/* Selector Individual vs Empresa */}
-              <div className="flex items-center justify-between bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                <span className="text-slate-400 font-bold">Tipo de cliente:</span>
+              <div className="flex items-center justify-between bg-[#0c0e12] p-3 rounded-xl border border-zinc-800/80">
+                <span className="text-zinc-400 font-bold">Tipo de contribuyente:</span>
                 <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-1.5 text-slate-200 cursor-pointer font-bold">
+                  <label className="flex items-center gap-1.5 text-zinc-200 cursor-pointer font-bold">
                     <input
                       type="radio"
                       name="quickTipoContacto"
                       value="Individual"
                       checked={newClientForm.TipoContacto === 'Individual'}
                       onChange={() => setNewClientForm({ ...newClientForm, TipoContacto: 'Individual' })}
-                      className="text-cyan-500 bg-slate-900 border-slate-700"
+                      className="accent-amber-500"
                     />
-                    <span>Individual</span>
+                    <span>Persona Natural</span>
                   </label>
-                  <label className="flex items-center gap-1.5 text-slate-200 cursor-pointer font-bold">
+                  <label className="flex items-center gap-1.5 text-zinc-200 cursor-pointer font-bold">
                     <input
                       type="radio"
                       name="quickTipoContacto"
                       value="Empresa"
                       checked={newClientForm.TipoContacto === 'Empresa'}
                       onChange={() => setNewClientForm({ ...newClientForm, TipoContacto: 'Empresa' })}
-                      className="text-cyan-500 bg-slate-900 border-slate-700"
+                      className="accent-amber-500"
                     />
-                    <span>Empresa</span>
+                    <span>Empresa / Constructora</span>
                   </label>
                 </div>
               </div>
@@ -3333,11 +3219,11 @@ function POSView() {
               {/* Nombre de la empresa si es Empresa */}
               {newClientForm.TipoContacto === 'Empresa' ? (
                 <div>
-                  <label className="block text-cyan-300 font-bold mb-1">Nombre de la empresa:*</label>
+                  <label className="block text-zinc-300 font-bold mb-1">Nombre de la empresa *</label>
                   <input
                     type="text"
                     required
-                    placeholder="Ej. PORTE ASESORIA Y CONFECCION S.R.L."
+                    placeholder="Ej. CONSTRUCTORA DEL VALLE S.R.L."
                     value={newClientForm.NombreEmpresa}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -3347,13 +3233,13 @@ function POSView() {
                         RazonSocial: (!newClientForm.RazonSocial || newClientForm.RazonSocial === newClientForm.NombreEmpresa) ? val.toUpperCase() : newClientForm.RazonSocial
                       });
                     }}
-                    className="w-full bg-slate-950 border border-cyan-700/60 rounded-xl px-3 py-2 text-white font-bold outline-none focus:border-cyan-400 uppercase"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 font-bold outline-none focus:border-amber-500 uppercase"
                   />
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Nombres:*</label>
+                    <label className="block text-zinc-400 font-semibold mb-1">Nombres *</label>
                     <input
                       type="text"
                       required
@@ -3368,11 +3254,11 @@ function POSView() {
                           RazonSocial: fullName.toUpperCase()
                         });
                       }}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-500 font-bold uppercase"
+                      className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 outline-none focus:border-amber-500 font-bold uppercase"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Apellidos:</label>
+                    <label className="block text-zinc-400 font-semibold mb-1">Apellidos</label>
                     <input
                       type="text"
                       placeholder="Ej. RODRIGUEZ"
@@ -3386,7 +3272,7 @@ function POSView() {
                           RazonSocial: fullName.toUpperCase()
                         });
                       }}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-500 font-semibold uppercase"
+                      className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 outline-none focus:border-amber-500 font-semibold uppercase"
                     />
                   </div>
                 </div>
@@ -3394,24 +3280,24 @@ function POSView() {
 
               {/* Razón Social para Facturación */}
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Razón Social para Facturación:</label>
+                <label className="block text-zinc-400 font-semibold mb-1">Razón Social para Facturación</label>
                 <input
                   type="text"
                   placeholder="Razón social que figurará en la factura"
                   value={newClientForm.RazonSocial}
                   onChange={(e) => setNewClientForm({ ...newClientForm, RazonSocial: e.target.value.toUpperCase() })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-500 font-bold uppercase"
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 outline-none focus:border-amber-500 font-bold uppercase"
                 />
               </div>
 
               {/* Tipo de Documento y NIT / CI */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Tipo de Documento:</label>
+                  <label className="block text-zinc-400 font-semibold mb-1">Tipo de Documento</label>
                   <select
                     value={newClientForm.TipoDocumentoSIAT}
                     onChange={(e) => setNewClientForm({ ...newClientForm, TipoDocumentoSIAT: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-white outline-none focus:border-cyan-500 font-semibold text-[11px]"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-2.5 py-2 text-zinc-100 outline-none focus:border-amber-500 font-semibold text-[11px]"
                   >
                     <option value="NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA">NIT</option>
                     <option value="CI - CÉDULA DE IDENTIDAD">CI (Cédula de Identidad)</option>
@@ -3420,52 +3306,52 @@ function POSView() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Número de impuesto / NIT / CI:</label>
+                  <label className="block text-zinc-400 font-semibold mb-1">Número NIT / CI</label>
                   <input
                     type="text"
-                    placeholder="Ej. 4502616-1S o 0"
+                    placeholder="Ej. 4502616011 o 0"
                     value={newClientForm.nit}
                     onChange={(e) => setNewClientForm({ ...newClientForm, nit: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-cyan-300 font-mono font-bold outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-amber-400 font-mono tabular-nums font-bold outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
 
               {/* Móvil y Email */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Móvil cliente:* (Default: 0)</label>
+                  <label className="block text-zinc-400 font-semibold mb-1">Teléfono / Celular</label>
                   <input
                     type="text"
-                    placeholder="0"
+                    placeholder="70000000"
                     value={newClientForm.phone}
                     onChange={(e) => setNewClientForm({ ...newClientForm, phone: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Email Factura:</label>
+                  <label className="block text-zinc-400 font-semibold mb-1">Correo electrónico</label>
                   <input
                     type="email"
                     placeholder="cliente@correo.com"
                     value={newClientForm.email}
                     onChange={(e) => setNewClientForm({ ...newClientForm, email: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-zinc-800/80">
                 <button
                   type="button"
                   onClick={() => setShowNewClientModal(false)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 font-bold rounded-xl hover:bg-slate-700"
+                  className="btn-press px-4 py-2.5 bg-zinc-800 text-zinc-200 font-bold rounded-xl hover:bg-zinc-700 transition-colors"
                 >
-                  Cerrar
+                  Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30"
+                  className="btn-press px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold rounded-xl transition-colors"
                 >
                   Guardar y Seleccionar
                 </button>
@@ -3476,13 +3362,63 @@ function POSView() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL: AUMENTO A CAJA / INGRESO DE EFECTIVO PARA CAMBIO                  */}
+      {/* 11. MODAL: CALCULADORA RÁPIDA DE MOSTRADOR                                */}
+      {/* ========================================================================= */}
+      {showCalculatorModal && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#12151c] border border-zinc-800 text-zinc-100 rounded-2xl max-w-xs w-full p-5 shadow-2xl space-y-4 animate-modal-in">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <h3 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
+                <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <span>Resumen Rápido de Ticket</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowCalculatorModal(false)}
+                className="text-zinc-400 hover:text-zinc-100 p-1 rounded-lg hover:bg-zinc-800 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="bg-[#0c0e12] border border-zinc-800 rounded-xl p-3.5 space-y-2 text-xs font-mono tabular-nums">
+              <div className="flex justify-between text-zinc-400">
+                <span>Unidades Ticket:</span>
+                <strong className="text-zinc-100">{totalQuantity.toFixed(2)}</strong>
+              </div>
+              <div className="flex justify-between text-zinc-400">
+                <span>Subtotal Bruto:</span>
+                <strong className="text-zinc-100">Bs. {subtotalProducts.toFixed(2)}</strong>
+              </div>
+              <div className="flex justify-between text-amber-400">
+                <span>Descuento:</span>
+                <strong>-Bs. {effectiveDiscount.toFixed(2)}</strong>
+              </div>
+              <div className="flex justify-between text-emerald-400 pt-2 border-t border-zinc-800 text-sm font-bold">
+                <span>Total a Cobrar:</span>
+                <strong>Bs. {finalTotal.toFixed(2)}</strong>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCalculatorModal(false)}
+              className="btn-press w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-bold text-xs rounded-xl transition-colors"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 12. MODAL: AUMENTO A CAJA / INGRESO DE EFECTIVO PARA CAMBIO               */}
       {/* ========================================================================= */}
       {showCashInModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 text-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-scale-up">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#12151c] border border-zinc-800 text-zinc-100 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-modal-in">
             {/* Cabecera */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -3490,31 +3426,30 @@ function POSView() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white tracking-tight">Aumento a caja</h3>
-                  <p className="text-[11px] text-slate-400">Ingreso de efectivo o cambio durante el turno</p>
+                  <h3 className="text-base font-bold text-zinc-100 tracking-tight">Ingreso de Efectivo a Caja</h3>
+                  <p className="text-[11px] text-zinc-400">Dotación de sencillo o cambio durante el turno</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowCashInModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors text-base cursor-pointer"
-                title="Cerrar ventana"
+                className="text-zinc-400 hover:text-zinc-100 p-1 rounded-lg hover:bg-zinc-800 transition-colors text-base cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             {/* Info rápida del turno */}
-            <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs font-semibold">
-              <span className="text-slate-400">Caja inicial actual:</span>
-              <span className="font-mono text-white font-bold">Bs. {parseFloat(cashRegisterData?.montoInicial || 0).toFixed(2)}</span>
+            <div className="bg-[#0c0e12] p-3 rounded-xl border border-zinc-800/80 flex items-center justify-between text-xs font-semibold">
+              <span className="text-zinc-400">Fondo inicial de apertura:</span>
+              <span className="font-mono tabular-nums text-zinc-100 font-bold">Bs. {parseFloat(cashRegisterData?.montoInicial || 0).toFixed(2)}</span>
             </div>
 
             {/* Formulario */}
             <form onSubmit={handleAddCashInflow} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Monto a ingresar (Bs.):*
+                <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                  Monto a ingresar (Bs.) *
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-2.5 text-emerald-400 font-mono font-bold text-sm">Bs.</span>
@@ -3527,46 +3462,46 @@ function POSView() {
                     placeholder="0.00"
                     value={cashInAmount}
                     onChange={(e) => setCashInAmount(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-12 pr-4 py-2.5 text-base text-white font-mono font-bold focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 shadow-inner"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl pl-12 pr-4 py-2.5 text-base text-zinc-100 font-mono tabular-nums font-bold focus:outline-none focus:border-emerald-500 transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Motivo / Observación:
+                <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                  Motivo / Observación
                 </label>
                 <textarea
                   rows="2"
                   value={cashInReason}
                   onChange={(e) => setCashInReason(e.target.value)}
-                  placeholder="Ej: Billetes de 10 y 20 Bs, monedas para dar cambio..."
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 shadow-inner resize-none"
+                  placeholder="Ej: Dotación de monedas y billetes de corte bajo para cambio..."
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition-colors resize-none"
                 ></textarea>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-800">
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-zinc-800/80">
                 <button
                   type="button"
                   onClick={() => setShowCashInModal(false)}
-                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold rounded-xl border border-slate-700 transition-colors cursor-pointer"
+                  className="btn-press px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={cashInLoading}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50 border border-emerald-500"
+                  className="btn-press px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded-xl transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50"
                 >
                   {cashInLoading ? (
                     <>
                       <svg className="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
-                      <span>Guardando...</span>
+                      <span>Registrando...</span>
                     </>
                   ) : (
-                    <span>Guardar aumento</span>
+                    <span>Registrar ingreso</span>
                   )}
                 </button>
               </div>
@@ -3576,51 +3511,55 @@ function POSView() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL: REGISTRO ACTUAL / CIERRE DE CAJA REGISTRADORA                      */}
+      {/* 13. MODAL: ARQUEO Y CIERRE DE CAJA REGISTRADORA                           */}
       {/* ========================================================================= */}
       {showCloseRegisterModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 z-50 animate-fade-in overflow-y-auto">
-          <div className="bg-slate-900 text-slate-100 rounded-2xl max-w-4xl w-full border border-slate-800 shadow-2xl overflow-hidden animate-scale-up my-auto max-h-[92vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 z-50 overflow-y-auto">
+          <div className="bg-[#12151c] text-zinc-100 rounded-2xl max-w-4xl w-full border border-zinc-800 shadow-2xl overflow-hidden animate-modal-in my-auto max-h-[92vh] flex flex-col">
             {/* 1. Encabezado del Modal */}
-            <div className="p-4 sm:p-5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+            <div className="p-4 sm:p-5 bg-[#0c0e12] border-b border-zinc-800/80 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
-                <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                  Registro actual ( {closeRegisterStats.sessionStart} - {closeRegisterStats.sessionEnd} )
-                </h2>
+                <div>
+                  <h2 className="text-sm sm:text-base font-extrabold text-zinc-100 tracking-tight">
+                    Arqueo y Cierre de Turno POS
+                  </h2>
+                  <p className="text-[11px] text-zinc-400 font-mono tabular-nums">
+                    {closeRegisterStats.sessionStart} → {closeRegisterStats.sessionEnd}
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowCloseRegisterModal(false)}
-                className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors text-lg cursor-pointer"
-                title="Cerrar ventana"
+                className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800 transition-colors cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             {/* 2. Contenido Scrollable */}
-            <div className="p-5 sm:p-7 overflow-y-auto space-y-6 flex-1 text-xs text-slate-300">
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1 text-xs text-zinc-300">
               {/* Tabla de Métodos de Pago */}
-              <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950/40">
+              <div className="border border-zinc-800/80 rounded-xl overflow-hidden bg-[#0c0e12]">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
-                      <th className="py-2.5 px-4">Método de pago</th>
-                      <th className="py-2.5 px-4 text-right">Monto registrado</th>
+                    <tr className="bg-zinc-900/70 text-zinc-400 font-bold border-b border-zinc-800">
+                      <th className="py-2.5 px-4">Concepto en Caja</th>
+                      <th className="py-2.5 px-4 text-right">Importe Registrado</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 font-medium text-slate-300">
+                  <tbody className="divide-y divide-zinc-800/60 font-medium text-zinc-300">
                     <tr>
                       <td className="py-2.5 px-4 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                        <span className="w-2 h-2 rounded-full bg-amber-400"></span>
                         <span>Efectivo inicial (Apertura):</span>
                       </td>
-                      <td className="py-2.5 px-4 text-right font-mono font-bold text-cyan-400">
+                      <td className="py-2.5 px-4 text-right font-mono tabular-nums font-bold text-amber-400">
                         Bs. {closeRegisterStats.initialCash.toFixed(2)}
                       </td>
                     </tr>
@@ -3628,9 +3567,9 @@ function POSView() {
                       <tr>
                         <td className="py-2.5 px-4 flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                          <span>Aumentos de efectivo (Cambio en turno):</span>
+                          <span>Ingresos de efectivo (Dotación cambio en turno):</span>
                         </td>
-                        <td className="py-2.5 px-4 text-right font-mono font-bold text-emerald-400">
+                        <td className="py-2.5 px-4 text-right font-mono tabular-nums font-bold text-emerald-400">
                           +Bs. {parseFloat(closeRegisterStats.totalAumentos).toFixed(2)}
                         </td>
                       </tr>
@@ -3638,19 +3577,19 @@ function POSView() {
                     <tr>
                       <td className="py-2.5 px-4 flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                        <span>Pago en efectivo (Ventas):</span>
+                        <span>Cobros en efectivo (Ventas):</span>
                       </td>
-                      <td className="py-2.5 px-4 text-right font-mono font-bold text-emerald-400">
+                      <td className="py-2.5 px-4 text-right font-mono tabular-nums font-bold text-emerald-400">
                         Bs. {closeRegisterStats.cashSales.toFixed(2)}
                       </td>
                     </tr>
                     {closeRegisterStats.digitalSales > 0 && (
                       <tr>
                         <td className="py-2.5 px-4 flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
+                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
                           <span>Pagos digitales (Tarjeta / QR / Transferencia):</span>
                         </td>
-                        <td className="py-2.5 px-4 text-right font-mono font-bold text-indigo-400">
+                        <td className="py-2.5 px-4 text-right font-mono tabular-nums font-bold text-amber-400">
                           Bs. {closeRegisterStats.digitalSales.toFixed(2)}
                         </td>
                       </tr>
@@ -3660,85 +3599,66 @@ function POSView() {
               </div>
 
               {/* Bloque de KPIs y Resumen Financiero */}
-              <div className="space-y-2 text-xs">
-                <div className="bg-slate-800/40 border border-slate-700/60 rounded-xl p-3 flex justify-between items-center text-slate-200 font-semibold">
-                  <span className="flex items-center gap-1.5">
-                    <span>Ventas totales del turno</span>
-                    <span className="text-[10px] text-cyan-400">ⓘ</span>
-                  </span>
-                  <span className="font-mono font-bold text-white text-sm">Bs. {closeRegisterStats.totalSales.toFixed(2)}</span>
+              <div className="space-y-2.5 text-xs">
+                <div className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl p-3.5 flex justify-between items-center text-zinc-200 font-semibold">
+                  <span>Facturación / Ventas Totales del Turno</span>
+                  <span className="font-mono tabular-nums font-bold text-zinc-100 text-sm">Bs. {closeRegisterStats.totalSales.toFixed(2)}</span>
                 </div>
 
                 {closeRegisterStats.totalRefunds > 0 && (
-                  <div className="flex justify-between items-center py-2 px-3 bg-rose-950/40 text-rose-300 rounded-xl border border-rose-900/50 font-semibold">
-                    <span className="flex items-center gap-1.5">
-                      <span>Reembolso total (Anulaciones)</span>
-                      <span className="text-[10px] text-rose-400">ⓘ</span>
-                    </span>
-                    <div className="text-right">
-                      <span className="font-mono font-bold text-rose-400">Bs. {closeRegisterStats.totalRefunds.toFixed(2)}</span>
-                    </div>
+                  <div className="flex justify-between items-center py-2.5 px-3.5 bg-red-950/30 text-red-300 rounded-xl border border-red-500/30 font-semibold">
+                    <span>Devoluciones / Anulaciones del Turno</span>
+                    <span className="font-mono tabular-nums font-bold text-red-400">-Bs. {closeRegisterStats.totalRefunds.toFixed(2)}</span>
                   </div>
                 )}
 
-                {/* Resumen Destacado en Verde Corporativo */}
-                <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-4 space-y-2 text-slate-200 text-xs font-semibold">
+                {/* Resumen Destacado */}
+                <div className="bg-emerald-950/25 border border-emerald-500/30 rounded-xl p-4 space-y-2 text-zinc-200 text-xs font-semibold">
                   <div className="flex justify-between items-center py-0.5">
-                    <span className="text-slate-300">Efectivo inicial + aumentos + ventas:</span>
-                    <span className="font-mono font-bold text-white">
+                    <span className="text-zinc-300">Efectivo apertura + dotaciones + ventas en efectivo:</span>
+                    <span className="font-mono tabular-nums font-bold text-zinc-100">
                       Bs. {(closeRegisterStats.initialCash + (parseFloat(closeRegisterStats.totalAumentos || 0)) + closeRegisterStats.cashSales).toFixed(2)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-0.5">
-                    <span className="text-slate-300">Ventas totales del turno:</span>
-                    <span className="font-mono font-bold text-white">Bs. {closeRegisterStats.totalSales.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-emerald-500/20 text-white font-black text-sm">
-                    <span className="text-emerald-300">Efectivo esperado de cierre:</span>
-                    <span className="font-mono text-emerald-400 text-base font-extrabold">Bs. {closeRegisterStats.expectedCash.toFixed(2)}</span>
+                  <div className="flex justify-between items-center pt-2 border-t border-emerald-500/20 text-zinc-100 font-black text-sm">
+                    <span className="text-emerald-300">Efectivo físico esperado en gaveta:</span>
+                    <span className="font-mono tabular-nums text-emerald-400 text-base font-extrabold">Bs. {closeRegisterStats.expectedCash.toFixed(2)}</span>
                   </div>
                 </div>
-
-                <p className="text-[11px] text-slate-400 pt-1 font-mono">
-                  Total = Bs. {closeRegisterStats.initialCash.toFixed(2)} (Apertura) {parseFloat(closeRegisterStats.totalAumentos || 0) > 0 ? `+ Bs. ${parseFloat(closeRegisterStats.totalAumentos).toFixed(2)} (Aumentos) ` : ''}+ Bs. {closeRegisterStats.cashSales.toFixed(2)} (Venta) {closeRegisterStats.totalRefunds > 0 ? `- Bs. ${closeRegisterStats.totalRefunds.toFixed(2)} (Reembolso)` : ''} = Bs. {closeRegisterStats.expectedCash.toFixed(2)}
-                </p>
               </div>
 
               {/* 3. Tabla de Productos Vendidos en el Turno */}
-              <div className="space-y-3 pt-2">
-                <h3 className="text-sm font-bold text-white border-b border-slate-800 pb-2 flex items-center gap-2">
-                  <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                  <span>Detalles de los productos vendidos</span>
+              <div className="space-y-2.5 pt-1">
+                <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-2">
+                  <span>Desglose de Ítems Despachados en el Turno</span>
                 </h3>
 
-                <div className="border border-slate-800 rounded-xl overflow-hidden max-h-56 overflow-y-auto bg-slate-950/40">
+                <div className="border border-zinc-800/80 rounded-xl overflow-hidden max-h-56 overflow-y-auto bg-[#0c0e12]">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800 sticky top-0">
+                      <tr className="bg-zinc-900/90 text-zinc-400 font-bold border-b border-zinc-800 sticky top-0">
                         <th className="py-2.5 px-3 w-10 text-center">#</th>
                         <th className="py-2.5 px-3">SKU</th>
                         <th className="py-2.5 px-3">Producto</th>
-                        <th className="py-2.5 px-3 text-right">Cantidad</th>
-                        <th className="py-2.5 px-3 text-right">Cantidad total</th>
+                        <th className="py-2.5 px-3 text-right">Cant.</th>
+                        <th className="py-2.5 px-3 text-right">Importe Total</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 font-medium text-slate-300">
+                    <tbody className="divide-y divide-zinc-800/60 font-medium text-zinc-300">
                       {closeRegisterStats.soldProducts.length === 0 ? (
                         <tr>
-                          <td colSpan="5" className="py-6 text-center text-slate-500 italic">
-                            No se registraron ventas de productos en este turno.
+                          <td colSpan="5" className="py-6 text-center text-zinc-500">
+                            No se registraron salidas de productos en este turno.
                           </td>
                         </tr>
                       ) : (
                         closeRegisterStats.soldProducts.map((p, idx) => (
-                          <tr key={idx} className="hover:bg-slate-800/40 transition-colors">
-                            <td className="py-2 px-3 text-center text-slate-500 font-mono">{idx + 1}.</td>
-                            <td className="py-2 px-3 font-mono font-semibold text-cyan-400">{p.sku}</td>
-                            <td className="py-2 px-3 font-semibold text-slate-200 uppercase">{p.name}</td>
-                            <td className="py-2 px-3 text-right font-mono font-bold text-slate-300">{p.quantity.toFixed(2)}</td>
-                            <td className="py-2 px-3 text-right font-mono font-bold text-emerald-400">Bs. {p.total.toFixed(2)}</td>
+                          <tr key={idx} className="hover:bg-zinc-900/60 transition-colors">
+                            <td className="py-2 px-3 text-center text-zinc-500 font-mono tabular-nums">{idx + 1}.</td>
+                            <td className="py-2 px-3 font-mono tabular-nums font-semibold text-amber-400">{p.sku}</td>
+                            <td className="py-2 px-3 font-semibold text-zinc-200 uppercase">{p.name}</td>
+                            <td className="py-2 px-3 text-right font-mono tabular-nums font-bold text-zinc-300">{p.quantity.toFixed(2)}</td>
+                            <td className="py-2 px-3 text-right font-mono tabular-nums font-bold text-emerald-400">Bs. {p.total.toFixed(2)}</td>
                           </tr>
                         ))
                       )}
@@ -3748,11 +3668,10 @@ function POSView() {
               </div>
 
               {/* 4. Formulario de Cierre de Turno */}
-              <form onSubmit={handleConfirmCloseRegister} className="space-y-4 pt-2 border-t border-slate-800">
-                {/* Campo Efectivo Real Declarado */}
+              <form onSubmit={handleConfirmCloseRegister} className="space-y-4 pt-3 border-t border-zinc-800/80">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Efectivo real declarado:*
+                  <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                    Efectivo real contado en gaveta (Bs.) *
                   </label>
                   <input
                     type="number"
@@ -3760,55 +3679,46 @@ function POSView() {
                     required
                     value={declaredCashInput}
                     onChange={(e) => setDeclaredCashInput(e.target.value)}
-                    placeholder="Monto en efectivo contado en gaveta"
-                    className="w-full sm:w-80 px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white font-mono font-bold focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 shadow-inner"
+                    placeholder="Monto físico contado"
+                    className="w-full sm:w-80 px-3.5 py-2.5 bg-[#0c0e12] border border-zinc-800 rounded-xl text-sm text-zinc-100 font-mono tabular-nums font-bold focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 </div>
 
-                {/* Nota de Cierre */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Nota de cierre:
+                  <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                    Observaciones de arqueo / cierre
                   </label>
                   <textarea
-                    rows="3"
+                    rows="2"
                     value={closingNoteInput}
                     onChange={(e) => setClosingNoteInput(e.target.value)}
-                    placeholder="Observaciones de cierre de turno (opcional)"
-                    className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 shadow-inner resize-none"
+                    placeholder="Novedades del turno, billetes observados o diferencias (opcional)..."
+                    className="w-full px-3.5 py-2 bg-[#0c0e12] border border-zinc-800 rounded-xl text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-500 transition-colors resize-none"
                   ></textarea>
                 </div>
 
-                {/* Info de Operador */}
-                <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 text-[11px] text-slate-400 font-medium space-y-1">
-                  <p><strong className="text-slate-300">Usuario:</strong> <span className="text-white font-semibold">Sr. {currentUser?.Nombre || 'OSCAR EDGAR CLAROS DAVALOS'}</span></p>
-                  <p><strong className="text-slate-300">Email:</strong> <span>{currentUser?.Email || 'oscarclarosdavalos@gmail.com'}</span></p>
-                  <p><strong className="text-slate-300">Ubicación comercial:</strong> <span className="text-cyan-400 font-bold">CASA Y CONSTRUCCION (SUCURSAL CENTRAL)</span></p>
-                </div>
-
-                {/* Botones de Acción */}
-                <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                <div className="flex justify-end gap-3 pt-3 border-t border-zinc-800/80">
                   <button
                     type="button"
                     onClick={() => setShowCloseRegisterModal(false)}
-                    className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs rounded-xl border border-slate-700 transition-colors cursor-pointer"
+                    className="btn-press px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs rounded-xl transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={closingRegisterLoading}
-                    className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-cyan-600/25 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50 border border-cyan-500"
+                    className="btn-press px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold text-xs rounded-xl transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50"
                   >
                     {closingRegisterLoading ? (
                       <>
-                        <svg className="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
-                        <span>Cerrando Registro...</span>
+                        <span>Cerrando Turno...</span>
                       </>
                     ) : (
-                      <span>Cerrar registro</span>
+                      <span>Confirmar Cierre de Caja</span>
                     )}
                   </button>
                 </div>
@@ -3823,15 +3733,15 @@ function POSView() {
       {/* ========================================================================= */}
       {toast.show && (
         <div
-          className={`fixed bottom-16 right-6 z-50 px-4 py-2.5 rounded-xl shadow-2xl border text-xs font-bold animate-fade-in flex items-center gap-2 ${
+          className={`fixed bottom-16 right-6 z-50 px-4 py-2.5 rounded-xl shadow-2xl border text-xs font-bold animate-toast-in flex items-center gap-2.5 ${
             toast.type === 'error'
-              ? 'bg-rose-950/90 border-rose-500 text-rose-300'
+              ? 'bg-[#12151c] border-red-500/40 text-red-400'
               : toast.type === 'info'
-              ? 'bg-blue-950/90 border-blue-500 text-blue-300'
-              : 'bg-emerald-950/90 border-emerald-500 text-emerald-300'
+              ? 'bg-[#12151c] border-amber-500/40 text-amber-300'
+              : 'bg-[#12151c] border-emerald-500/40 text-emerald-400'
           }`}
         >
-          <span>{toast.type === 'error' ? '⚠️' : '✓'}</span>
+          <span className={`w-2 h-2 rounded-full ${toast.type === 'error' ? 'bg-red-400' : toast.type === 'info' ? 'bg-amber-400' : 'bg-emerald-400'}`}></span>
           <span>{toast.message}</span>
         </div>
       )}

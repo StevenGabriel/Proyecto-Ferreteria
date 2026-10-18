@@ -1569,3 +1569,68 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
      * Se configuró la ruta comodín `<Route path="*" element={<NotFound />} />` en el router principal.
 * **Verificación:**
   * Compilación exitosa en Vite (`npm run build`) en 6.20s con 0 errores.
+
+
+### 152. Rediseño Estético Integral y Sistema de Animaciones (Emil Kowalski + Impeccable Design + Taste Skill)
+* **Solicitud del Usuario:**
+  * Elevar radicalmente la calidad visual y la experiencia de usuario de toda la aplicación, erradicando los clichés de "plantilla genérica hecha por IA" (*AI slop*), degradados saturados neón e interfaces recargadas, e integrando tres sistemas complementarios de diseño e ingeniería de movimiento:
+    1. **Emil Kowalski Design Engineering:** Curvas físicas de entrada/salida (`ease-out-expo`), respeto estricto del presupuesto de cuadros (60 fps), transform-origin espacial, micro-interacciones táctiles instantáneas (`btn-press`) y cero uso de `transition-all`.
+    2. **Impeccable Design:** Jerarquía tipográfica con propósito, elevación sobria de una sola capa, contraste nítido y eliminación de decoraciones gratuitas.
+    3. **Taste Skill & Redesign:** Paleta de identidad industrial auténtica para **C&C Ferretería — Casa y Construcción** (superficies carbón/grafito técnico `#0c0e12` / `#12151c`, acento ámbar industrial `#f59e0b` y semáforo funcional estricto).
+
+* **Fundamentos y Reglas Establecidas:**
+  * **Documentación Normativa:** Se crearon y configuraron los manuales [`GEMINI.md`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/GEMINI.md), [`PRODUCT.md`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/PRODUCT.md) y [`DESIGN.md`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/DESIGN.md) definiendo las directrices de diseño anti-slop, curvas de interpolación, tipografías y reglas de animación.
+  * **Habilitación Tipográfica y Tokens CSS:**
+    * En [`index.html`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/index.html) se precargaron las fuentes Google Fonts: **Plus Jakarta Sans** (`font-sans`) para titulares e interfaz general, y **JetBrains Mono** (`font-mono`) para números, SKUs, precios y fechas.
+    * En [`tailwind.config.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/tailwind.config.js) y [`index.css`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/index.css) se definieron las curvas de aceleración personalizadas:
+      * `--ease-out`: `cubic-bezier(0.23, 1, 0.32, 1)` (`ease-out-expo`) para entradas, modales y popovers.
+      * `--ease-in-out`: `cubic-bezier(0.77, 0, 0.175, 1)` para elementos en reposicionamiento.
+      * `--ease-drawer`: `cubic-bezier(0.32, 0.72, 0, 1)` para cajones laterales deslizables.
+      * Clases utilitarias `.tabular-nums` (`font-variant-numeric: tabular-nums`) y `.btn-press` (`active:scale-[0.97] transition-transform duration-100`).
+      * Animaciones optimizadas `animate-modal-in`, `animate-dropdown-in`, `animate-toast-in` y `animate-drawer-in`.
+
+* **Módulos y Pantallas Transformados al 100%:**
+  1. **Tienda y Catálogo Público para Clientes ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+     * Eliminación de degradados neón y texto transparente; adopción de superficies carbón `#0c0e12` y tarjetas `#12151c`.
+     * Drawer del carrito lateral con curva física suave `ease-drawer` y sin saltos bruscos.
+     * Cifras de precios (`Bs.`), descuentos y cantidades con `font-mono tabular-nums`.
+     * Modales de checkout, confirmación y vista rápida animados con `animate-modal-in` desde `scale(0.95)` y origen espacial controlado.
+  2. **Asistente Virtual Chatbot ([`ChatbotWidget.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/chatbot/ChatbotWidget.jsx)):**
+     * Ventana flotante con origen espacial exacto `origin-bottom-right animate-dropdown-in`.
+     * Mensajes y respuestas renderizadas limpiamente con burbujas técnicas de alto contraste.
+  3. **Autenticación y Onboarding ([`Login.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Auth/Login.jsx), [`RegisterClie.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/RegisterClie.jsx), [`ForgotPassword.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Auth/ForgotPassword.jsx), [`ResetPassword.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Auth/ResetPassword.jsx), [`NotFound.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/NotFound/NotFound.jsx)):**
+     * Formatos unificados con tarjetas `#12151c`, bordes sutiles `border-zinc-800/80` y botones `.btn-press` en ámbar industrial.
+     * Página 404 modernizada sin blobs difusos artificiales, con tipografía técnica y navegación contextual.
+  4. **Shell del Administrador ([`sidebar.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/sidebar/sidebar.jsx) y [`topbar.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/topbar/topbar.jsx)):**
+     * Transición del menú lateral optimizada con `transition-[width] duration-220 ease-out-expo` (sin `transition-all`).
+     * Dropdowns de usuario y notificaciones anclados a `origin-top-right animate-dropdown-in`.
+  5. **Panel de Control y Analítica Predictiva ([`Home.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/Home.jsx) y [`PredictiveReportsTab.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/PredictiveReportsTab.jsx)):**
+     * Métricas y KPIs de ventas con cifras milimétricamente alineadas en `font-mono tabular-nums`.
+     * Gráficos SVG y reportes predictivos estilizados con contrastes nítidos sin degradados IA genéricos.
+  6. **Punto de Venta POS Dedicado ([`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx)):**
+     * Respuesta inmediata (`< 100ms`) en adición de productos, cambio de cantidades y lector de código de barras para garantizar velocidad en mostrador.
+     * Eliminación de `animate-pulse` perturbador en botones de cobro; calculadora flotante y modal de nuevo cliente con `animate-modal-in`.
+  7. **Pedidos Online y Cola de Recojo ([`OnlineOrdersView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/OnlineOrdersView.jsx)):**
+     * Verificación de comprobantes de pago QR y facturación SIAT con badges semánticos sobrios.
+     * Modales de revisión, anulación y factura imprimible con curva física `animate-modal-in`.
+  8. **Gestión de Usuarios y Clientes ([`UserManagement.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Users/UserManagement.jsx), [`ClientView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Contacts/ClientView.jsx) y [`loyalty.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/constants/loyalty.js)):**
+     * Reemplazo de emojis informales por tokens de lealtad profesionales (`Bronce`, `Plata`, `Oro`, `Diamante`).
+     * Menús de visibilidad de columnas y acciones con origen espacial real.
+     * CIs, NITs, teléfonos y acumulados en `Bs.` alineados con `font-mono tabular-nums`.
+  9. **Facturación e Historial de Ventas ([`InvoiceListView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/InvoiceListView.jsx)):**
+     * Tabla densa de comprobantes con formateo tabular para número de factura, base imponible, crédito fiscal (13%) y totales.
+     * Botones de reimpresión (carta/térmico) y anulación con feedback táctil y modales fluidos.
+  10. **Catálogo de Productos ([`ProductView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Products/ProductView.jsx), [`ProductRegisterForm.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Products/ProductRegisterForm.jsx) y [`ProductEditForm.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Products/ProductEditForm.jsx)):**
+      * Formulario de precios y cálculo de márgenes con tipografía monoespaciada para evitar desajustes visuales.
+      * Modales de stock de apertura multi-fila y ficha técnica con escala natural `scale(0.95) -> 1`.
+  11. **Control de Inventario, Lotes FEFO y Kardex ([`InventoryControl.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Inventory/InventoryControl.jsx)):**
+      * Barras de existencias con transición individual `transition-[width] duration-200 ease-out-expo`.
+      * Semáforo de vencimiento FEFO y entradas/salidas de Kardex con indicadores semánticos limpios en lugar de emojis.
+  12. **Catálogos Auxiliares ([`BrandView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Brands/BrandView.jsx), [`CategoryView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Categories/CategoryView.jsx), [`UnitView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Units/UnitView.jsx), [`LocationView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Locations/LocationView.jsx), [`WarehouseView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Warehouses/WarehouseView.jsx)):**
+      * Tablas de marcas, categorías, unidades, ubicaciones y almacenes unificadas bajo el estándar de grafito técnico, paginación tabular e interacciones instantáneas.
+
+* **Impacto y Optimización del Bundle:**
+  * La eliminación de clases superfluas de gradientes redujo el tamaño de la hoja de estilos compilada de **70.22 kB a 53.24 kB** (reducción del 24%).
+  * Todos los componentes preservan el 100% de la lógica de negocio, llamadas a la API, persistencia en localStorage y estado.
+* **Verificación:**
+  * Compilación de producción exitosa en Vite (`npm run build`) en 7.37s con 0 errores y 0 advertencias de sintaxis.

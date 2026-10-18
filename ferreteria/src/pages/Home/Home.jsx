@@ -238,64 +238,70 @@ function Home() {
   };
 
   return (
-    <div className="bg-slate-950 text-white min-h-screen font-sans flex">
+    <div className="bg-[#0c0e12] text-zinc-100 min-h-screen font-sans flex selection:bg-amber-500 selection:text-zinc-950">
       {/* Sidebar Lateral Fijo */}
       <Sidebar activeItem="inicio" />
 
-      {/* Área del Contenido Principal (con margen izquierdo para no tapar el sidebar) */}
-      <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-slate-950 flex flex-col`}>
+      {/* Área del Contenido Principal */}
+      <main className={`flex-1 transition-[margin-left] duration-220 ease-out-expo ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-[#0c0e12] flex flex-col`}>
         {/* Barra Superior (Topbar) */}
         <Topbar />
 
-        {/* Contenido Dinámico con ancho completo idéntico a Clientes */}
+        {/* Contenido Dinámico */}
         <div className="p-6 md:p-8 max-w-[1920px] w-full mx-auto space-y-6 flex-1">
           {/* Banner de Bienvenida */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
-                Bienvenido {userName}
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100 [text-wrap:balance]">
+                Panel de control {userName ? `— ${userName}` : ''}
               </h2>
-              <p className="text-slate-400 text-sm mt-1">Este es el estado operativo de tu ferretería para el día de hoy.</p>
+              <p className="text-zinc-400 text-xs sm:text-sm mt-1">
+                Estado operativo en tiempo real de caja, inventario y vencimiento de lotes FEFO.
+              </p>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl hover:border-cyan-500/50 hover:text-cyan-400 transition-all font-semibold text-xs text-slate-300">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <button className="flex items-center gap-2 px-3.5 py-2 bg-[#12151c] border border-zinc-800/90 rounded-xl hover:border-amber-500/50 hover:text-amber-400 transition-colors duration-160 ease-out-expo btn-press font-semibold text-xs text-zinc-300 cursor-pointer">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
-              Filtrar por fecha
+              <span>Filtrar por fecha</span>
             </button>
           </div>
 
           {/* Conmutador de Pestañas Principales (Dashboard Operativo vs Reportes Predictivos) */}
-          <div className="flex flex-wrap bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 gap-2 self-start">
+          <div className="flex flex-wrap bg-[#12151c] p-1 rounded-xl border border-zinc-800/90 gap-1.5 self-start">
             <button
               type="button"
               onClick={() => setMainTab('DASHBOARD')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-colors duration-160 ease-out-expo btn-press cursor-pointer ${
                 mainTab === 'DASHBOARD'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-lg shadow-cyan-500/20'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                  ? 'bg-amber-500 text-zinc-950 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50'
               }`}
             >
-              <svg className="w-4 h-4 text-current" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-current" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
               </svg>
-              <span>Panel Operativo & Alertas</span>
+              <span>Panel Operativo y Alertas</span>
             </button>
             <button
               type="button"
               onClick={() => setMainTab('PREDICTIVE')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-colors duration-160 ease-out-expo btn-press cursor-pointer ${
                 mainTab === 'PREDICTIVE'
-                  ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-500/20'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                  ? 'bg-amber-500 text-zinc-950 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50'
               }`}
             >
-              <svg className="w-4 h-4 text-current" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-current" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
               </svg>
-              <span>Reportes & Análisis Predictivo</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-400/20 text-purple-200 font-black border border-purple-400/30">
-                IA & Stats
+              <span>Pronóstico de Demanda y Compras</span>
+              <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded font-bold border ${
+                mainTab === 'PREDICTIVE'
+                  ? 'bg-zinc-950/20 text-zinc-950 border-zinc-950/30'
+                  : 'bg-zinc-900 text-amber-400 border-zinc-800'
+              }`}>
+                SES / SMA / WMA
               </span>
             </button>
           </div>
@@ -305,74 +311,74 @@ function Home() {
           ) : (
             <>
               {/* Grilla de 4 Tarjetas de Métricas Operativas 100% Reales */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* 1. Ventas Totales */}
-                <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 flex items-center justify-between hover:border-cyan-500/30 transition-all">
+                <div className="bg-[#12151c] border border-zinc-800/90 rounded-2xl p-5 flex items-center justify-between hover:border-zinc-700 transition-colors duration-160 ease-out-expo">
                   <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Ventas Totales</span>
-                    <p className="text-2xl font-black text-white">
+                    <span className="text-xs font-semibold text-zinc-400 block">Ventas totales</span>
+                    <p className="text-2xl font-mono tabular-nums font-bold text-zinc-100">
                       Bs. {salesKPIs.totalRevenue?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
-                    <p className="text-[11px] text-emerald-400 font-semibold">
-                      Margen Ganancia: {salesKPIs.netMarginPercent ?? 0}%
+                    <p className="text-[11px] text-emerald-400 font-mono tabular-nums font-semibold">
+                      Margen neto: {salesKPIs.netMarginPercent ?? 0}%
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 shrink-0">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                 </div>
 
                 {/* 2. Transacciones / Tickets */}
-                <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 flex items-center justify-between hover:border-purple-500/30 transition-all">
+                <div className="bg-[#12151c] border border-zinc-800/90 rounded-2xl p-5 flex items-center justify-between hover:border-zinc-700 transition-colors duration-160 ease-out-expo">
                   <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Transacciones</span>
-                    <p className="text-2xl font-black text-white">
-                      {salesKPIs.totalTransactions ?? 0} <span className="text-sm font-normal text-slate-400">tickets</span>
+                    <span className="text-xs font-semibold text-zinc-400 block">Transacciones</span>
+                    <p className="text-2xl font-mono tabular-nums font-bold text-zinc-100">
+                      {salesKPIs.totalTransactions ?? 0} <span className="text-xs font-sans font-normal text-zinc-400">tickets</span>
                     </p>
-                    <p className="text-[11px] text-purple-300 font-semibold">
-                      Ticket Promedio: Bs. {salesKPIs.averageTicket?.toFixed(2) ?? '0.00'}
+                    <p className="text-[11px] text-zinc-300 font-mono tabular-nums font-medium">
+                      Ticket prom.: Bs. {salesKPIs.averageTicket?.toFixed(2) ?? '0.00'}
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <div className="w-11 h-11 rounded-xl bg-zinc-800/70 border border-zinc-700/80 flex items-center justify-center text-zinc-300 shrink-0">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
                 </div>
 
                 {/* 3. Alertas de Stock Bajo */}
-                <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 flex items-center justify-between hover:border-amber-500/30 transition-all">
+                <div className="bg-[#12151c] border border-zinc-800/90 rounded-2xl p-5 flex items-center justify-between hover:border-amber-500/30 transition-colors duration-160 ease-out-expo">
                   <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Alertas de Stock</span>
-                    <p className="text-2xl font-black text-amber-400">
-                      {criticalProducts.length} <span className="text-sm font-normal text-slate-400">artículos</span>
+                    <span className="text-xs font-semibold text-zinc-400 block">Alertas de stock</span>
+                    <p className="text-2xl font-mono tabular-nums font-bold text-amber-400">
+                      {criticalProducts.length} <span className="text-xs font-sans font-normal text-zinc-400">artículos</span>
                     </p>
-                    <p className="text-[11px] text-slate-400 font-medium">
-                      Stock actual ≤ Stock Mínimo
+                    <p className="text-[11px] text-zinc-400 font-medium">
+                      Stock actual ≤ mínimo
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 shrink-0">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                   </div>
                 </div>
 
                 {/* 4. Alertas de Lotes por Vencer / Vencidos (FEFO) */}
-                <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 flex items-center justify-between hover:border-rose-500/30 transition-all">
+                <div className="bg-[#12151c] border border-zinc-800/90 rounded-2xl p-5 flex items-center justify-between hover:border-rose-500/30 transition-colors duration-160 ease-out-expo">
                   <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Caducidad Lotes</span>
-                    <p className="text-2xl font-black text-rose-400">
-                      {filteredExpiringLots.filter(l => l.status === 'EXPIRED' || l.status === 'EXPIRING_SOON').length} <span className="text-sm font-normal text-slate-400">lotes</span>
+                    <span className="text-xs font-semibold text-zinc-400 block">Caducidad de lotes</span>
+                    <p className="text-2xl font-mono tabular-nums font-bold text-rose-400">
+                      {filteredExpiringLots.filter(l => l.status === 'EXPIRED' || l.status === 'EXPIRING_SOON').length} <span className="text-xs font-sans font-normal text-zinc-400">lotes</span>
                     </p>
-                    <p className="text-[11px] text-slate-400 font-medium">
-                      Vencidos o por vencer pronto
+                    <p className="text-[11px] text-zinc-400 font-medium">
+                      Vencidos o próximos a vencer
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <div className="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-rose-400 shrink-0">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
@@ -380,33 +386,33 @@ function Home() {
               </div>
 
               {/* Gráfico Dinámico de Ventas Reales */}
-              <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 space-y-6 relative">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800/60 pb-3">
+              <div className="bg-[#12151c] border border-zinc-800/90 rounded-2xl p-6 space-y-6 relative">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-zinc-800/80 pb-3.5">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-white">Historial de Ventas Diarias</h3>
-                      <p className="text-xs text-slate-400">Ingresos reales registrados en caja por día de operación</p>
+                      <h3 className="text-base font-bold text-zinc-100">Historial de ventas diarias</h3>
+                      <p className="text-xs text-zinc-400">Ingresos reales registrados en caja por día de operación</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
-                    <span className="text-xs font-semibold text-slate-300">Ingresos (Bs.)</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    <span className="text-xs font-medium text-zinc-300">Ingresos (Bs.)</span>
                   </div>
                 </div>
 
                 {/* Gráfico SVG Reactivo con datos reales */}
                 <div className="relative">
                   {loadingSales ? (
-                    <div className="h-64 flex items-center justify-center text-slate-500 text-xs">
+                    <div className="h-64 flex items-center justify-center text-zinc-500 text-xs">
                       Cargando histórico de ventas...
                     </div>
                   ) : points.length === 0 ? (
-                    <div className="h-64 flex items-center justify-center text-slate-500 text-xs">
+                    <div className="h-64 flex items-center justify-center text-zinc-500 text-xs">
                       No hay ventas registradas aún.
                     </div>
                   ) : (
@@ -414,13 +420,8 @@ function Home() {
                       <svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-80 overflow-visible select-none">
                         <defs>
                           <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.35" />
-                            <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0" />
-                          </linearGradient>
-                          <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="#06b6d4" />
-                            <stop offset="50%" stopColor="#3b82f6" />
-                            <stop offset="100%" stopColor="#06b6d4" />
+                            <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.26" />
+                            <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
                           </linearGradient>
                         </defs>
 
@@ -435,17 +436,17 @@ function Home() {
                                 y1={y}
                                 x2={chartWidth - padRight}
                                 y2={y}
-                                stroke="#1e293b"
+                                stroke="#27272a"
                                 strokeDasharray="4 4"
                               />
                               <text
                                 x={padLeft - 10}
                                 y={y + 4}
-                                fill="#64748b"
+                                fill="#a1a1aa"
                                 fontSize="11"
-                                fontWeight="bold"
+                                fontWeight="600"
                                 textAnchor="end"
-                                className="font-mono"
+                                className="font-mono tabular-nums"
                               >
                                 {gridVal >= 1000 ? `${(gridVal / 1000).toFixed(1)}k` : Math.round(gridVal)}
                               </text>
@@ -461,8 +462,8 @@ function Home() {
                           <path
                             d={pathD}
                             fill="none"
-                            stroke="url(#lineGradient)"
-                            strokeWidth="3.5"
+                            stroke="#f59e0b"
+                            strokeWidth="2.75"
                             strokeLinecap="round"
                             strokeLinejoin="round"
                           />
@@ -474,12 +475,12 @@ function Home() {
                             <circle
                               cx={p.x}
                               cy={p.y}
-                              r={hoveredIndex === index ? 6 : 3.5}
+                              r={hoveredIndex === index ? 5.5 : 3.5}
                               className={`${
                                 hoveredIndex === index
-                                  ? 'fill-cyan-400 stroke-slate-950 stroke-[3px]'
-                                  : 'fill-cyan-500/80'
-                              } transition-all duration-150 cursor-pointer`}
+                                  ? 'fill-amber-400 stroke-[#0c0e12] stroke-[2.5px]'
+                                  : 'fill-amber-500'
+                              } transition-[r,fill] duration-150 ease-out-expo cursor-pointer`}
                               onMouseEnter={() => setHoveredIndex(index)}
                               onMouseLeave={() => setHoveredIndex(null)}
                             />
@@ -495,7 +496,7 @@ function Home() {
                           </g>
                         ))}
 
-                        {/* Etiquetas Eje X dentro del SVG perfectamente alineadas con los puntos */}
+                        {/* Etiquetas Eje X dentro del SVG */}
                         {points
                           .filter((_, i) => i % Math.ceil(points.length / 8) === 0 || i === points.length - 1)
                           .map((p, i) => (
@@ -505,8 +506,8 @@ function Home() {
                               y={chartHeight - 10}
                               textAnchor="middle"
                               fontSize="11"
-                              fill="#94a3b8"
-                              className="font-mono font-medium"
+                              fill="#a1a1aa"
+                              className="font-mono tabular-nums font-medium"
                             >
                               {p.date ? p.date.slice(5) : ''}
                             </text>
@@ -516,7 +517,7 @@ function Home() {
                       {/* Tooltip flotante interactivo */}
                       {hoveredIndex !== null && points[hoveredIndex] && (
                         <div
-                          className="absolute bg-slate-900 border border-slate-700/80 rounded-xl p-3 shadow-2xl backdrop-blur-md pointer-events-none transition-all duration-150 z-30 flex flex-col gap-1.5"
+                          className="absolute bg-[#0c0e12] border border-zinc-700 rounded-xl p-3 shadow-2xl pointer-events-none z-30 flex flex-col gap-1 animate-fade-in"
                           style={{
                             left: `${points[hoveredIndex].x + 10}px`,
                             top: `${points[hoveredIndex].y - 90}px`,
@@ -524,15 +525,15 @@ function Home() {
                           }}
                         >
                           <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                            <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                            <span className="font-mono tabular-nums text-[10px] text-zinc-400 font-semibold">
                               {points[hoveredIndex].date}
                             </span>
                           </div>
-                          <div className="font-extrabold text-sm text-white">
+                          <div className="font-mono tabular-nums font-bold text-sm text-zinc-100">
                             Bs. {points[hoveredIndex].val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
-                          <span className="text-[9px] text-cyan-400 font-semibold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20 self-start">
+                          <span className="font-mono tabular-nums text-[10px] text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 self-start">
                             {points[hoveredIndex].desc}
                           </span>
                         </div>
@@ -543,21 +544,21 @@ function Home() {
               </div>
 
           {/* ========================================================================= */}
-          {/* TABLA: ALERTA DE STOCK DEL PRODUCTO (EXACTO A LA FOTO ERP)               */}
+          {/* TABLA: ALERTA DE STOCK DEL PRODUCTO                                       */}
           {/* ========================================================================= */}
-          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="bg-[#12151c] border border-zinc-800/90 rounded-2xl p-6 space-y-4">
             {/* Cabecera con Título e Icono de Información */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                  <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 className="font-bold text-white text-base flex items-center gap-2">
-                  Alerta de stock del producto
+                <h3 className="font-bold text-zinc-100 text-base flex items-center gap-2">
+                  Alerta de stock de productos
                   <span
-                    className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-black inline-flex items-center justify-center cursor-help"
+                    className="w-4 h-4 rounded-full bg-zinc-800 text-zinc-300 font-mono text-[10px] font-bold inline-flex items-center justify-center cursor-help border border-zinc-700"
                     title="Listado de productos con existencias por debajo del umbral mínimo configurado"
                   >
                     i
@@ -565,81 +566,72 @@ function Home() {
                 </h3>
               </div>
 
-              {/* Botones de Exportación / Herramientas según foto */}
+              {/* Botones de Exportación / Herramientas */}
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   onClick={() => handleExport('csv')}
-                  className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  Exportar a CSV
+                  Exportar CSV
                 </button>
                 <button
                   onClick={() => handleExport('excel')}
-                  className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  Exportar a Excel
+                  Exportar Excel
                 </button>
                 <button
                   onClick={() => handleExport('impresion')}
-                  className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                   </svg>
                   Impresión
                 </button>
                 <button
-                  className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  Visibilidad de columna
-                </button>
-                <button
                   onClick={() => handleExport('pdf')}
-                  className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
-                  Exportar a PDF
+                  Exportar PDF
                 </button>
               </div>
             </div>
 
             {/* Tabla con Filas Cebra */}
-            <div className="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-900/30">
+            <div className="border border-zinc-800/90 rounded-xl overflow-hidden bg-[#0c0e12]">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-slate-900/90 text-slate-400 border-b border-slate-800 uppercase tracking-wider text-[11px] font-bold">
+                  <tr className="bg-zinc-900/80 text-zinc-400 border-b border-zinc-800 text-[11px] font-semibold">
                     <th className="py-3 px-4">Producto</th>
                     <th className="py-3 px-4">Ubicación</th>
-                    <th className="py-3 px-4">Stock Actual</th>
+                    <th className="py-3 px-4">Stock actual</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-zinc-800/70">
                   {loadingAlerts ? (
                     <tr>
-                      <td colSpan="3" className="py-8 text-center text-slate-500">
+                      <td colSpan="3" className="py-8 text-center text-zinc-500">
                         <div className="inline-flex items-center gap-2 text-xs">
-                          <div className="w-4 h-4 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
+                          <div className="w-4 h-4 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin"></div>
                           <span>Consultando existencias de la base de datos...</span>
                         </div>
                       </td>
                     </tr>
                   ) : filteredProducts.length === 0 ? (
                     <tr>
-                      <td colSpan="3" className="py-8 text-center text-slate-400 text-xs">
-                        <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <td colSpan="3" className="py-8 text-center text-zinc-400 text-xs">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 flex items-center justify-center mx-auto mb-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
@@ -653,24 +645,24 @@ function Home() {
                       return (
                         <tr
                           key={item.ProductoID || index}
-                          className={`group hover:bg-slate-800/50 transition-colors ${
-                            index % 2 === 0 ? 'bg-slate-900/20' : 'bg-transparent'
+                          className={`group hover:bg-zinc-800/40 transition-colors duration-160 ease-out-expo ${
+                            index % 2 === 0 ? 'bg-zinc-900/20' : 'bg-transparent'
                           }`}
                         >
                           {/* 1. Columna: Producto */}
-                          <td className="py-3 px-4 text-slate-300">
+                          <td className="py-3 px-4 text-zinc-300">
                             <div className="flex items-center gap-2.5">
                               <span
                                 className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                  isOutOfStock ? 'bg-rose-500 animate-pulse' : 'bg-amber-400'
+                                  isOutOfStock ? 'bg-rose-500' : 'bg-amber-400'
                                 }`}
                                 title={isOutOfStock ? 'Producto Agotado' : 'Stock Bajo'}
                               ></span>
                               <div>
-                                <span className="font-bold text-slate-200 uppercase tracking-wide">
+                                <span className="font-semibold text-zinc-100">
                                   {item.Nombre}
                                 </span>
-                                <span className="text-slate-500 text-xs ml-1.5 font-mono">
+                                <span className="text-zinc-500 text-xs ml-2 font-mono tabular-nums">
                                   ({item.Codigo || item.CodigoBarras || `PRD-${item.ProductoID}`})
                                 </span>
                               </div>
@@ -678,14 +670,14 @@ function Home() {
                           </td>
 
                           {/* 2. Columna: Ubicación */}
-                          <td className="py-3 px-4 text-slate-300 whitespace-nowrap">
+                          <td className="py-3 px-4 text-zinc-300 whitespace-nowrap">
                             {item.Ubicacion ? (
-                              <span className="text-cyan-400 font-semibold">
-                                {item.Ubicacion.Almacen ? `[${item.Ubicacion.Almacen.Nombre}] ` : ''}
+                              <span className="text-zinc-200 font-medium">
+                                {item.Ubicacion.Almacen ? <span className="font-mono text-amber-400 mr-1">[{item.Ubicacion.Almacen.Nombre}]</span> : ''}
                                 {item.Ubicacion.Descripcion || item.Ubicacion.Nombre}
                               </span>
                             ) : (
-                              <span className="text-slate-600 italic">Sin asignar</span>
+                              <span className="text-zinc-600 italic">Sin asignar</span>
                             )}
                           </td>
 
@@ -693,19 +685,19 @@ function Home() {
                           <td className="py-3 px-4 whitespace-nowrap">
                             <div className="flex items-center justify-between sm:justify-start gap-3">
                               <span
-                                className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase border ${
+                                className={`px-2.5 py-0.5 rounded-md font-mono tabular-nums text-[10px] font-bold border ${
                                   isOutOfStock
-                                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                                    : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                    ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                                    : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
                                 }`}
                               >
                                 {isOutOfStock
-                                  ? `Agotado (0 ${item.Unidad?.Abreviacion || item.Unidad?.Nombre || 'UNID'})`
-                                  : `${stockVal} ${item.Unidad?.Abreviacion || item.Unidad?.Nombre || 'UNID'} (Bajo)`}
+                                  ? `AGOTADO (0 ${item.Unidad?.Abreviacion || item.Unidad?.Nombre || 'UNID'})`
+                                  : `${stockVal} ${item.Unidad?.Abreviacion || item.Unidad?.Nombre || 'UNID'} (BAJO)`}
                               </span>
                               <Link
                                 to="/productsView"
-                                className="text-[11px] text-cyan-400 hover:text-cyan-300 opacity-0 group-hover:opacity-100 transition-opacity font-semibold"
+                                className="text-[11px] text-amber-400 hover:text-amber-300 opacity-0 group-hover:opacity-100 transition-opacity duration-160 ease-out-expo font-semibold"
                               >
                                 Ver en productos →
                               </Link>
@@ -720,23 +712,23 @@ function Home() {
             </div>
 
             {/* Pie de Tabla con Contador y Paginación Dinámica */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-slate-400 font-medium">
-              <div>
-                Mostrando {filteredProducts.length > 0 ? 1 : 0} a {filteredProducts.length} de {criticalProducts.length} entrada{criticalProducts.length === 1 ? '' : 's'}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1 text-xs text-zinc-400 font-medium">
+              <div className="font-mono tabular-nums text-[11px]">
+                Mostrando {filteredProducts.length > 0 ? 1 : 0} a {filteredProducts.length} de {criticalProducts.length} registro{criticalProducts.length === 1 ? '' : 's'}
               </div>
               <div className="flex items-center gap-1">
                 <button
                   disabled
-                  className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg opacity-40 cursor-not-allowed transition-all text-xs"
+                  className="px-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg opacity-40 cursor-not-allowed text-xs"
                 >
                   Anterior
                 </button>
-                <button className="px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-bold rounded-lg text-xs">
+                <button className="px-3 py-1.5 bg-amber-500/15 border border-amber-500/35 text-amber-400 font-mono tabular-nums font-bold rounded-lg text-xs">
                   1
                 </button>
                 <button
                   disabled
-                  className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg opacity-40 cursor-not-allowed transition-all text-xs"
+                  className="px-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg opacity-40 cursor-not-allowed text-xs"
                 >
                   Siguiente
                 </button>
@@ -747,31 +739,33 @@ function Home() {
           {/* ========================================================================= */}
           {/* TABLA 2: ALERTAS DE CADUCIDAD Y VENCIMIENTO DE LOTES (MOTOR FEFO)         */}
           {/* ========================================================================= */}
-          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-2xl space-y-5">
+          <div className="bg-[#12151c] border border-zinc-800/90 rounded-2xl p-6 space-y-5">
             {/* Cabecera de la Sección */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-800/80 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-lg shadow-inner">
-                  ⏰
+                <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-rose-400 shrink-0">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
-                    <span>Alertas de Caducidad y Vencimiento de Lotes (Motor FEFO)</span>
-                    <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full text-[10px] font-mono">
+                  <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+                    <span>Control de Caducidad y Lotes (Motor FEFO)</span>
+                    <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/25 rounded-md text-[10px] font-mono tabular-nums font-semibold">
                       {filteredExpiringLots.length} lotes
                     </span>
                   </h3>
-                  <p className="text-slate-400 text-xs mt-0.5">
-                    Monitoreo de productos perecederos (Pinturas, Químicos, Siliconas, Pegamentos) para priorizar su venta.
+                  <p className="text-zinc-400 text-xs mt-0.5">
+                    Monitoreo de insumos perecederos (pinturas, químicos, selladores y adhesivos) para priorizar su salida en mostrador.
                   </p>
                 </div>
               </div>
 
               <Link
                 to="/productsView"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/90 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30 rounded-xl text-xs font-bold transition-all self-start md:self-auto"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0c0e12] hover:bg-zinc-800 text-amber-400 border border-zinc-800 rounded-xl text-xs font-semibold transition-colors duration-160 ease-out-expo btn-press self-start md:self-auto"
               >
-                <span>Ver Lista de Productos & Lotes →</span>
+                <span>Ver inventario y lotes →</span>
               </Link>
             </div>
 
@@ -779,17 +773,17 @@ function Home() {
             <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
               {/* Filtro por Estado de Vencimiento */}
               <div className="flex items-center gap-2 text-xs">
-                <span className="font-bold text-slate-400">Filtrar:</span>
+                <span className="font-semibold text-zinc-400">Filtrar:</span>
                 <select
                   value={expiringFilter}
                   onChange={(e) => setExpiringFilter(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs font-bold outline-none focus:border-amber-500/50 cursor-pointer"
+                  className="bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-1.5 text-zinc-200 text-xs font-semibold outline-none focus:border-amber-500/70 transition-colors duration-160 ease-out-expo cursor-pointer"
                 >
                   <option value="ALL">Todos los lotes con caducidad</option>
-                  <option value="EXPIRED">Lotes Vencidos</option>
-                  <option value="EXPIRING_SOON">Críticos (Menos de 30 días)</option>
-                  <option value="WARNING">Alerta preventiva (Menos de 60 días)</option>
-                  <option value="OPTIMAL">Vigentes (Más de 60 días)</option>
+                  <option value="EXPIRED">Lotes vencidos</option>
+                  <option value="EXPIRING_SOON">Críticos (menos de 30 días)</option>
+                  <option value="WARNING">Alerta preventiva (menos de 60 días)</option>
+                  <option value="OPTIMAL">Vigentes (más de 60 días)</option>
                   <option value="CRITICAL_ALL">Vencidos + Críticos</option>
                 </select>
               </div>
@@ -798,46 +792,46 @@ function Home() {
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   onClick={() => handleExportExpiring('csv')}
-                  className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  Exportar a CSV
+                  Exportar CSV
                 </button>
                 <button
                   onClick={() => handleExportExpiring('excel')}
-                  className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  Exportar a Excel
+                  Exportar Excel
                 </button>
                 <button
                   onClick={() => handleExportExpiring('impresion')}
-                  className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                   </svg>
                   Impresión
                 </button>
                 <button
                   onClick={() => handleExportExpiring('pdf')}
-                  className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
-                  Exportar a PDF
+                  Exportar PDF
                 </button>
               </div>
 
               {/* Buscador de Lotes */}
               <div className="relative w-full sm:w-64">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-zinc-500">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </span>
@@ -846,28 +840,28 @@ function Home() {
                   placeholder="Buscar lote, producto..."
                   value={expiringSearch}
                   onChange={(e) => setExpiringSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl focus:border-amber-500/50 text-xs text-white placeholder-slate-500 outline-none"
+                  className="w-full pl-9 pr-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-xl focus:border-amber-500/70 transition-colors duration-160 ease-out-expo text-xs text-zinc-100 placeholder-zinc-500 outline-none"
                 />
               </div>
             </div>
 
             {/* Tabla de Lotes FEFO */}
-            <div className="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-900/30">
+            <div className="border border-zinc-800/90 rounded-xl overflow-hidden bg-[#0c0e12]">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-slate-900/90 text-slate-400 border-b border-slate-800 uppercase tracking-wider text-[11px] font-bold whitespace-nowrap">
+                  <tr className="bg-zinc-900/80 text-zinc-400 border-b border-zinc-800 text-[11px] font-semibold whitespace-nowrap">
                     <th className="py-3 px-4">Producto</th>
                     <th className="py-3 px-4">Lote #</th>
-                    <th className="py-3 px-4">Fecha Caducidad</th>
-                    <th className="py-3 px-4">Estado / Semáforo</th>
-                    <th className="py-3 px-4">Stock Lote</th>
+                    <th className="py-3 px-4">Fecha caducidad</th>
+                    <th className="py-3 px-4">Estado FEFO</th>
+                    <th className="py-3 px-4">Stock lote</th>
                     <th className="py-3 px-4 text-right">Acción</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-zinc-800/70">
                   {loadingExpiring ? (
                     <tr>
-                      <td colSpan="6" className="py-8 text-center text-slate-500">
+                      <td colSpan="6" className="py-8 text-center text-zinc-500">
                         <div className="inline-flex items-center gap-2 text-xs">
                           <div className="w-4 h-4 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin"></div>
                           <span>Consultando caducidad de lotes...</span>
@@ -876,9 +870,9 @@ function Home() {
                     </tr>
                   ) : filteredExpiringLots.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="py-8 text-center text-slate-400 text-xs">
-                        <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <td colSpan="6" className="py-8 text-center text-zinc-400 text-xs">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 flex items-center justify-center mx-auto mb-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
@@ -893,29 +887,29 @@ function Home() {
                       return (
                         <tr
                           key={lot.LoteID || index}
-                          className={`group hover:bg-slate-800/50 transition-colors ${
-                            index % 2 === 0 ? 'bg-slate-900/20' : 'bg-transparent'
+                          className={`group hover:bg-zinc-800/40 transition-colors duration-160 ease-out-expo ${
+                            index % 2 === 0 ? 'bg-zinc-900/20' : 'bg-transparent'
                           }`}
                         >
                           {/* 1. Producto */}
-                          <td className="py-3 px-4 text-slate-300">
+                          <td className="py-3 px-4 text-zinc-300">
                             <div className="flex items-center gap-2.5">
                               <span
                                 className={`w-2 h-2 rounded-full flex-shrink-0 ${
                                   isExpired
-                                    ? 'bg-rose-500 animate-pulse'
+                                    ? 'bg-rose-500'
                                     : isSoon
-                                    ? 'bg-amber-500 animate-pulse'
+                                    ? 'bg-amber-500'
                                     : isWarning
                                     ? 'bg-amber-400'
                                     : 'bg-emerald-400'
                                 }`}
                               ></span>
                               <div>
-                                <span className="font-bold text-slate-200 uppercase tracking-wide block">
+                                <span className="font-semibold text-zinc-100 block">
                                   {lot.ProductoNombre}
                                 </span>
-                                <span className="text-slate-500 text-[11px] font-mono">
+                                <span className="text-zinc-500 text-[11px] font-mono tabular-nums">
                                   {lot.CodigoBarras || `PRD-${lot.ProductoID}`} • {lot.Marca || 'General'}
                                 </span>
                               </div>
@@ -923,43 +917,54 @@ function Home() {
                           </td>
 
                           {/* 2. Lote # */}
-                          <td className="py-3 px-4 text-slate-300 font-mono font-semibold whitespace-nowrap">
-                            <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 text-[11px]">
+                          <td className="py-3 px-4 text-zinc-300 font-mono tabular-nums font-medium whitespace-nowrap">
+                            <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 text-[11px]">
                               {lot.NotaLote || `LOTE-${lot.LoteID}`}
                             </span>
                           </td>
 
                           {/* 3. Fecha Caducidad */}
-                          <td className="py-3 px-4 font-mono font-bold text-white whitespace-nowrap">
+                          <td className="py-3 px-4 font-mono tabular-nums font-semibold text-zinc-100 whitespace-nowrap">
                             {lot.FechaVencimiento || '—'}
                           </td>
 
                           {/* 4. Estado / Semáforo */}
                           <td className="py-3 px-4 whitespace-nowrap">
                             <span
-                              className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase border ${
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md font-mono tabular-nums text-[10px] font-bold uppercase border ${
                                 isExpired
                                   ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
                                   : isSoon
                                   ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
                                   : isWarning
-                                  ? 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30'
+                                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/25'
                                   : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                               }`}
                             >
-                              {isExpired
-                                ? `🔴 Vencido (${Math.abs(lot.daysRemaining)}d)`
-                                : isSoon
-                                ? `🟠 Crítico (${lot.daysRemaining} días)`
-                                : isWarning
-                                ? `🟡 Alerta (${lot.daysRemaining} días)`
-                                : `🟢 Vigente (${lot.daysRemaining} días)`}
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  isExpired
+                                    ? 'bg-rose-400'
+                                    : isSoon || isWarning
+                                    ? 'bg-amber-400'
+                                    : 'bg-emerald-400'
+                                }`}
+                              ></span>
+                              <span>
+                                {isExpired
+                                  ? `Vencido (${Math.abs(lot.daysRemaining)}d)`
+                                  : isSoon
+                                  ? `Crítico (${lot.daysRemaining}d)`
+                                  : isWarning
+                                  ? `Preventivo (${lot.daysRemaining}d)`
+                                  : `Vigente (${lot.daysRemaining}d)`}
+                              </span>
                             </span>
                           </td>
 
                           {/* 5. Stock Lote */}
-                          <td className="py-3 px-4 font-bold text-slate-200 whitespace-nowrap">
-                            {lot.Stock} <span className="text-slate-500 text-[11px] font-normal">{lot.Unidad || 'UNID'}</span>
+                          <td className="py-3 px-4 font-mono tabular-nums font-semibold text-zinc-200 whitespace-nowrap">
+                            {lot.Stock} <span className="text-zinc-500 font-sans text-[11px] font-normal">{lot.Unidad || 'UNID'}</span>
                           </td>
 
                           {/* 6. Acción */}
@@ -970,16 +975,16 @@ function Home() {
                                   type="button"
                                   onClick={(e) => handleDismissExpiredLot(e, lot.LoteID)}
                                   title="Descartar este lote de la alerta"
-                                  className="text-[11px] px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 border border-rose-500/30 font-bold transition-all flex items-center gap-1 cursor-pointer"
+                                  className="text-[11px] px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/25 font-semibold transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1 cursor-pointer"
                                 >
-                                  <span>✕ Descartar lote</span>
+                                  <span>✕ Descartar</span>
                                 </button>
                               )}
                               <Link
                                 to="/productsView"
-                                className="text-[11px] text-cyan-400 hover:text-cyan-300 font-bold hover:underline"
+                                className="text-[11px] text-amber-400 hover:text-amber-300 font-semibold transition-colors duration-160 ease-out-expo"
                               >
-                                Ver en Productos →
+                                Ver producto →
                               </Link>
                             </div>
                           </td>
@@ -992,23 +997,23 @@ function Home() {
             </div>
 
             {/* Pie de Tabla con Contador */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-slate-400 font-medium">
-              <div>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1 text-xs text-zinc-400 font-medium">
+              <div className="font-mono tabular-nums text-[11px]">
                 Mostrando {filteredExpiringLots.length > 0 ? 1 : 0} a {filteredExpiringLots.length} de {expiringLots.length} lote{expiringLots.length === 1 ? '' : 's'} registrado{expiringLots.length === 1 ? '' : 's'}
               </div>
               <div className="flex items-center gap-1">
                 <button
                   disabled
-                  className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg opacity-40 cursor-not-allowed transition-all text-xs"
+                  className="px-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg opacity-40 cursor-not-allowed text-xs"
                 >
                   Anterior
                 </button>
-                <button className="px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold rounded-lg text-xs">
+                <button className="px-3 py-1.5 bg-amber-500/15 border border-amber-500/35 text-amber-400 font-mono tabular-nums font-bold rounded-lg text-xs">
                   1
                 </button>
                 <button
                   disabled
-                  className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg opacity-40 cursor-not-allowed transition-all text-xs"
+                  className="px-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg opacity-40 cursor-not-allowed text-xs"
                 >
                   Siguiente
                 </button>

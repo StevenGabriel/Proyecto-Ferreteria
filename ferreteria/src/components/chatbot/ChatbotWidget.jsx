@@ -8,7 +8,7 @@ function ChatbotWidget({ hidden = false }) {
   const [messages, setMessages] = useState([
     {
       sender: 'bot',
-      text: '¡Hola! 👋 Soy el **Asistente Virtual** de **C&C Ferretería Casa y Construcción**.\n\nPuedo asesorarte en materiales, herramientas, electricidad, plomería, pinturas, pedidos y facturación.\n\n¿En qué te puedo ayudar hoy?',
+      text: 'Bienvenido al soporte técnico de **C&C Ferretería — Casa y Construcción**.\n\nPuedo ayudarte con especificaciones de materiales, herramientas, cálculo de insumos, stock y facturación.\n\n¿Qué material o herramienta estás buscando?',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -25,14 +25,14 @@ function ChatbotWidget({ hidden = false }) {
     }
   }, [messages, isOpen]);
 
-  // Preguntas rápidas sugeridas (sin lealtad, enfocadas en materiales y servicios)
+  // Consultas técnicas rápidas (sin emojis decorativos — Impeccable Craft Floor)
   const quickQuestions = [
-    '🏗️ ¿Qué cemento usar para una losa?',
-    '🎨 ¿Pintura para fachada exterior?',
-    '⚡ ¿Calibre de cable para tomacorrientes?',
-    '🛒 ¿Cómo compro por WhatsApp?',
-    '🔩 ¿Tornillos para placas Drywall?',
-    '🧾 ¿Emiten factura electrónica?'
+    '¿Qué cemento usar para una losa?',
+    '¿Pintura para fachada exterior?',
+    '¿Calibre de cable para tomacorrientes?',
+    '¿Cómo reservo con QR Simple?',
+    '¿Tornillos para placas Drywall?',
+    '¿Emiten factura electrónica SIAT?'
   ];
 
   const handleSendMessage = async (textToSend) => {
@@ -52,7 +52,7 @@ function ChatbotWidget({ hidden = false }) {
         ...prev,
         {
           sender: 'bot',
-          text: res?.reply || 'Entendido. Si necesitas más información sobre productos o cotizaciones, con gusto te asesoramos.',
+          text: res?.reply || 'Entendido. Si necesitas más especificaciones sobre productos o cotizaciones, indícame el ítem.',
           time: botTime
         }
       ]);
@@ -63,7 +63,7 @@ function ChatbotWidget({ hidden = false }) {
         ...prev,
         {
           sender: 'bot',
-          text: 'Disculpa, tuve un inconveniente temporal para conectarme. Puedes intentar de nuevo o comunicarte directamente por WhatsApp. 🔨',
+          text: 'No se pudo establecer conexión con el asistente en este momento. Intenta nuevamente en unos segundos o contáctanos por WhatsApp.',
           time: botTime
         }
       ]);
@@ -83,24 +83,23 @@ function ChatbotWidget({ hidden = false }) {
     setMessages([
       {
         sender: 'bot',
-        text: 'Chat reiniciado. ¿Tienes alguna otra consulta sobre materiales, herramientas o pedidos en C&C Ferretería?',
+        text: 'Conversación reiniciada. ¿Tienes otra consulta sobre herramientas, materiales o pedidos en C&C Ferretería?',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ]);
   };
 
-  // Formateador simple de negritas y saltos de línea para las respuestas
+  // Formateador de negritas y saltos de línea alineado a la paleta Industrial de Precisión
   const renderFormattedText = (text) => {
     if (!text) return null;
     const lines = text.split('\n');
     return lines.map((line, idx) => {
-      // Reemplazar **texto** con <strong>texto</strong>
       const parts = line.split(/(\*\*.*?\*\*)/g);
       return (
         <span key={idx} className="block min-h-[1.1rem]">
           {parts.map((part, pIdx) => {
             if (part.startsWith('**') && part.endsWith('**')) {
-              return <strong key={pIdx} className="text-cyan-300 font-bold">{part.slice(2, -2)}</strong>;
+              return <strong key={pIdx} className="text-amber-400 font-semibold">{part.slice(2, -2)}</strong>;
             }
             return part;
           })}
@@ -112,29 +111,33 @@ function ChatbotWidget({ hidden = false }) {
   if (hidden) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-      {/* Ventana flotante del Chat */}
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
+      {/* Ventana flotante del Chat (Emil Kowalski: origin-bottom-right + animate-popover-in 180ms ease-out-expo) */}
       {isOpen && (
-        <div className="w-[360px] sm:w-[400px] h-[540px] max-h-[85vh] bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-4 animate-fade-in transition-all duration-300 backdrop-blur-xl">
+        <div className="w-[350px] sm:w-[390px] h-[520px] max-h-[82vh] bg-[#12151c] border border-zinc-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-3 origin-bottom-right animate-popover-in">
           {/* Header del Chat */}
-          <div className="bg-gradient-to-r from-slate-900 via-cyan-950 to-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
+          <div className="bg-[#0c0e12] border-b border-zinc-800 px-4 py-3.5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-md shadow-cyan-500/20">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
                   </svg>
                 </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full animate-pulse"></span>
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#0c0e12] rounded-full"></span>
               </div>
               <div>
-                <h3 className="font-extrabold text-sm text-white flex items-center gap-1.5">
-                  Asistente Virtual C&C
-                  <span className="text-[10px] bg-cyan-500/20 text-cyan-300 font-semibold px-1.5 py-0.5 rounded border border-cyan-500/30">IA</span>
-                </h3>
-                <p className="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-xs sm:text-sm text-zinc-100 leading-none">
+                    Asesor Técnico C&C
+                  </h3>
+                  <span className="text-[10px] font-mono bg-zinc-800 text-zinc-300 font-semibold px-1.5 py-0.5 rounded border border-zinc-700">
+                    IA
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-400 font-medium mt-1 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
-                  En línea • Ferretería Casa y Construcción
+                  <span>Consultas de catálogo y obra</span>
                 </p>
               </div>
             </div>
@@ -142,19 +145,21 @@ function ChatbotWidget({ hidden = false }) {
             <div className="flex items-center gap-1">
               <button
                 onClick={clearChat}
-                title="Limpiar conversación"
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer text-xs"
+                title="Reiniciar conversación"
+                className="p-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition-colors duration-160 cursor-pointer"
+                aria-label="Reiniciar conversación"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
                 </svg>
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                title="Cerrar chat"
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                title="Cerrar asistente"
+                className="p-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition-colors duration-160 cursor-pointer"
+                aria-label="Cerrar asistente"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -162,45 +167,45 @@ function ChatbotWidget({ hidden = false }) {
           </div>
 
           {/* Lista de Mensajes */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar bg-slate-950/60">
+          <div className="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar bg-[#0c0e12]">
             {messages.map((msg, idx) => (
               <div
                 key={idx}
                 className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs sm:text-[13px] leading-relaxed shadow-md ${
+                  className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-xs leading-relaxed ${
                     msg.sender === 'user'
-                      ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-br-none'
-                      : 'bg-slate-800/95 border border-slate-700/70 text-slate-200 rounded-bl-none'
+                      ? 'bg-amber-500 text-zinc-950 font-medium rounded-br-xs'
+                      : 'bg-[#14171f] border border-zinc-800/90 text-zinc-200 rounded-bl-xs'
                   }`}
                 >
-                  {renderFormattedText(msg.text)}
+                  {msg.sender === 'user' ? msg.text : renderFormattedText(msg.text)}
                 </div>
-                <span className="text-[10px] text-slate-500 mt-1 px-1">{msg.time}</span>
+                <span className="text-[10px] font-mono tabular-nums text-zinc-500 mt-1 px-1">
+                  {msg.time}
+                </span>
               </div>
             ))}
 
-            {/* Indicador de escribiendo */}
+            {/* Indicador de consulta en curso */}
             {loading && (
-              <div className="flex items-center gap-1.5 bg-slate-800/80 border border-slate-700/60 rounded-2xl px-3.5 py-2.5 w-fit rounded-bl-none text-slate-400 text-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                <span className="ml-1 text-[11px] text-cyan-300">Consultando asistente...</span>
+              <div className="flex items-center gap-2 bg-[#14171f] border border-zinc-800 rounded-xl px-3.5 py-2.5 w-fit rounded-bl-xs text-zinc-400 text-xs animate-fade-in">
+                <div className="w-3.5 h-3.5 border-2 border-amber-500/30 border-t-amber-400 rounded-full animate-spin" />
+                <span className="text-[11px] text-zinc-300 font-medium">Verificando catálogo...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
           {/* Preguntas Frecuentes Rápidas */}
-          <div className="px-3 py-2 bg-slate-900 border-t border-slate-800/80 overflow-x-auto flex gap-1.5 no-scrollbar whitespace-nowrap">
+          <div className="px-3 py-2 bg-[#12151c] border-t border-zinc-800/90 overflow-x-auto flex gap-1.5 custom-scrollbar whitespace-nowrap">
             {quickQuestions.map((q, idx) => (
               <button
                 key={idx}
-                onClick={() => handleSendMessage(q.replace(/^[^\w¿]+/, ''))}
+                onClick={() => handleSendMessage(q)}
                 disabled={loading}
-                className="text-[11px] font-medium bg-slate-800 hover:bg-cyan-950/60 hover:text-cyan-300 hover:border-cyan-500/40 text-slate-300 border border-slate-700/70 rounded-full px-2.5 py-1 transition-all flex-shrink-0 cursor-pointer disabled:opacity-50"
+                className="text-[11px] font-medium bg-[#0c0e12] hover:bg-zinc-800 hover:text-amber-400 hover:border-zinc-700 text-zinc-300 border border-zinc-800 rounded-lg px-2.5 py-1 transition-colors duration-160 flex-shrink-0 cursor-pointer disabled:opacity-50"
               >
                 {q}
               </button>
@@ -208,43 +213,54 @@ function ChatbotWidget({ hidden = false }) {
           </div>
 
           {/* Input de Mensaje */}
-          <div className="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2">
+          <div className="p-3 bg-[#12151c] border-t border-zinc-800 flex items-center gap-2">
             <input
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Escribe tu consulta sobre materiales o pedidos..."
+              placeholder="Consulta un material, herramienta o medida..."
               disabled={loading}
-              className="flex-1 bg-slate-950 border border-slate-700 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-white text-xs sm:text-sm rounded-xl px-3.5 py-2.5 outline-none transition-all placeholder:text-slate-500 disabled:opacity-50"
+              className="flex-1 bg-[#0c0e12] border border-zinc-800 focus:border-amber-500/70 text-zinc-100 text-xs rounded-xl px-3.5 py-2.5 outline-none transition-colors duration-160 placeholder:text-zinc-500 disabled:opacity-50"
             />
             <button
               onClick={() => handleSendMessage()}
               disabled={!inputMessage.trim() || loading}
-              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white p-2.5 rounded-xl transition-all shadow-md shadow-cyan-500/20 flex-shrink-0 cursor-pointer"
+              className="bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed text-zinc-950 p-2.5 rounded-xl btn-press flex-shrink-0 cursor-pointer"
+              aria-label="Enviar consulta"
             >
-              <svg className="w-4 h-4 transform rotate-90" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7" />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
               </svg>
             </button>
           </div>
         </div>
       )}
 
-      {/* Botón Flotante Activador */}
+      {/* Botón Flotante Activador (Tactile btn-press, sin hover:scale-105 ni ping infinito) */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        title={isOpen ? "Cerrar asistente" : "Consultar al Asistente Virtual"}
-        className="group relative flex items-center gap-2.5 bg-gradient-to-r from-cyan-500 via-cyan-600 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white px-4 py-3 rounded-full shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all duration-300 transform hover:scale-105 cursor-pointer font-bold text-sm"
+        title={isOpen ? "Cerrar asesor técnico" : "Abrir asesor técnico C&C"}
+        className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl shadow-xl border text-xs font-bold cursor-pointer btn-press ${
+          isOpen
+            ? 'bg-[#14171f] hover:bg-zinc-800 text-zinc-200 border-zinc-700'
+            : 'bg-amber-500 hover:bg-amber-400 text-zinc-950 border-amber-400/50'
+        }`}
       >
-        <div className="relative">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-          </svg>
-          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping"></span>
-          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full"></span>
+        <div className="relative flex items-center justify-center">
+          {isOpen ? (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+              </svg>
+            </>
+          )}
         </div>
-        <span className="hidden sm:inline font-semibold">¿Necesitas ayuda?</span>
+        <span>{isOpen ? 'Ocultar asesor' : 'Asesor técnico'}</span>
       </button>
     </div>
   );

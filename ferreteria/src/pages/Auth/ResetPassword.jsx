@@ -118,101 +118,129 @@ function ResetPassword() {
   const isInvitation = tokenType === "INVITATION";
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 text-white flex items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-cyan-500 selection:text-slate-950">
-      {/* Resplandor ambiental de fondo */}
-      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
+    <div className="min-h-screen w-full bg-[#0c0e12] text-zinc-100 flex items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-amber-500 selection:text-zinc-950">
+      {/* Retícula técnica industrial sutil */}
+      <div
+        className="absolute inset-0 opacity-[0.18] pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(#3f3f46 1px, transparent 1px)",
+          backgroundSize: "20px 20px",
+        }}
+      ></div>
+      <div className="absolute top-0 inset-x-0 h-px bg-zinc-800"></div>
 
       {/* Tarjeta Central */}
-      <div className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-800/90 rounded-3xl p-8 sm:p-10 shadow-2xl relative z-10 space-y-6">
+      <div className="w-full max-w-md bg-[#12151c] border border-zinc-800/90 rounded-2xl p-7 sm:p-9 shadow-2xl shadow-black/60 relative z-10 space-y-6 animate-modal-in">
         
         {/* Encabezado */}
-        <div className="text-center space-y-2">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white font-black text-2xl shadow-lg shadow-cyan-500/25 hover:scale-105 transition-transform mb-2"
-          >
-            C
-          </Link>
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            {isInvitation ? "Activar Cuenta de Operador" : "Nueva Contraseña"}
-          </h1>
-          <p className="text-xs text-slate-400 font-medium">
-            {isInvitation
-              ? "¡Bienvenido al equipo! Configura tu contraseña personal para"
-              : "Establece tu nueva clave de acceso para"}{" "}
-            <br />
-            <span className="text-cyan-400 font-mono font-bold text-xs">{userEmail || "tu cuenta"}</span>
-          </p>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2.5 group focus:outline-none"
+            >
+              <div className="w-10 h-10 rounded-xl bg-amber-500 text-zinc-950 flex items-center justify-center font-black text-lg tracking-tighter shadow-sm transition-transform duration-160 ease-out-expo group-hover:scale-[1.03]">
+                C&C
+              </div>
+              <div className="text-left">
+                <span className="block text-xs font-extrabold text-zinc-100 tracking-tight leading-none">
+                  FERRETERÍA C&C
+                </span>
+                <span className="block font-mono text-[10px] text-zinc-400 mt-0.5">
+                  CASA Y CONSTRUCCIÓN
+                </span>
+              </div>
+            </Link>
+            <span className="font-mono text-[10px] text-zinc-400 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-md">
+              {isInvitation ? "ACTIVACIÓN" : "CLAVE NUEVA"}
+            </span>
+          </div>
+
+          <div className="pt-2 border-t border-zinc-800/80">
+            <h1 className="text-xl sm:text-2xl font-bold text-zinc-100 tracking-tight [text-wrap:balance]">
+              {isInvitation ? "Activar cuenta de operador" : "Establecer nueva contraseña"}
+            </h1>
+            <p className="text-xs text-zinc-400 mt-1">
+              {isInvitation
+                ? "Configura tu clave personal para activar el perfil asociado a "
+                : "Define una nueva clave de acceso para "}
+              <span className="text-amber-400 font-mono font-semibold">{userEmail || "tu cuenta"}</span>
+            </p>
+          </div>
         </div>
 
         {/* Estado 1: Verificando Token */}
         {verifying ? (
-          <div className="py-12 text-center space-y-3">
-            <div className="inline-block w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-xs text-slate-400 font-semibold">Validando enlace de seguridad...</p>
+          <div className="py-10 text-center space-y-3">
+            <div className="inline-block w-7 h-7 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-xs text-zinc-400 font-medium">Validando token de seguridad...</p>
           </div>
         ) : isSuccess ? (
           /* Estado 2: Cambio Exitoso */
           <div className="space-y-5 text-center animate-fade-in py-2">
-            <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl flex items-center justify-center text-emerald-400 text-3xl mx-auto shadow-xl shadow-emerald-500/10">
-              ✓
+            <div className="w-12 h-12 bg-emerald-500/15 border border-emerald-500/30 rounded-xl flex items-center justify-center text-emerald-400 mx-auto">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-            <div className="space-y-1">
-              <h3 className="text-base font-bold text-white">
-                {isInvitation ? "¡Cuenta Activada con Éxito!" : "¡Contraseña Actualizada!"}
+            <div className="space-y-1.5">
+              <h3 className="text-base font-bold text-zinc-100">
+                {isInvitation ? "Cuenta activada correctamente" : "Contraseña actualizada"}
               </h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-zinc-400 leading-relaxed">
                 {isInvitation
-                  ? "Tu cuenta ha sido activada y tu contraseña personalizada ha quedado guardada. Ya puedes ingresar al sistema."
-                  : "Tu clave ha sido cambiada correctamente. Ya puedes ingresar al sistema con tus nuevas credenciales."}
+                  ? "Tu cuenta de operador ha sido activada y tu clave ha quedado registrada."
+                  : "Tu clave de acceso ha sido actualizada. Ya puedes ingresar con tus nuevas credenciales."}
               </p>
             </div>
             <Link
               to="/login"
-              className="inline-flex items-center justify-center w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold rounded-2xl shadow-lg shadow-cyan-500/25 text-xs transition-all"
+              className="inline-flex items-center justify-center w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl text-xs transition-colors duration-160 ease-out-expo btn-press"
             >
-              Iniciar Sesión →
+              Ir a iniciar sesión →
             </Link>
           </div>
         ) : !isValidToken ? (
           /* Estado 3: Enlace Expirado o Inválido */
           <div className="space-y-5 text-center animate-fade-in py-2">
-            <div className="w-16 h-16 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center justify-center text-rose-400 text-3xl mx-auto shadow-xl shadow-rose-500/10">
-              ⚠️
+            <div className="w-12 h-12 bg-rose-500/15 border border-rose-500/30 rounded-xl flex items-center justify-center text-rose-400 mx-auto">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
             </div>
-            <div className="space-y-2">
-              <h3 className="text-base font-bold text-white">Enlace Expirado o Inválido</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                {errorMessage || "Este enlace ha caducado o ya fue utilizado."}
+            <div className="space-y-1.5">
+              <h3 className="text-base font-bold text-zinc-100">Enlace expirado o inválido</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                {errorMessage || "Este enlace de seguridad ha caducado o ya fue utilizado."}
               </p>
             </div>
             <Link
               to="/forgot-password"
-              className="inline-flex items-center justify-center w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold rounded-2xl shadow-lg shadow-cyan-500/25 text-xs transition-all"
+              className="inline-flex items-center justify-center w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl text-xs transition-colors duration-160 ease-out-expo btn-press"
             >
-              Solicitar un Nuevo Enlace →
+              Solicitar nuevo enlace →
             </Link>
           </div>
         ) : (
           /* Estado 4: Formulario de Nueva Contraseña con Cronómetro */
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Banner del Temporizador */}
-            <div className="p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl flex items-center justify-between text-xs text-cyan-400 font-bold">
-              <span className="flex items-center gap-1.5">
-                <span>⏱️</span>
-                <span>Vigencia del enlace:</span>
+            {/* Banner del Temporizador con números tabulares */}
+            <div className="p-3 bg-[#0c0e12] border border-zinc-800 rounded-xl flex items-center justify-between text-xs">
+              <span className="flex items-center gap-2 text-zinc-300 font-medium">
+                <svg className="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Vigencia del token:</span>
               </span>
-              <span className="font-mono text-xs bg-slate-950/60 px-2.5 py-0.5 rounded-lg border border-cyan-500/20 text-white">
+              <span className="font-mono tabular-nums text-xs font-bold bg-amber-500/10 px-2.5 py-0.5 rounded-md border border-amber-500/25 text-amber-400">
                 {formatTime(remainingSeconds)}
               </span>
             </div>
 
             {/* Mensaje de Error */}
             {errorMessage && (
-              <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-xs text-rose-400 font-semibold flex items-center gap-2.5 animate-fade-in">
-                <svg className="w-4 h-4 shrink-0 text-rose-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <div className="p-3.5 bg-rose-500/10 border border-rose-500/25 rounded-xl text-xs text-rose-300 font-medium flex items-center gap-2.5 animate-fade-in">
+                <svg className="w-4 h-4 shrink-0 text-rose-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <span>{errorMessage}</span>
@@ -221,12 +249,12 @@ function ResetPassword() {
 
             {/* Nueva Contraseña */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-300 block">
-                Nueva Contraseña
+              <label className="text-xs font-semibold text-zinc-300 block">
+                Nueva contraseña
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </span>
@@ -236,19 +264,20 @@ function ResetPassword() {
                   value={nuevaContrasena}
                   onChange={(e) => setNuevaContrasena(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-10 pr-10 py-3 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-500 transition-colors"
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl pl-10 pr-10 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500/80 transition-colors duration-160 ease-out-expo"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-500 hover:text-zinc-300 transition-colors duration-160 ease-out-expo"
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
                   {showPassword ? (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
                     </svg>
                   ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
@@ -259,12 +288,12 @@ function ResetPassword() {
 
             {/* Confirmar Nueva Contraseña */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-300 block">
-                Confirmar Nueva Contraseña
+              <label className="text-xs font-semibold text-zinc-300 block">
+                Confirmar nueva contraseña
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </span>
@@ -274,14 +303,14 @@ function ResetPassword() {
                   value={confirmContrasena}
                   onChange={(e) => setConfirmContrasena(e.target.value)}
                   placeholder="Repite la nueva contraseña"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-500 transition-colors"
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500/80 transition-colors duration-160 ease-out-expo"
                 />
               </div>
             </div>
 
             {/* Medidor de Fuerza de Contraseña */}
             {nuevaContrasena && (
-              <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-2xl space-y-2 animate-fade-in text-[11px]">
+              <div className="p-3 bg-[#0c0e12] border border-zinc-800/90 rounded-xl space-y-2 animate-fade-in text-[11px]">
                 {(() => {
                   let score = 0;
                   const hasLen = nuevaContrasena.length >= 8;
@@ -293,22 +322,22 @@ function ResetPassword() {
                   if (hasNum) score++;
                   if (hasSpec) score++;
 
-                  const labels = ["Débil", "Débil", "Media / Aceptable", "Fuerte", "Excelente / Segura"];
-                  const colors = ["bg-rose-500", "bg-rose-500", "bg-amber-500", "bg-emerald-500", "bg-cyan-400"];
+                  const labels = ["Débil", "Débil", "Aceptable", "Fuerte", "Excelente / Segura"];
+                  const colors = ["bg-rose-500", "bg-rose-500", "bg-amber-500", "bg-emerald-500", "bg-emerald-400"];
 
                   return (
                     <>
-                      <div className="flex justify-between font-bold">
-                        <span className="text-slate-400">Seguridad:</span>
+                      <div className="flex justify-between font-semibold">
+                        <span className="text-zinc-400">Seguridad:</span>
                         <span className={score >= 3 ? "text-emerald-400" : score === 2 ? "text-amber-400" : "text-rose-400"}>
                           {labels[score]}
                         </span>
                       </div>
-                      <div className="grid grid-cols-4 gap-1.5 h-1.5 bg-slate-900 rounded-full overflow-hidden">
-                        <div className={`h-full ${score >= 1 ? colors[score] : 'bg-slate-800'}`}></div>
-                        <div className={`h-full ${score >= 2 ? colors[score] : 'bg-slate-800'}`}></div>
-                        <div className={`h-full ${score >= 3 ? colors[score] : 'bg-slate-800'}`}></div>
-                        <div className={`h-full ${score >= 4 ? colors[score] : 'bg-slate-800'}`}></div>
+                      <div className="grid grid-cols-4 gap-1.5 h-1.5 bg-zinc-900 rounded-full overflow-hidden">
+                        <div className={`h-full transition-colors duration-180 ease-out-expo ${score >= 1 ? colors[score] : 'bg-zinc-800'}`}></div>
+                        <div className={`h-full transition-colors duration-180 ease-out-expo ${score >= 2 ? colors[score] : 'bg-zinc-800'}`}></div>
+                        <div className={`h-full transition-colors duration-180 ease-out-expo ${score >= 3 ? colors[score] : 'bg-zinc-800'}`}></div>
+                        <div className={`h-full transition-colors duration-180 ease-out-expo ${score >= 4 ? colors[score] : 'bg-zinc-800'}`}></div>
                       </div>
                     </>
                   );
@@ -320,24 +349,27 @@ function ResetPassword() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold rounded-2xl shadow-lg shadow-cyan-500/25 transition-all active:scale-[0.99] text-xs flex items-center justify-center gap-2 mt-4"
+              className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-zinc-950 font-bold rounded-xl transition-colors duration-160 ease-out-expo btn-press text-xs flex items-center justify-center gap-2 mt-4"
             >
               {loading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-3.5 h-3.5 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin"></div>
                   <span>Guardando nueva contraseña...</span>
                 </>
               ) : (
-                <span>Confirmar y Cambiar Contraseña</span>
+                <span>Confirmar y guardar contraseña</span>
               )}
             </button>
           </form>
         )}
 
         {/* Enlace Volver */}
-        <div className="pt-2 border-t border-slate-800/80 text-center text-xs text-slate-400">
-          <Link to="/login" className="text-slate-500 hover:text-slate-300 transition-colors">
-            ← Volver al Inicio de Sesión
+        <div className="pt-4 border-t border-zinc-800/80 text-center text-xs text-zinc-400">
+          <Link
+            to="/login"
+            className="text-zinc-500 hover:text-zinc-300 font-medium transition-colors duration-160 ease-out-expo"
+          >
+            ← Volver al inicio de sesión
           </Link>
         </div>
       </div>

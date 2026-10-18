@@ -286,40 +286,38 @@ function OnlineOrdersView() {
   }, [orders, statusFilter, searchTerm]);
 
   return (
-    <div className="flex h-screen bg-slate-950 font-sans text-slate-100 overflow-hidden">
+    <div className="flex h-screen bg-[#0c0e12] font-sans text-zinc-100 overflow-hidden selection:bg-amber-500/30 selection:text-amber-200">
       {/* Barra Lateral Navegación */}
       <Sidebar />
 
       {/* Contenedor Principal */}
-      <div className={`flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
+      <div className={`flex-1 flex flex-col min-w-0 overflow-hidden transition-[margin-left] duration-220 ease-out-expo ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
         <Topbar />
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] w-full mx-auto">
           {/* 1. Header Principal Formal */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-            <div>
-              <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20 flex-shrink-0">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                  </svg>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/80 pb-5">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 flex-shrink-0">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </div>
+              <div>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-100 tracking-tight text-balance">
+                    Despacho de Pedidos Online
+                  </h1>
+                  {stats.pendientes > 0 && (
+                    <span className="text-xs font-mono tabular-nums font-bold px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                      <span>{stats.pendientes} en cola</span>
+                    </span>
+                  )}
                 </div>
-                <div>
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                      Pedidos Online — Mostrador
-                    </h1>
-                    {stats.pendientes > 0 && (
-                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5 shadow-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                        <span>{stats.pendientes} en cola</span>
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Verificación de transferencias QR Simple (Yape / BCP), entrega de materiales y emisión de comprobantes oficiales.
-                  </p>
-                </div>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Verificación de transferencias QR Simple, entrega de materiales en mostrador y emisión de comprobantes SIAT.
+                </p>
               </div>
             </div>
 
@@ -327,26 +325,26 @@ function OnlineOrdersView() {
               <button
                 onClick={fetchOrders}
                 disabled={loading}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700/80 rounded-xl text-xs font-bold flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+                className="btn-press px-4 py-2 bg-[#12151c] hover:bg-zinc-800/90 text-zinc-200 border border-zinc-800 hover:border-zinc-700 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors disabled:opacity-50 cursor-pointer"
               >
-                <svg className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-cyan-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                <svg className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-amber-400' : 'text-zinc-400'}`} fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                <span>Actualizar</span>
+                <span>Sincronizar cola</span>
               </button>
             </div>
           </div>
 
-          {/* 2. Tarjetas de Estadísticas KPI Corporativas */}
+          {/* 2. Tarjetas de Estadísticas KPI */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Pendientes de Entrega */}
-            <div className="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-4 shadow-lg shadow-amber-500/5 relative overflow-hidden flex items-center justify-between">
+            <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl p-4 flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Por Entregar (Cola)</p>
-                <p className="text-2xl font-black text-white mt-1 font-mono">{stats.pendientes}</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Esperando verificación en tienda</p>
+                <p className="text-2xl font-black text-zinc-100 mt-1 font-mono tabular-nums">{stats.pendientes}</p>
+                <p className="text-[11px] text-zinc-500 mt-0.5">Esperando verificación en tienda</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -354,13 +352,13 @@ function OnlineOrdersView() {
             </div>
 
             {/* Total por Cobrar en Pendientes */}
-            <div className="bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-4 shadow-lg shadow-cyan-500/5 relative overflow-hidden flex items-center justify-between">
+            <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl p-4 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">Monto en Cola QR</p>
-                <p className="text-2xl font-black text-white mt-1 font-mono">Bs. {stats.totalPendientesMonto.toFixed(2)}</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">En pedidos pendientes con QR</p>
+                <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Importe en Cola QR</p>
+                <p className="text-2xl font-black text-amber-400 mt-1 font-mono tabular-nums">Bs. {stats.totalPendientesMonto.toFixed(2)}</p>
+                <p className="text-[11px] text-zinc-500 mt-0.5">En pedidos pendientes por retirar</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 text-amber-400 flex items-center justify-center">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -368,13 +366,13 @@ function OnlineOrdersView() {
             </div>
 
             {/* Completados */}
-            <div className="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-4 shadow-lg shadow-emerald-500/5 relative overflow-hidden flex items-center justify-between">
+            <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl p-4 flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Entregados con Éxito</p>
-                <p className="text-2xl font-black text-white mt-1 font-mono">{stats.completados}</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Pagos verificados y facturados</p>
+                <p className="text-2xl font-black text-zinc-100 mt-1 font-mono tabular-nums">{stats.completados}</p>
+                <p className="text-[11px] text-zinc-500 mt-0.5">Pagos verificados y facturados</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -382,13 +380,13 @@ function OnlineOrdersView() {
             </div>
 
             {/* Cancelados */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg relative overflow-hidden flex items-center justify-between">
+            <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl p-4 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Cancelados / No Retirados</p>
-                <p className="text-2xl font-black text-slate-300 mt-1 font-mono">{stats.cancelados}</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Sin impacto en inventario</p>
+                <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Cancelados / No Retirados</p>
+                <p className="text-2xl font-black text-zinc-300 mt-1 font-mono tabular-nums">{stats.cancelados}</p>
+                <p className="text-[11px] text-zinc-500 mt-0.5">Sin impacto en inventario</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-400 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 flex items-center justify-center">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                 </svg>
@@ -397,55 +395,66 @@ function OnlineOrdersView() {
           </div>
 
           {/* 3. Filtros y Búsqueda */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3">
             {/* Pestañas de Estado */}
             <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
               <button
                 onClick={() => setStatusFilter('PENDIENTE')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+                className={`btn-press px-3.5 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                   statusFilter === 'PENDIENTE'
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-amber-500 text-zinc-950 font-extrabold'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60'
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                <span>Pendientes ({stats.pendientes})</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${statusFilter === 'PENDIENTE' ? 'bg-zinc-950' : 'bg-amber-400'}`}></span>
+                <span>Pendientes</span>
+                <span className={`font-mono tabular-nums text-[11px] px-1.5 py-0.2 rounded ${statusFilter === 'PENDIENTE' ? 'bg-zinc-950/20 text-zinc-950' : 'bg-zinc-800 text-zinc-300'}`}>
+                  {stats.pendientes}
+                </span>
               </button>
 
               <button
                 onClick={() => setStatusFilter('COMPLETADO')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+                className={`btn-press px-3.5 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                   statusFilter === 'COMPLETADO'
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-emerald-500 text-zinc-950 font-extrabold'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60'
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                <span>Completados ({stats.completados})</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${statusFilter === 'COMPLETADO' ? 'bg-zinc-950' : 'bg-emerald-400'}`}></span>
+                <span>Completados</span>
+                <span className={`font-mono tabular-nums text-[11px] px-1.5 py-0.2 rounded ${statusFilter === 'COMPLETADO' ? 'bg-zinc-950/20 text-zinc-950' : 'bg-zinc-800 text-zinc-300'}`}>
+                  {stats.completados}
+                </span>
               </button>
 
               <button
                 onClick={() => setStatusFilter('CANCELADO')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+                className={`btn-press px-3.5 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                   statusFilter === 'CANCELADO'
-                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-red-500 text-white font-extrabold'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60'
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-rose-400"></span>
-                <span>Cancelados ({stats.cancelados})</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${statusFilter === 'CANCELADO' ? 'bg-white' : 'bg-red-400'}`}></span>
+                <span>Cancelados</span>
+                <span className={`font-mono tabular-nums text-[11px] px-1.5 py-0.2 rounded ${statusFilter === 'CANCELADO' ? 'bg-black/20 text-white' : 'bg-zinc-800 text-zinc-300'}`}>
+                  {stats.cancelados}
+                </span>
               </button>
 
               <button
                 onClick={() => setStatusFilter('TODOS')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+                className={`btn-press px-3.5 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                   statusFilter === 'TODOS'
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-zinc-200 text-zinc-950 font-extrabold'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60'
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-                <span>Todos ({stats.total})</span>
+                <span>Todos</span>
+                <span className={`font-mono tabular-nums text-[11px] px-1.5 py-0.2 rounded ${statusFilter === 'TODOS' ? 'bg-zinc-950/15 text-zinc-950' : 'bg-zinc-800 text-zinc-300'}`}>
+                  {stats.total}
+                </span>
               </button>
             </div>
 
@@ -456,9 +465,9 @@ function OnlineOrdersView() {
                 placeholder="Buscar por código, cliente o NIT..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-medium"
+                className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-500 transition-colors duration-100 font-medium"
               />
-              <svg className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -466,26 +475,26 @@ function OnlineOrdersView() {
 
           {/* 4. Lista de Pedidos Online */}
           {loading ? (
-            <div className="p-16 text-center bg-slate-900/40 border border-slate-800 rounded-3xl space-y-3">
-              <div className="w-9 h-9 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-xs font-semibold text-slate-400">Cargando cola de pedidos online...</p>
+            <div className="p-16 text-center bg-[#12151c] border border-zinc-800/80 rounded-2xl space-y-3">
+              <div className="w-8 h-8 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mx-auto" />
+              <p className="text-xs font-semibold text-zinc-400">Cargando cola de pedidos online...</p>
             </div>
           ) : filteredOrders.length === 0 ? (
-            <div className="p-16 text-center bg-slate-900/40 border border-slate-800 rounded-3xl space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-slate-800/80 flex items-center justify-center mx-auto text-slate-500">
+            <div className="p-16 text-center bg-[#12151c] border border-zinc-800/80 rounded-2xl space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-500">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                 </svg>
               </div>
-              <h3 className="text-sm font-bold text-white">No hay pedidos en este estado</h3>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              <h3 className="text-sm font-bold text-zinc-200">No hay pedidos en este estado</h3>
+              <p className="text-xs text-zinc-500 max-w-sm mx-auto">
                 {statusFilter === 'PENDIENTE'
                   ? 'Actualmente no hay pedidos pendientes en mostrador. Todo se encuentra al día.'
                   : 'No se encontraron registros que coincidan con los filtros seleccionados.'}
               </p>
             </div>
           ) : (
-            <div className="space-y-3.5">
+            <div className="space-y-3">
               {filteredOrders.map((order) => {
                 const isPending = order.EstadoPedido === 'PENDIENTE';
                 const isCompleted = order.EstadoPedido === 'COMPLETADO';
@@ -496,47 +505,43 @@ function OnlineOrdersView() {
                 return (
                   <div
                     key={order.PedidoID}
-                    className={`bg-slate-900/90 border rounded-2xl p-4 sm:p-5 transition-all shadow-md hover:border-cyan-500/40 ${
+                    className={`bg-[#12151c] border rounded-2xl p-4 sm:p-5 transition-colors duration-150 ${
                       isPending
-                        ? 'border-amber-500/40 bg-gradient-to-r from-amber-950/15 via-slate-900 to-slate-900'
+                        ? 'border-amber-500/35 hover:border-amber-500/60'
                         : isCompleted
-                        ? 'border-emerald-500/20'
-                        : 'border-slate-800/80 opacity-75'
+                        ? 'border-emerald-500/25 hover:border-emerald-500/45'
+                        : 'border-zinc-800/80 opacity-75'
                     }`}
                   >
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                       {/* Información Principal del Pedido */}
-                      <div className="space-y-2 flex-1">
+                      <div className="space-y-2.5 flex-1">
                         <div className="flex flex-wrap items-center gap-2.5">
-                          <span className="font-mono text-sm font-black text-cyan-400 bg-cyan-950/50 border border-cyan-500/30 px-2.5 py-0.5 rounded-xl">
+                          <span className="font-mono tabular-nums text-xs font-extrabold text-amber-400 bg-amber-500/10 border border-amber-500/25 px-2.5 py-1 rounded-lg">
                             #{order.CodigoPedido}
                           </span>
 
                           {/* Estado */}
                           {isPending && (
-                            <span className="bg-amber-500/15 text-amber-300 border border-amber-500/40 text-[11px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            <span className="bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[11px] font-bold px-2.5 py-0.5 rounded-md inline-flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                               Pendiente de Verificación y Entrega
                             </span>
                           )}
                           {isCompleted && (
-                            <span className="bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5">
-                              <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
+                            <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 text-[11px] font-bold px-2.5 py-0.5 rounded-md inline-flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                               Entregado en Mostrador
                             </span>
                           )}
                           {isCancelled && (
-                            <span className="bg-rose-500/15 text-rose-300 border border-rose-500/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5">
-                              <svg className="w-3 h-3 text-rose-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
+                            <span className="bg-red-500/10 text-red-400 border border-red-500/25 text-[11px] font-bold px-2.5 py-0.5 rounded-md inline-flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
                               Cancelado
                             </span>
                           )}
 
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs font-mono tabular-nums text-zinc-500">
                             • {new Date(order.FechaPedido).toLocaleString('es-BO')}
                           </span>
                         </div>
@@ -544,49 +549,49 @@ function OnlineOrdersView() {
                         {/* Datos del Cliente y Teléfono */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                           <div className="flex items-center gap-1.5">
-                            <svg className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
-                            <span className="text-slate-400">Cliente: </span>
-                            <strong className="text-white truncate">{order.ClienteNombre}</strong>
+                            <span className="text-zinc-500">Cliente: </span>
+                            <strong className="text-zinc-100 truncate">{order.ClienteNombre}</strong>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <svg className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
                             </svg>
-                            <span className="text-slate-400">NIT/C.I.: </span>
-                            <span className="font-mono text-slate-300">{order.NIT_CI || '0'}</span>
+                            <span className="text-zinc-500">NIT/C.I.: </span>
+                            <span className="font-mono tabular-nums text-zinc-300">{order.NIT_CI || '0'}</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <svg className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                             </svg>
-                            <span className="text-slate-400">Teléfono: </span>
+                            <span className="text-zinc-500">Contacto: </span>
                             {order.Telefono ? (
                               <a
                                 href={`https://wa.me/591${order.Telefono.replace(/\D/g, '')}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-emerald-400 font-bold hover:underline inline-flex items-center gap-1"
+                                className="text-emerald-400 font-mono tabular-nums font-bold hover:underline inline-flex items-center gap-1"
                               >
                                 <span>{order.Telefono}</span>
                               </a>
                             ) : (
-                              <span className="text-slate-500">No especificado</span>
+                              <span className="text-zinc-500">No especificado</span>
                             )}
                           </div>
                         </div>
 
                         {/* Resumen de Productos Pedidos */}
-                        <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-2.5 text-xs text-slate-300 space-y-1">
-                          <div className="flex items-center justify-between text-[11px] text-slate-400 border-b border-slate-800/60 pb-1">
-                            <span>Artículos solicitados ({totalItemsCount} unid.):</span>
-                            <span className="text-cyan-400 font-bold">Transferencia QR (Yape)</span>
+                        <div className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl p-3 text-xs text-zinc-300 space-y-1.5">
+                          <div className="flex items-center justify-between text-[11px] text-zinc-400 border-b border-zinc-800/70 pb-1.5">
+                            <span>Ítems solicitados (<strong className="font-mono tabular-nums text-zinc-200">{totalItemsCount}</strong> unid.):</span>
+                            <span className="text-amber-400 font-bold">Transferencia QR Simple</span>
                           </div>
-                          <div className="flex flex-wrap gap-2 pt-0.5">
+                          <div className="flex flex-wrap gap-1.5 pt-0.5">
                             {(order.Detalles || []).map((dt, idx) => (
-                              <span key={idx} className="bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-lg text-[11px] text-slate-200">
-                                <strong>{dt.Cantidad}x</strong> {dt.Producto?.Nombre || `Item #${dt.ProductoID}`}
+                              <span key={idx} className="bg-[#12151c] border border-zinc-800 px-2.5 py-1 rounded-lg text-[11px] text-zinc-200">
+                                <strong className="font-mono tabular-nums text-amber-400">{dt.Cantidad}×</strong> {dt.Producto?.Nombre || `Ítem #${dt.ProductoID}`}
                               </span>
                             ))}
                           </div>
@@ -594,14 +599,14 @@ function OnlineOrdersView() {
                       </div>
 
                       {/* Monto y Botones de Acción */}
-                      <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-800">
+                      <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-zinc-800/80">
                         <div className="text-left lg:text-right">
-                          <p className="text-[11px] text-slate-400 font-medium">Total a Cobrar:</p>
-                          <p className="text-xl sm:text-2xl font-black text-cyan-300 font-mono">
+                          <p className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider">Importe Total</p>
+                          <p className="text-xl sm:text-2xl font-black text-amber-400 font-mono tabular-nums">
                             Bs. {parseFloat(order.Total || 0).toFixed(2)}
                           </p>
                           {order.RequiereFactura && (
-                            <span className="text-[10px] text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 px-1.5 py-0.2 rounded font-bold">
+                            <span className="inline-block mt-0.5 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded font-bold">
                               Factura SIAT Solicitada
                             </span>
                           )}
@@ -612,19 +617,18 @@ function OnlineOrdersView() {
                             <>
                               <button
                                 onClick={() => handleOpenReview(order)}
-                                className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                                className="btn-press px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <span>Revisar y Entregar</span>
+                                <span>Verificar y Entregar</span>
                               </button>
 
                               <button
                                 onClick={() => handleOpenCancel(order)}
                                 title="Cancelar Pedido"
-                                className="px-3 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold rounded-xl text-xs transition-colors active:scale-95 cursor-pointer"
+                                className="btn-press px-3 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/25 font-bold rounded-xl text-xs transition-colors cursor-pointer"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -634,9 +638,9 @@ function OnlineOrdersView() {
                           ) : (
                             <button
                               onClick={() => handleOpenReview(order)}
-                              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                              className="btn-press px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                              <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
                               <span>Ver Detalles</span>
@@ -655,36 +659,36 @@ function OnlineOrdersView() {
 
       {/* 5. MODAL DE REVISIÓN, VERIFICACIÓN Y ENTREGA FORMAL */}
       {showReviewModal && selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-7 space-y-5 shadow-2xl relative max-h-[95vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="bg-[#12151c] border border-zinc-800 rounded-2xl max-w-2xl w-full p-6 sm:p-7 space-y-5 shadow-2xl relative max-h-[95vh] overflow-y-auto animate-modal-in">
             {/* Header del Modal */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-white flex items-center gap-2">
-                    Pedido #{selectedOrder.CodigoPedido}
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  <h3 className="text-base sm:text-lg font-extrabold text-zinc-100 flex items-center gap-2">
+                    <span className="font-mono tabular-nums">Pedido #{selectedOrder.CodigoPedido}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                       selectedOrder.EstadoPedido === 'PENDIENTE'
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        ? 'bg-amber-500/15 text-amber-300 border-amber-500/35'
                         : selectedOrder.EstadoPedido === 'COMPLETADO'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                        : 'bg-red-500/15 text-red-400 border-red-500/30'
                     }`}>
                       {selectedOrder.EstadoPedido}
                     </span>
                   </h3>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 mt-0.5">
-                    <span>Fecha: {new Date(selectedOrder.FechaPedido).toLocaleString('es-BO')}</span>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400 mt-0.5">
+                    <span className="font-mono tabular-nums">{new Date(selectedOrder.FechaPedido).toLocaleString('es-BO')}</span>
                     <span>•</span>
-                    <span className="text-slate-300">Cliente: <strong className="text-white">{selectedOrder.ClienteNombre}</strong></span>
+                    <span className="text-zinc-300">Cliente: <strong className="text-zinc-100">{selectedOrder.ClienteNombre}</strong></span>
                     {clientLoyalty && (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${clientLoyalty.textClass || 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30'}`}>
-                        {clientLoyalty.name} {clientLoyalty.discountPercent > 0 ? `(${clientLoyalty.discountPercent}% Dcto)` : '(Cliente Estándar)'}
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md border bg-amber-500/10 text-amber-400 border-amber-500/25">
+                        Nivel {clientLoyalty.name} {clientLoyalty.discountPercent > 0 ? `(${clientLoyalty.discountPercent}% Dcto.)` : ''}
                       </span>
                     )}
                   </div>
@@ -693,7 +697,7 @@ function OnlineOrdersView() {
 
               <button
                 onClick={() => setShowReviewModal(false)}
-                className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 flex items-center justify-center transition-colors cursor-pointer"
               >
                 ✕
               </button>
@@ -701,74 +705,74 @@ function OnlineOrdersView() {
 
             {/* PROTOCOLO DE VERIFICACIÓN QR YAPE */}
             {selectedOrder.EstadoPedido === 'PENDIENTE' && (
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-900 border border-cyan-500/30 space-y-2 text-xs">
-                <div className="flex items-center gap-2 text-cyan-300 font-bold text-xs">
-                  <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <div className="p-4 rounded-xl bg-[#0c0e12] border border-amber-500/25 space-y-2 text-xs">
+                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
-                  <span>Protocolo de Verificación de Pago (Transferencia QR Yape / BCP)</span>
+                  <span>Protocolo de Verificación de Pago (Transferencia QR Simple / Yape / BCP)</span>
                 </div>
-                <div className="space-y-1.5 text-slate-300 pl-6 text-[11px]">
-                  <p>1. Solicite al cliente que muestre el <strong>comprobante de transferencia digital</strong> en su teléfono.</p>
-                  <p>2. Compruebe que el monto transferido inicialmente corresponda a <strong>Bs. {parseFloat(selectedOrder.Total).toFixed(2)}</strong>.</p>
-                  <p>3. Verifique en su aplicación bancaria o notificación de Yape que el dinero ingresó a la cuenta de la ferretería.</p>
+                <div className="space-y-1 text-zinc-300 pl-6 text-[11px]">
+                  <p>1. Solicite al cliente el <strong>comprobante de transferencia bancaria</strong> en su dispositivo móvil.</p>
+                  <p>2. Compruebe que el importe transferido corresponda a <strong className="font-mono tabular-nums text-zinc-100">Bs. {parseFloat(selectedOrder.Total).toFixed(2)}</strong>.</p>
+                  <p>3. Confirme en el extracto de la ferretería que el abono fue acreditado antes de despachar el material.</p>
                 </div>
               </div>
             )}
 
             {/* Tabla de Productos Solicitados con Precios Dinámicos (Con vs Sin Factura) */}
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                  Materiales a Entregar al Cliente:
+                <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
+                  Materiales a Entregar
                 </h4>
-                <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-md border ${
                   issueInvoice 
-                    ? 'text-cyan-300 bg-cyan-500/10 border-cyan-500/30' 
-                    : 'text-amber-300 bg-amber-500/10 border-amber-500/30'
+                    ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25' 
+                    : 'text-amber-400 bg-amber-500/10 border-amber-500/25'
                 }`}>
-                  Modo: {issueInvoice ? 'Precios Con Factura SIAT (13% IVA)' : 'Precios Sin Factura (Recibo)'}
+                  Modalidad: {issueInvoice ? 'Con Factura SIAT (13% IVA)' : 'Sin Factura (Nota de Venta)'}
                 </span>
               </div>
 
-              <div className="border border-slate-800 rounded-xl overflow-hidden">
+              <div className="border border-zinc-800/80 rounded-xl overflow-hidden bg-[#0c0e12]">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+                  <thead className="bg-zinc-900/80 text-zinc-400 font-bold border-b border-zinc-800">
                     <tr>
                       <th className="p-2.5">Producto</th>
                       <th className="p-2.5 text-center">Cant.</th>
                       <th className="p-2.5 text-right">
                         <span>P. Unit. </span>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ml-1 ${
-                          issueInvoice ? 'bg-cyan-500/20 text-cyan-300' : 'bg-amber-500/20 text-amber-300'
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ml-1 ${
+                          issueInvoice ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'
                         }`}>
-                          {issueInvoice ? 'Con Fac.' : 'Sin Fac.'}
+                          {issueInvoice ? 'Facturado' : 'Sin Fac.'}
                         </span>
                       </th>
                       <th className="p-2.5 text-right">Subtotal</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 bg-slate-900/60 text-slate-200">
+                  <tbody className="divide-y divide-zinc-800/60 text-zinc-200">
                     {dynamicItems.map((dt, idx) => (
-                      <tr key={idx} className="hover:bg-slate-800/40">
+                      <tr key={idx} className="hover:bg-zinc-900/50 transition-colors">
                         <td className="p-2.5">
-                          <p className="font-bold text-white">{dt.Producto?.Nombre || `Producto #${dt.ProductoID}`}</p>
-                          <span className="text-[10px] text-slate-400">
-                            Unidad: {dt.Producto?.Unidad?.Nombre || 'Pza'} • Código: {dt.Producto?.CodigoBarras || 'S/C'}
+                          <p className="font-bold text-zinc-100">{dt.Producto?.Nombre || `Producto #${dt.ProductoID}`}</p>
+                          <span className="text-[10px] font-mono tabular-nums text-zinc-500">
+                            Unidad: {dt.Producto?.Unidad?.Nombre || 'Pza'} • SKU: {dt.Producto?.CodigoBarras || 'S/C'}
                           </span>
                         </td>
-                        <td className="p-2.5 text-center font-bold text-cyan-300 font-mono">
+                        <td className="p-2.5 text-center font-bold text-amber-400 font-mono tabular-nums">
                           {dt.cant}
                         </td>
-                        <td className="p-2.5 text-right font-mono">
-                          <span className="font-bold text-white">Bs. {dt.activeUnitPrice.toFixed(2)}</span>
+                        <td className="p-2.5 text-right font-mono tabular-nums">
+                          <span className="font-bold text-zinc-100">Bs. {dt.activeUnitPrice.toFixed(2)}</span>
                           {!issueInvoice && dt.precioConFactura > dt.activeUnitPrice && (
-                            <span className="block text-[9px] text-slate-500 line-through">
+                            <span className="block text-[10px] text-zinc-500 line-through">
                               Bs. {dt.precioConFactura.toFixed(2)}
                             </span>
                           )}
                         </td>
-                        <td className="p-2.5 text-right font-bold text-white font-mono">
+                        <td className="p-2.5 text-right font-bold text-zinc-100 font-mono tabular-nums">
                           Bs. {dt.activeSubtotal.toFixed(2)}
                         </td>
                       </tr>
@@ -778,48 +782,48 @@ function OnlineOrdersView() {
               </div>
 
               {/* Totales Dinámicos y Comparación */}
-              <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2 text-xs">
-                <div className="flex justify-between text-slate-400">
-                  <span>Subtotal ({issueInvoice ? 'Precios con Factura' : 'Precios Sin Factura'}):</span>
-                  <span className="font-mono text-slate-200 font-bold">Bs. {activeSubtotalSum.toFixed(2)}</span>
+              <div className="bg-[#0c0e12] p-4 rounded-xl border border-zinc-800/80 space-y-2 text-xs">
+                <div className="flex justify-between text-zinc-400">
+                  <span>Subtotal ({issueInvoice ? 'Tarifa con Factura' : 'Tarifa sin Factura'}):</span>
+                  <span className="font-mono tabular-nums text-zinc-200 font-bold">Bs. {activeSubtotalSum.toFixed(2)}</span>
                 </div>
 
                 {activeLoyaltyDiscount > 0 && (
                   <div className="flex justify-between text-amber-400 font-bold">
-                    <span>Descuento Lealtad ({clientLoyalty.name} - {clientLoyalty.discountPercent}%):</span>
-                    <span className="font-mono">-Bs. {activeLoyaltyDiscount.toFixed(2)}</span>
+                    <span>Descuento Lealtad ({clientLoyalty.name} — {clientLoyalty.discountPercent}%):</span>
+                    <span className="font-mono tabular-nums">-Bs. {activeLoyaltyDiscount.toFixed(2)}</span>
                   </div>
                 )}
 
-                <div className="flex justify-between items-baseline pt-2 border-t border-slate-800 font-black">
+                <div className="flex justify-between items-baseline pt-2 border-t border-zinc-800 font-black">
                   <div>
-                    <span className="text-white text-sm block">
-                      {issueInvoice ? 'Total Factura Oficial (SIAT):' : 'Total Recibo Oficial (Sin Factura):'}
+                    <span className="text-zinc-100 text-sm block">
+                      {issueInvoice ? 'Total Factura Fiscal (SIAT):' : 'Total Nota de Venta (Sin Factura):'}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-normal">
-                      {issueInvoice ? 'Genera crédito fiscal IVA' : 'Documento interno de entrega en mostrador'}
+                    <span className="text-[10px] text-zinc-500 font-normal">
+                      {issueInvoice ? 'Genera crédito fiscal IVA (13%)' : 'Comprobante interno de entrega en mostrador'}
                     </span>
                   </div>
-                  <span className="text-cyan-400 text-lg font-mono">
+                  <span className="text-amber-400 text-lg font-mono tabular-nums">
                     Bs. {activeFinalTotal.toFixed(2)}
                   </span>
                 </div>
 
                 {/* Comparación con el monto QR inicial */}
-                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400">Monto transferido inicialmente por cliente:</span>
-                  <span className="font-mono font-bold text-purple-300">Bs. {parseFloat(selectedOrder.Total || 0).toFixed(2)}</span>
+                <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between text-[11px]">
+                  <span className="text-zinc-400">Importe abonado inicialmente por QR:</span>
+                  <span className="font-mono tabular-nums font-bold text-zinc-200">Bs. {parseFloat(selectedOrder.Total || 0).toFixed(2)}</span>
                 </div>
 
                 {!issueInvoice && parseFloat(selectedOrder.Total || 0) > activeFinalTotal && (
-                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-300 flex items-start gap-2">
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-300 flex items-start gap-2">
                     <svg className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div>
-                      <strong>Modalidad Sin Factura:</strong> El precio sin IVA es de <strong className="text-white">Bs. {activeFinalTotal.toFixed(2)}</strong> (menor a los Bs. {parseFloat(selectedOrder.Total || 0).toFixed(2)} de lista).
-                      <span className="block text-white font-bold mt-0.5">
-                        Diferencia a devolver al cliente en mostrador: Bs. {(parseFloat(selectedOrder.Total || 0) - activeFinalTotal).toFixed(2)}
+                      <strong>Ajuste por Modalidad Sin Factura:</strong> El importe neto sin IVA es <strong className="text-zinc-100 font-mono tabular-nums">Bs. {activeFinalTotal.toFixed(2)}</strong>.
+                      <span className="block text-zinc-100 font-mono tabular-nums font-bold mt-0.5">
+                        Diferencia a reintegrar al cliente en mostrador: Bs. {(parseFloat(selectedOrder.Total || 0) - activeFinalTotal).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -829,78 +833,70 @@ function OnlineOrdersView() {
 
             {/* Opciones de Facturación al Entregar (solo si está PENDIENTE) */}
             {selectedOrder.EstadoPedido === 'PENDIENTE' && (
-              <div className={`p-4 rounded-2xl border transition-all ${
-                issueInvoice
-                  ? 'bg-slate-950 border-cyan-500/40 shadow-lg shadow-cyan-500/5'
-                  : 'bg-slate-950 border-amber-500/30 shadow-lg shadow-amber-500/5'
-              } space-y-3`}>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800/80">
+              <div className="p-4 rounded-xl bg-[#0c0e12] border border-zinc-800/80 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-zinc-800/80">
                   <div>
-                    <h4 className="text-xs font-bold text-slate-200 flex items-center gap-2">
-                      <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <h4 className="text-xs font-bold text-zinc-200 flex items-center gap-2">
+                      <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
-                      <span>Comprobante: {issueInvoice ? 'Factura Computarizada SIAT' : 'Recibo / Nota de Venta (Sin Factura)'}</span>
+                      <span>Documento de Salida: {issueInvoice ? 'Factura Computarizada SIAT' : 'Nota de Venta (Sin Factura)'}</span>
                     </h4>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
                       {issueInvoice
-                        ? 'Se aplicará el precio facturado y se generará la factura electrónica oficial.'
-                        : 'Se aplicará el precio sin factura (con descuento tributario del 13%).'}
+                        ? 'Se aplicará tarifa facturada y se emitirá factura fiscal.'
+                        : 'Se aplicará tarifa sin factura (13% de descuento tributario).'}
                     </p>
                   </div>
 
-                  <label className="flex items-center gap-2.5 cursor-pointer bg-slate-900 border border-slate-700/80 hover:border-slate-600 px-3 py-1.5 rounded-xl self-start sm:self-auto transition-colors">
+                  <label className="flex items-center gap-2.5 cursor-pointer bg-[#12151c] border border-zinc-800 hover:border-zinc-700 px-3 py-1.5 rounded-xl self-start sm:self-auto transition-colors">
                     <input
                       type="checkbox"
                       checked={issueInvoice}
                       onChange={(e) => setIssueInvoice(e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-700 text-cyan-500 bg-slate-950 cursor-pointer accent-cyan-500"
+                      className="w-4 h-4 rounded border-zinc-700 bg-[#0c0e12] cursor-pointer accent-amber-500"
                     />
-                    <span className={`text-xs font-bold select-none ${issueInvoice ? 'text-cyan-400' : 'text-slate-400'}`}>
-                      {issueInvoice ? '✓ Emitir con Factura (13% IVA)' : 'Emitir Factura SIAT (13% IVA)'}
+                    <span className={`text-xs font-bold select-none ${issueInvoice ? 'text-amber-400' : 'text-zinc-400'}`}>
+                      Emitir Factura SIAT (13% IVA)
                     </span>
                   </label>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-400 mb-1">
-                      {issueInvoice ? 'Razón Social / Nombre en Factura:' : 'Nombre del Cliente (Recibo):'}
+                    <label className="block text-[11px] font-bold text-zinc-400 mb-1">
+                      {issueInvoice ? 'Razón Social / Nombre en Factura' : 'Nombre del Cliente (Recibo)'}
                     </label>
                     <input
                       type="text"
                       value={billingName}
                       onChange={(e) => setBillingName(e.target.value)}
                       placeholder="Nombre o Razón Social"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-medium"
+                      className="w-full bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-amber-500 transition-colors font-medium"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-400 mb-1">
-                      {issueInvoice ? 'NIT / CI para Facturación:' : 'C.I. / NIT (Opcional):'}
+                    <label className="block text-[11px] font-bold text-zinc-400 mb-1">
+                      {issueInvoice ? 'NIT / CI para Facturación' : 'C.I. / NIT (Opcional)'}
                     </label>
                     <input
                       type="text"
                       value={billingNit}
                       onChange={(e) => setBillingNit(e.target.value)}
                       placeholder="0 para Sin Factura"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
+                      className="w-full bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-amber-500 transition-colors font-mono tabular-nums"
                     />
                   </div>
                 </div>
-
-                <p className="text-[10px] text-slate-400 leading-tight">
-                  Al confirmar, se descontará automáticamente el inventario físico de los lotes por FIFO, se registrará la venta en el sistema y se generará el documento oficial ({issueInvoice ? 'Factura SIAT' : 'Recibo'}).
-                </p>
               </div>
             )}
 
             {/* Botones de Acción */}
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-zinc-800/80">
               <button
                 type="button"
                 onClick={() => setShowReviewModal(false)}
-                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                className="btn-press px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-xl text-xs transition-colors cursor-pointer"
               >
                 Cerrar
               </button>
@@ -910,19 +906,19 @@ function OnlineOrdersView() {
                   type="button"
                   disabled={actionLoading}
                   onClick={handleConfirmPickup}
-                  className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 hover:from-emerald-400 hover:to-cyan-500 text-white font-black rounded-xl text-xs shadow-lg shadow-emerald-500/25 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                  className="btn-press px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   {actionLoading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Confirmando y descontando inventario...</span>
+                      <span>Confirmando despacho...</span>
                     </>
                   ) : (
                     <>
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
-                      <span>Confirmar {issueInvoice ? 'Factura' : 'Recibo'} (Bs. {activeFinalTotal.toFixed(2)})</span>
+                      <span className="font-mono tabular-nums">Confirmar {issueInvoice ? 'Factura' : 'Entrega'} (Bs. {activeFinalTotal.toFixed(2)})</span>
                     </>
                   )}
                 </button>
@@ -934,29 +930,29 @@ function OnlineOrdersView() {
 
       {/* 6. MODAL DE CANCELACIÓN DE PEDIDO */}
       {showCancelModal && selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
-          <div className="bg-slate-900 border border-rose-500/30 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
-            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="bg-[#12151c] border border-zinc-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative animate-modal-in">
+            <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/25 flex items-center justify-center text-red-400 mx-auto">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
 
             <div className="text-center space-y-1">
-              <h3 className="text-lg font-bold text-white">¿Cancelar Pedido #{selectedOrder.CodigoPedido}?</h3>
-              <p className="text-xs text-slate-400">
-                El pedido será marcado como cancelado. No se descontará stock ni se generará débito fiscal.
+              <h3 className="text-base font-extrabold text-zinc-100">¿Cancelar Pedido #{selectedOrder.CodigoPedido}?</h3>
+              <p className="text-xs text-zinc-400">
+                El pedido quedará anulado sin descontar inventario ni generar débito fiscal.
               </p>
             </div>
 
-            <div className="text-xs space-y-1 text-left">
-              <label className="block font-bold text-slate-300">Motivo de la cancelación:</label>
+            <div className="text-xs space-y-1.5 text-left">
+              <label className="block font-bold text-zinc-300">Motivo de la anulación:</label>
               <textarea
                 rows={3}
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
                 placeholder="Especifique el motivo..."
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-rose-400"
+                className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl p-2.5 text-xs text-zinc-100 focus:outline-none focus:border-red-500 transition-colors"
               />
             </div>
 
@@ -964,7 +960,7 @@ function OnlineOrdersView() {
               <button
                 type="button"
                 onClick={() => setShowCancelModal(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                className="btn-press px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-xl text-xs transition-colors cursor-pointer"
               >
                 Volver
               </button>
@@ -972,78 +968,78 @@ function OnlineOrdersView() {
                 type="button"
                 disabled={actionLoading}
                 onClick={handleCancelOrder}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-rose-600/25 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                className="btn-press px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white font-extrabold rounded-xl text-xs transition-colors disabled:opacity-50 cursor-pointer"
               >
-                {actionLoading ? 'Cancelando...' : 'Confirmar Cancelación'}
+                {actionLoading ? 'Cancelando...' : 'Confirmar Anulación'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 7. MODAL POPUP DE ÉXITO E IMPRESIÓN DE RECIBO / FACTURA (ESTILO POS) */}
+      {/* 7. MODAL POPUP DE ÉXITO E IMPRESIÓN DE RECIBO / FACTURA */}
       {showReceiptModal && lastSaleReceipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto">
           <div
             id="printable-receipt-online"
-            className="bg-white text-slate-900 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl space-y-4 font-sans text-xs max-h-[95vh] overflow-y-auto relative border border-slate-200"
+            className="bg-white text-zinc-900 rounded-2xl max-w-xl w-full p-6 sm:p-8 shadow-2xl space-y-4 font-sans text-xs max-h-[95vh] overflow-y-auto relative border border-zinc-200 animate-modal-in"
           >
             {/* Header / Botón Cerrar */}
-            <div className="flex items-center justify-between no-print border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg font-bold">
+            <div className="flex items-center justify-between no-print border-b border-zinc-200 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-base font-bold">
                   ✓
                 </span>
                 <div>
-                  <h3 className="font-extrabold text-sm text-slate-900">
-                    {lastSaleReceipt.isInvoice ? 'Factura Oficial Generada' : 'Recibo de Venta Oficial'}
+                  <h3 className="font-extrabold text-sm text-zinc-900">
+                    {lastSaleReceipt.isInvoice ? 'Factura Oficial Emitida' : 'Recibo Oficial de Entrega'}
                   </h3>
-                  <p className="text-[11px] text-slate-500">Pedido online {lastSaleReceipt.codigoPedido} procesado correctamente</p>
+                  <p className="text-[11px] text-zinc-500 font-mono tabular-nums">Pedido #{lastSaleReceipt.codigoPedido} despachado</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowReceiptModal(false)}
-                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-600 hover:text-zinc-900 flex items-center justify-center transition-colors"
               >
                 ✕
               </button>
             </div>
 
             {/* 1. Cabecera Empresa */}
-            <div className="text-center space-y-0.5 border-b border-slate-300 pb-3">
-              <h2 className="font-extrabold text-base tracking-wider uppercase text-black">CASA Y CONSTRUCCION</h2>
-              <p className="text-[10px] text-slate-600 font-medium">AV. BEIJING Y AV. TADEO HAENKE, COCHABAMBA, BOLIVIA</p>
-              <p className="text-[10px] text-slate-600 font-medium">NIT: 1028394021 • Teléfono: 78221469</p>
+            <div className="text-center space-y-0.5 border-b border-zinc-300 pb-3">
+              <h2 className="font-extrabold text-base tracking-wider uppercase text-black">CASA Y CONSTRUCCIÓN</h2>
+              <p className="text-[10px] text-zinc-600 font-medium">AV. BEIJING Y AV. TADEO HAENKE, COCHABAMBA, BOLIVIA</p>
+              <p className="text-[10px] text-zinc-600 font-mono tabular-nums font-medium">NIT: 1028394021 • Teléfono: 78221469</p>
               <h3 className="font-bold text-sm text-black pt-1 uppercase">
-                {lastSaleReceipt.isInvoice ? 'Factura Computarizada SIAT (13% IVA)' : 'Recibo / Nota de Venta Oficial'}
+                {lastSaleReceipt.isInvoice ? 'Factura Computarizada SIAT (13% IVA)' : 'Recibo / Nota de Entrega Oficial'}
               </h3>
             </div>
 
             {/* 2. Metadatos: Factura / Recibo No, Cliente, Fecha */}
-            <div className="flex justify-between items-start text-[11px] pb-2 border-b border-slate-300 text-slate-800">
+            <div className="flex justify-between items-start text-[11px] pb-2 border-b border-zinc-300 text-zinc-800">
               <div className="space-y-0.5">
                 <p className="font-bold text-black text-xs">
-                  {lastSaleReceipt.isInvoice ? 'Factura Nro.:' : 'Recibo Nro.:'} <span className="font-mono font-bold">{lastSaleReceipt.id}</span>
+                  {lastSaleReceipt.isInvoice ? 'Factura Nro.:' : 'Recibo Nro.:'} <span className="font-mono tabular-nums font-bold">{lastSaleReceipt.id}</span>
                 </p>
                 <p>
-                  <span className="font-semibold">Pedido Ref.:</span> <span className="font-mono text-cyan-800 font-bold">{lastSaleReceipt.codigoPedido}</span>
+                  <span className="font-semibold">Pedido Ref.:</span> <span className="font-mono tabular-nums text-zinc-900 font-bold">#{lastSaleReceipt.codigoPedido}</span>
                 </p>
                 <p>
                   <span className="font-semibold">Cliente:</span> {lastSaleReceipt.cliente || 'CLIENTE GENERAL'}
                   {lastSaleReceipt.nit && lastSaleReceipt.nit !== '0' ? ` (NIT/CI: ${lastSaleReceipt.nit})` : ''}
                 </p>
               </div>
-              <div className="text-right font-mono text-[11px]">
+              <div className="text-right font-mono tabular-nums text-[11px]">
                 <p><span className="font-semibold">Fecha:</span> {lastSaleReceipt.time}</p>
-                <p className="text-slate-500 text-[10px]">Cajero: {lastSaleReceipt.empleado}</p>
+                <p className="text-zinc-500 text-[10px] font-sans">Operador: {lastSaleReceipt.empleado}</p>
                 {lastSaleReceipt.isInvoice ? (
-                  <span className="inline-block mt-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold rounded-full">
+                  <span className="inline-block mt-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-sans font-bold rounded">
                     Factura Electrónica SIAT
                   </span>
                 ) : (
-                  <span className="inline-block mt-1 px-2 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-bold rounded-full">
-                    Venta Sin Factura (Recibo)
+                  <span className="inline-block mt-1 px-2 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-sans font-bold rounded">
+                    Nota de Venta (Sin Factura)
                   </span>
                 )}
               </div>
@@ -1052,24 +1048,24 @@ function OnlineOrdersView() {
             {/* 3. Tabla de Productos */}
             <table className="w-full text-left text-[11px] border-collapse my-2">
               <thead>
-                <tr className="border-t border-b border-slate-900 font-bold text-black text-[11px]">
+                <tr className="border-t border-b border-zinc-900 font-bold text-black text-[11px]">
                   <th className="py-1.5 text-left">Producto</th>
                   <th className="py-1.5 text-center w-24">Cantidad</th>
                   <th className="py-1.5 text-right w-24">P. Unit.</th>
                   <th className="py-1.5 text-right w-24">Subtotal</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-zinc-200">
                 {(lastSaleReceipt.items || []).map((it, idx) => (
-                  <tr key={idx} className="text-slate-800">
+                  <tr key={idx} className="text-zinc-800">
                     <td className="py-1.5 pr-2 uppercase font-medium">{it.name || it.producto}</td>
-                    <td className="py-1.5 text-center font-mono">
+                    <td className="py-1.5 text-center font-mono tabular-nums">
                       {it.quantity} {it.unit || 'PZA'}
                     </td>
-                    <td className="py-1.5 text-right font-mono">
+                    <td className="py-1.5 text-right font-mono tabular-nums">
                       Bs. {parseFloat(it.price || 0).toFixed(2)}
                     </td>
-                    <td className="py-1.5 text-right font-mono font-semibold text-black">
+                    <td className="py-1.5 text-right font-mono tabular-nums font-semibold text-black">
                       Bs. {parseFloat(it.subtotal || 0).toFixed(2)}
                     </td>
                   </tr>
@@ -1078,49 +1074,49 @@ function OnlineOrdersView() {
             </table>
 
             {/* 4. Resumen de Pagos y Totales */}
-            <div className="border-t border-slate-400 pt-2 grid grid-cols-2 gap-4 text-[11px]">
+            <div className="border-t border-zinc-400 pt-2 grid grid-cols-2 gap-4 text-[11px]">
               {/* Izquierda: Pagos */}
               <div className="space-y-1">
-                <div className="flex justify-between text-slate-700">
-                  <span>{lastSaleReceipt.paymentMethod || 'QR Simple Yape'}</span>
-                  <span className="font-mono font-semibold">Bs. {lastSaleReceipt.total.toFixed(2)}</span>
+                <div className="flex justify-between text-zinc-700">
+                  <span>{lastSaleReceipt.paymentMethod || 'QR Simple'}</span>
+                  <span className="font-mono tabular-nums font-semibold">Bs. {lastSaleReceipt.total.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between font-bold text-black border-t border-slate-300 pt-1">
+                <div className="flex justify-between font-bold text-black border-t border-zinc-300 pt-1">
                   <span>Total Liquidado</span>
-                  <span className="font-mono text-xs">Bs. {lastSaleReceipt.total.toFixed(2)}</span>
+                  <span className="font-mono tabular-nums text-xs">Bs. {lastSaleReceipt.total.toFixed(2)}</span>
                 </div>
                 {lastSaleReceipt.isInvoice && (
-                  <div className="text-[10px] text-slate-500 pt-1">
-                    Base Crédito Fiscal IVA (13%): <strong className="text-slate-800">Bs. {lastSaleReceipt.total.toFixed(2)}</strong>
+                  <div className="text-[10px] text-zinc-500 pt-1">
+                    Base Crédito Fiscal IVA (13%): <strong className="text-zinc-800 font-mono tabular-nums">Bs. {lastSaleReceipt.total.toFixed(2)}</strong>
                   </div>
                 )}
               </div>
 
               {/* Derecha: Subtotal y Total */}
               <div className="space-y-1 text-right">
-                <div className="flex justify-between text-slate-700">
+                <div className="flex justify-between text-zinc-700">
                   <span className="font-semibold">Subtotal:</span>
-                  <span className="font-mono">Bs. {lastSaleReceipt.subtotal.toFixed(2)}</span>
+                  <span className="font-mono tabular-nums">Bs. {lastSaleReceipt.subtotal.toFixed(2)}</span>
                 </div>
                 {lastSaleReceipt.discount > 0 && (
-                  <div className="flex justify-between text-rose-600 font-semibold">
+                  <div className="flex justify-between text-red-600 font-semibold">
                     <span>Descuento Lealtad:</span>
-                    <span className="font-mono">-Bs. {lastSaleReceipt.discount.toFixed(2)}</span>
+                    <span className="font-mono tabular-nums">-Bs. {lastSaleReceipt.discount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-black text-black border-t border-black pt-1 text-xs">
                   <span>Total a Pagar:</span>
-                  <span className="font-mono font-black text-emerald-700 text-sm">Bs. {lastSaleReceipt.total.toFixed(2)}</span>
+                  <span className="font-mono tabular-nums font-black text-emerald-700 text-sm">Bs. {lastSaleReceipt.total.toFixed(2)}</span>
                 </div>
               </div>
             </div>
 
             {/* Botones de Acción en Pantalla (ocultos al imprimir) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-4 no-print border-t border-slate-200">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-4 no-print border-t border-zinc-200">
               <button
                 type="button"
                 onClick={() => setShowReceiptModal(false)}
-                className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors text-center"
+                className="btn-press py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded-xl text-xs transition-colors text-center"
               >
                 Cerrar
               </button>
@@ -1128,20 +1124,20 @@ function OnlineOrdersView() {
               <button
                 type="button"
                 onClick={() => handleDownloadReceiptPdf(lastSaleReceipt.isInvoice)}
-                className="py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all"
+                className="btn-press py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                <span>{lastSaleReceipt.isInvoice ? 'Descargar Factura (PDF)' : 'Descargar Recibo (PDF)'}</span>
+                <span>{lastSaleReceipt.isInvoice ? 'Descargar PDF' : 'Recibo PDF'}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="py-2.5 px-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-cyan-600/20 transition-all"
+                className="btn-press py-2.5 px-4 bg-zinc-900 hover:bg-zinc-800 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
                 <span>{lastSaleReceipt.isInvoice ? 'Imprimir Factura' : 'Imprimir Recibo'}</span>
@@ -1178,15 +1174,15 @@ function OnlineOrdersView() {
 
       {/* Toast Notification */}
       {toast.show && (
-        <div className="fixed bottom-6 right-6 z-50 animate-bounce">
-          <div className={`px-4 py-3 rounded-2xl shadow-2xl text-xs font-bold border flex items-center gap-2.5 ${
+        <div className="fixed bottom-6 right-6 z-50 animate-toast-in">
+          <div className={`px-4 py-3 rounded-xl shadow-2xl text-xs font-bold border flex items-center gap-2.5 ${
             toast.type === 'success'
-              ? 'bg-emerald-950 border-emerald-500/50 text-emerald-200'
+              ? 'bg-[#12151c] border-emerald-500/40 text-emerald-400'
               : toast.type === 'error'
-              ? 'bg-rose-950 border-rose-500/50 text-rose-200'
-              : 'bg-cyan-950 border-cyan-500/50 text-cyan-200'
+              ? 'bg-[#12151c] border-red-500/40 text-red-400'
+              : 'bg-[#12151c] border-amber-500/40 text-amber-300'
           }`}>
-            <span>{toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️'}</span>
+            <span className={`w-2 h-2 rounded-full ${toast.type === 'success' ? 'bg-emerald-400' : toast.type === 'error' ? 'bg-red-400' : 'bg-amber-400'}`}></span>
             <span>{toast.message}</span>
           </div>
         </div>

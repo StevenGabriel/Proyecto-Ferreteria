@@ -180,22 +180,28 @@ function InvoiceListView() {
   }, [invoices, currentPage, itemsPerPage]);
 
   return (
-    <div className="flex h-screen bg-slate-950 font-sans text-slate-100 overflow-hidden">
+    <div className="flex h-screen bg-[#0c0e12] font-sans text-zinc-100 overflow-hidden">
       {/* Toast Notificación */}
       {toast.show && (
         <div
-          className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-2xl text-xs font-bold border transition-all duration-300 animate-slide-in-right flex items-center gap-2 ${
+          className={`fixed bottom-6 right-6 z-50 px-4 py-3.5 rounded-xl shadow-2xl text-xs font-bold border bg-[#12151c] animate-toast-in flex items-center gap-2.5 ${
             toast.type === 'success'
-              ? 'bg-emerald-950/95 text-emerald-300 border-emerald-500/50 shadow-emerald-950/50'
+              ? 'text-emerald-200 border-emerald-500/30'
               : toast.type === 'error'
-              ? 'bg-rose-950/95 text-rose-300 border-rose-500/50 shadow-rose-950/50'
-              : 'bg-cyan-950/95 text-cyan-300 border-cyan-500/50 shadow-cyan-950/50'
+              ? 'text-red-200 border-red-500/30'
+              : 'text-amber-200 border-amber-500/30'
           }`}
         >
-          <span>
-            {toast.type === 'success' ? '✓' : toast.type === 'error' ? '✕' : 'ℹ'}
-          </span>
-          <span>{toast.message}</span>
+          <span
+            className={`w-2 h-2 rounded-full shrink-0 ${
+              toast.type === 'success'
+                ? 'bg-emerald-400'
+                : toast.type === 'error'
+                ? 'bg-red-400'
+                : 'bg-amber-400'
+            }`}
+          />
+          <span className="text-zinc-100">{toast.message}</span>
         </div>
       )}
 
@@ -203,24 +209,24 @@ function InvoiceListView() {
       <Sidebar />
 
       {/* Contenido Principal */}
-      <div className={`flex-1 flex flex-col min-w-0 overflow-y-auto transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
+      <div className={`flex-1 flex flex-col min-w-0 overflow-y-auto transition-[margin-left] duration-220 ease-out-expo ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
         <Topbar />
 
         <div className="p-4 sm:p-6 md:p-8 max-w-[1920px] w-full mx-auto space-y-6 flex-1">
           {/* 1. Cabecera Principal */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800/80 pb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-zinc-800/80 pb-4">
             <div>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-100" style={{ textWrap: 'balance' }}>
                     Listado de Facturas
                   </h1>
-                  <p className="text-xs text-slate-400 font-medium">
+                  <p className="text-xs text-zinc-400 font-medium">
                     Consulta, reimpresión en hoja carta u 80mm térmico y anulación de comprobantes
                   </p>
                 </div>
@@ -229,58 +235,58 @@ function InvoiceListView() {
 
             {/* Estadísticas Rápidas */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <div className="px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Emitidas</span>
-                <span className="text-emerald-400 font-black font-mono text-sm">{countEmitidas}</span>
+              <div className="px-3.5 py-2 rounded-xl bg-[#12151c] border border-zinc-800/80 text-xs">
+                <span className="text-zinc-400 block text-[10px] uppercase font-bold tracking-wider">Emitidas</span>
+                <span className="text-emerald-400 font-extrabold font-mono tabular-nums text-sm">{countEmitidas}</span>
               </div>
-              <div className="px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Anuladas</span>
-                <span className="text-rose-400 font-black font-mono text-sm">{countAnuladas}</span>
+              <div className="px-3.5 py-2 rounded-xl bg-[#12151c] border border-zinc-800/80 text-xs">
+                <span className="text-zinc-400 block text-[10px] uppercase font-bold tracking-wider">Anuladas</span>
+                <span className="text-red-400 font-extrabold font-mono tabular-nums text-sm">{countAnuladas}</span>
               </div>
-              <div className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-950/80 to-cyan-950/80 border border-cyan-500/40 text-xs">
-                <span className="text-cyan-300 block text-[10px] uppercase font-bold">Total Facturado</span>
-                <span className="text-white font-black font-mono text-sm">Bs. {totalFacturado.toFixed(2)}</span>
+              <div className="px-3.5 py-2 rounded-xl bg-[#12151c] border border-amber-500/30 text-xs">
+                <span className="text-amber-400 block text-[10px] uppercase font-bold tracking-wider">Total Facturado</span>
+                <span className="text-zinc-100 font-extrabold font-mono tabular-nums text-sm">Bs. {totalFacturado.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
           {/* 2. Barra de Filtros y Búsqueda */}
-          <form onSubmit={handleSearchSubmit} className="p-4 bg-slate-900/90 rounded-2xl border border-slate-800/80 space-y-3 shadow-xl backdrop-blur-sm">
+          <form onSubmit={handleSearchSubmit} className="p-4 bg-[#12151c] rounded-2xl border border-zinc-800/80 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {/* Fecha Inicio */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">Fecha Inicio:</label>
+                <label className="block text-[11px] font-bold text-zinc-300 mb-1">Fecha Inicio:</label>
                 <input
                   type="date"
                   value={fechaInicio}
                   onChange={(e) => setFechaInicio(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-400 transition-all font-mono"
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors font-mono tabular-nums"
                 />
               </div>
 
               {/* Fecha Fin */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">Fecha Fin:</label>
+                <label className="block text-[11px] font-bold text-zinc-300 mb-1">Fecha Fin:</label>
                 <input
                   type="date"
                   value={fechaFin}
                   onChange={(e) => setFechaFin(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-400 transition-all font-mono"
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors font-mono tabular-nums"
                 />
               </div>
 
               {/* Buscador */}
               <div className="lg:col-span-2">
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">Búsqueda rápida:</label>
+                <label className="block text-[11px] font-bold text-zinc-300 mb-1">Búsqueda rápida:</label>
                 <div className="relative">
                   <input
                     type="text"
                     placeholder="Número de factura, Cliente, NIT/CI, CUF..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400 transition-all font-medium"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500/60 transition-colors font-medium"
                   />
-                  <svg className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
@@ -288,11 +294,11 @@ function InvoiceListView() {
 
               {/* Estado */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">Estado:</label>
+                <label className="block text-[11px] font-bold text-zinc-300 mb-1">Estado:</label>
                 <select
                   value={filterEstado}
                   onChange={(e) => setFilterEstado(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-400 transition-all font-semibold"
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors font-semibold cursor-pointer"
                 >
                   <option value="ALL">Todos los estados</option>
                   <option value="EMITIDA">Emitidas</option>
@@ -302,16 +308,16 @@ function InvoiceListView() {
             </div>
 
             {/* Botones de Filtro */}
-            <div className="flex justify-between items-center pt-2 border-t border-slate-800/60">
-              <span className="text-xs text-slate-400 font-medium">
-                Mostrando <strong className="text-white">{invoices.length}</strong> facturas encontradas
+            <div className="flex justify-between items-center pt-2 border-t border-zinc-800/80">
+              <span className="text-xs text-zinc-400 font-medium">
+                Mostrando <strong className="text-zinc-100 font-mono tabular-nums">{invoices.length}</strong> facturas encontradas
               </span>
 
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={handleResetFilters}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 rounded-xl text-xs font-bold transition-colors duration-150 btn-press flex items-center gap-1.5 cursor-pointer"
                   title="Restablecer filtros"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -322,9 +328,9 @@ function InvoiceListView() {
 
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold shadow-md shadow-cyan-600/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-xl text-xs font-bold shadow-sm transition-colors duration-150 btn-press flex items-center gap-1.5 cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   <span>Buscar</span>
@@ -336,17 +342,19 @@ function InvoiceListView() {
           {/* 3. Listado de Facturas (Cards en Formato Exacto) */}
           <div className="space-y-3">
             {loading ? (
-              <div className="p-16 text-center text-slate-400 space-y-3 bg-slate-900/40 rounded-2xl border border-slate-800">
-                <div className="w-10 h-10 border-3 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p className="text-sm font-bold text-slate-200">Cargando listado de facturas...</p>
+              <div className="p-16 text-center text-zinc-400 space-y-3 bg-[#12151c] rounded-2xl border border-zinc-800/80">
+                <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-sm font-bold text-zinc-200">Cargando listado de facturas...</p>
               </div>
             ) : currentInvoices.length === 0 ? (
-              <div className="p-16 text-center text-slate-400 space-y-2 bg-slate-900/40 rounded-2xl border border-slate-800">
-                <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-xl text-slate-500">
-                  📄
+              <div className="p-16 text-center text-zinc-400 space-y-2 bg-[#12151c] rounded-2xl border border-zinc-800/80">
+                <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-500">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
                 </div>
-                <p className="text-base font-bold text-slate-300">No se encontraron facturas</p>
-                <p className="text-xs text-slate-500">Intente modificar los filtros de fecha o búsqueda</p>
+                <p className="text-base font-bold text-zinc-200">No se encontraron facturas</p>
+                <p className="text-xs text-zinc-500">Intente modificar los filtros de fecha o búsqueda</p>
               </div>
             ) : (
               currentInvoices.map((inv) => {
@@ -355,10 +363,10 @@ function InvoiceListView() {
                 return (
                   <div
                     key={inv.id || inv.ventaID}
-                    className={`p-4 rounded-2xl border transition-all duration-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
+                    className={`p-4 rounded-2xl border transition-colors duration-150 flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
                       isVoided
-                        ? 'bg-slate-950/60 border-rose-900/30 opacity-75'
-                        : 'bg-slate-900/70 hover:bg-slate-900 border-slate-800/90 shadow-lg'
+                        ? 'bg-[#0c0e12]/70 border-red-900/30 opacity-75'
+                        : 'bg-[#12151c] hover:border-zinc-700 border-zinc-800/80'
                     }`}
                   >
                     {/* Bloque Izquierdo: Metadatos de la Factura */}
@@ -368,17 +376,20 @@ function InvoiceListView() {
                         <button
                           type="button"
                           onClick={() => handleViewDetails(inv)}
-                          className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer transition-colors"
+                          className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1.5 cursor-pointer transition-colors"
                         >
-                          <span>👁️</span>
-                          <span className="underline">Ver Detalle</span>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          <span className="underline underline-offset-2">Ver Detalle</span>
                         </button>
 
-                        <span className="text-slate-500 font-mono text-xs">
-                          ID: <strong className="text-slate-300">{inv.facturaID || inv.ventaID}</strong>
+                        <span className="text-zinc-500 font-mono tabular-nums text-xs">
+                          ID: <strong className="text-zinc-300">{inv.facturaID || inv.ventaID}</strong>
                         </span>
 
-                        <span className="px-2.5 py-0.5 rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 text-xs font-extrabold font-mono tracking-wide">
+                        <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/25 text-xs font-extrabold font-mono tabular-nums tracking-wide">
                           Factura Nro: {inv.numeroFactura}
                         </span>
 
@@ -386,8 +397,8 @@ function InvoiceListView() {
                         <span
                           className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${
                             isVoided
-                              ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                              ? 'bg-red-500/10 text-red-400 border-red-500/25'
+                              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
                           }`}
                         >
                           {inv.estado}
@@ -395,70 +406,72 @@ function InvoiceListView() {
                       </div>
 
                       {/* Fila 2: Cliente y Sucursal */}
-                      <div className="text-xs text-slate-300 flex items-center gap-2 flex-wrap">
+                      <div className="text-xs text-zinc-300 flex items-center gap-2 flex-wrap">
                         <div>
-                          <span className="text-slate-500 font-semibold">Cliente: </span>
-                          <strong className="text-white uppercase">{inv.cliente || 'CLIENTE GENERAL'}</strong>
+                          <span className="text-zinc-500 font-semibold">Cliente: </span>
+                          <strong className="text-zinc-100 uppercase">{inv.cliente || 'CLIENTE GENERAL'}</strong>
                           {inv.nit && inv.nit !== '0' && (
-                            <span className="font-mono text-slate-400 ml-1">(NIT/CI: {inv.nit})</span>
+                            <span className="font-mono tabular-nums text-zinc-400 ml-1">(NIT/CI: {inv.nit})</span>
                           )}
                         </div>
-                        <span className="text-slate-600">•</span>
-                        <div className="text-[11px] text-slate-400 font-medium">
-                          Sucursal: <strong className="text-slate-300">{inv.sucursal || '0'}</strong> | Punto Venta: <strong className="text-slate-300">{inv.puntoVenta || '0'}</strong>
+                        <span className="text-zinc-700">•</span>
+                        <div className="text-[11px] text-zinc-400 font-medium font-mono tabular-nums">
+                          Sucursal: <strong className="text-zinc-300">{inv.sucursal || '0'}</strong> | Punto Venta: <strong className="text-zinc-300">{inv.puntoVenta || '0'}</strong>
                         </div>
                       </div>
 
                       {/* Fila 3: Fecha de Emisión */}
-                      <div className="text-[11px] text-slate-400 font-mono">
+                      <div className="text-[11px] text-zinc-400 font-mono tabular-nums">
                         <span>Fecha emisión: </span>
-                        <span className="text-slate-200 font-semibold">{inv.fechaEmision}</span>
+                        <span className="text-zinc-200 font-semibold">{inv.fechaEmision}</span>
                         {inv.empleado && (
-                          <span className="text-slate-500 ml-2">• Emitido por: {inv.empleado}</span>
+                          <span className="text-zinc-500 ml-2 font-sans">• Emitido por: {inv.empleado}</span>
                         )}
                       </div>
 
                       {/* Fila 4: CUF (Código de Autorización) */}
-                      <div className="text-[10px] text-slate-400 flex items-center gap-1.5 flex-wrap">
-                        <span className="font-bold text-slate-500">CUF:</span>
-                        <span className="font-mono text-slate-300 truncate max-w-xs sm:max-w-md md:max-w-lg select-all bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
+                      <div className="text-[10px] text-zinc-400 flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-zinc-500">CUF:</span>
+                        <span className="font-mono tabular-nums text-zinc-300 truncate max-w-xs sm:max-w-md md:max-w-lg select-all bg-[#0c0e12] px-1.5 py-0.5 rounded border border-zinc-800">
                           {inv.cuf}
                         </span>
                         <button
                           type="button"
                           onClick={() => handleCopyCUF(inv.cuf)}
-                          className="text-slate-500 hover:text-cyan-400 p-0.5 transition-colors cursor-pointer"
+                          className="text-zinc-500 hover:text-amber-400 p-1 rounded hover:bg-zinc-800/60 transition-colors cursor-pointer"
                           title="Copiar CUF"
                         >
-                          📋
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
                         </button>
                       </div>
                     </div>
 
                     {/* Bloque Central: Sector, Impuesto (13%) y Total */}
-                    <div className="lg:w-48 text-left lg:text-right border-t lg:border-t-0 lg:border-l border-slate-800/80 pt-3 lg:pt-0 lg:pl-4 space-y-0.5 flex-shrink-0">
-                      <div className="text-[11px] text-slate-400 font-medium">
-                        Sector: <strong className="text-slate-300">{inv.sector || 1}</strong>
+                    <div className="lg:w-48 text-left lg:text-right border-t lg:border-t-0 lg:border-l border-zinc-800/80 pt-3 lg:pt-0 lg:pl-4 space-y-0.5 flex-shrink-0">
+                      <div className="text-[11px] text-zinc-400 font-medium font-mono tabular-nums">
+                        Sector: <strong className="text-zinc-300">{inv.sector || 1}</strong>
                       </div>
-                      <div className="text-[11px] text-slate-400 font-mono">
-                        Impuesto (13%): <strong className="text-slate-300">Bs. {inv.impuesto.toFixed(2)}</strong>
+                      <div className="text-[11px] text-zinc-400 font-mono tabular-nums">
+                        Impuesto (13%): <strong className="text-zinc-300">Bs. {inv.impuesto.toFixed(2)}</strong>
                       </div>
-                      <div className="text-base font-black text-white font-mono pt-0.5">
-                        <span className="text-xs text-slate-400 mr-1 font-normal">Total:</span>
-                        <span className="text-cyan-400">Bs. {inv.total.toFixed(2)}</span>
+                      <div className="text-base font-black text-zinc-100 font-mono tabular-nums pt-0.5">
+                        <span className="text-xs text-zinc-400 mr-1 font-normal font-sans">Total:</span>
+                        <span className="text-amber-400">Bs. {inv.total.toFixed(2)}</span>
                       </div>
                     </div>
 
                     {/* Bloque Derecho: Botones de Acción (Estrictamente los 3 solicitados) */}
-                    <div className="flex flex-row lg:flex-col gap-2 flex-shrink-0 w-full lg:w-44 border-t lg:border-t-0 border-slate-800/80 pt-3 lg:pt-0">
+                    <div className="flex flex-row lg:flex-col gap-2 flex-shrink-0 w-full lg:w-44 border-t lg:border-t-0 border-zinc-800/80 pt-3 lg:pt-0">
                       {/* 1. Imprimir Hoja Carta (PDF Oficial) */}
                       <button
                         type="button"
                         onClick={() => handlePrintLetter(inv)}
-                        className="flex-1 lg:w-full py-2 px-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+                        className="flex-1 lg:w-full py-2 px-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-100 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 btn-press cursor-pointer"
                         title="Imprimir o guardar en hoja carta / oficio PDF con formato oficial"
                       >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
                         <span>Imprimir</span>
@@ -468,7 +481,7 @@ function InvoiceListView() {
                       <button
                         type="button"
                         onClick={() => handlePrintTicket(inv)}
-                        className="flex-1 lg:w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+                        className="flex-1 lg:w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 btn-press cursor-pointer"
                         title="Imprimir ticket para máquina de impresión por rollo térmico"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -479,14 +492,14 @@ function InvoiceListView() {
 
                       {/* 3. Anular */}
                       {isVoided ? (
-                        <div className="flex-1 lg:w-full py-2 px-3 bg-slate-800 text-rose-400/80 font-bold rounded-xl text-xs flex items-center justify-center gap-1 border border-rose-500/20 cursor-not-allowed">
+                        <div className="flex-1 lg:w-full py-2 px-3 bg-zinc-900 text-red-400/80 font-bold rounded-xl text-xs flex items-center justify-center gap-1 border border-red-500/20 cursor-not-allowed">
                           <span>✕ Anulada</span>
                         </div>
                       ) : (
                         <button
                           type="button"
                           onClick={() => handleOpenVoidModal(inv)}
-                          className="flex-1 lg:w-full py-2 px-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-rose-600/20 transition-all cursor-pointer"
+                          className="flex-1 lg:w-full py-2 px-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 btn-press cursor-pointer"
                           title="Anular esta factura y restituir inventario"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -509,7 +522,7 @@ function InvoiceListView() {
                 type="button"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 disabled:opacity-40 hover:border-cyan-500 cursor-pointer disabled:cursor-not-allowed"
+                className="px-3 py-1.5 rounded-lg bg-[#12151c] border border-zinc-800 text-xs font-bold text-zinc-300 disabled:opacity-40 hover:border-amber-500/50 transition-colors duration-150 btn-press cursor-pointer disabled:cursor-not-allowed"
               >
                 ‹ Anterior
               </button>
@@ -519,10 +532,10 @@ function InvoiceListView() {
                   key={page}
                   type="button"
                   onClick={() => setCurrentPage(page)}
-                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  className={`w-8 h-8 rounded-lg text-xs font-mono tabular-nums font-bold transition-colors duration-150 btn-press cursor-pointer ${
                     currentPage === page
-                      ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/30'
-                      : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+                      ? 'bg-amber-500 text-zinc-950'
+                      : 'bg-[#12151c] text-zinc-400 border border-zinc-800 hover:text-zinc-100'
                   }`}
                 >
                   {page}
@@ -533,7 +546,7 @@ function InvoiceListView() {
                 type="button"
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 disabled:opacity-40 hover:border-cyan-500 cursor-pointer disabled:cursor-not-allowed"
+                className="px-3 py-1.5 rounded-lg bg-[#12151c] border border-zinc-800 text-xs font-bold text-zinc-300 disabled:opacity-40 hover:border-amber-500/50 transition-colors duration-150 btn-press cursor-pointer disabled:cursor-not-allowed"
               >
                 Siguiente ›
               </button>
@@ -546,24 +559,24 @@ function InvoiceListView() {
       {/* MODAL: VER DETALLES DE LA FACTURA                                         */}
       {/* ========================================================================= */}
       {showDetailModal && selectedInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto animate-modal-in">
             {/* Cabecera Modal */}
-            <div className="flex justify-between items-start border-b border-slate-800 pb-3">
+            <div className="flex justify-between items-start border-b border-zinc-800/80 pb-3">
               <div>
-                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                <h3 className="text-lg font-extrabold text-zinc-100 flex items-center gap-2 font-mono tabular-nums">
                   <span>Factura No. {selectedInvoice.numeroFactura}</span>
                   <span
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-sans font-extrabold uppercase ${
                       selectedInvoice.estado === 'Anulada'
-                        ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
-                        : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                        ? 'bg-red-500/15 text-red-400 border border-red-500/30'
+                        : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                     }`}
                   >
                     {selectedInvoice.estado}
                   </span>
                 </h3>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                <p className="text-xs text-zinc-400 font-mono tabular-nums mt-0.5">
                   ID: {selectedInvoice.facturaID} • Fecha: {selectedInvoice.fechaEmision}
                 </p>
               </div>
@@ -571,62 +584,62 @@ function InvoiceListView() {
               <button
                 type="button"
                 onClick={() => setShowDetailModal(false)}
-                className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-100 flex items-center justify-center transition-colors cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             {/* Metadatos Cliente */}
-            <div className="grid grid-cols-2 gap-3 p-3 bg-slate-950/60 rounded-xl border border-slate-800 text-xs">
+            <div className="grid grid-cols-2 gap-3 p-3.5 bg-[#0c0e12] rounded-xl border border-zinc-800/80 text-xs">
               <div>
-                <span className="text-slate-500 block font-semibold">Razón Social / Cliente:</span>
-                <span className="font-bold text-white uppercase">{selectedInvoice.cliente}</span>
+                <span className="text-zinc-500 block font-semibold">Razón Social / Cliente:</span>
+                <span className="font-bold text-zinc-100 uppercase">{selectedInvoice.cliente}</span>
               </div>
               <div>
-                <span className="text-slate-500 block font-semibold">NIT / Documento:</span>
-                <span className="font-mono font-bold text-cyan-400">{selectedInvoice.nit || '0'}</span>
+                <span className="text-zinc-500 block font-semibold">NIT / Documento:</span>
+                <span className="font-mono tabular-nums font-bold text-amber-400">{selectedInvoice.nit || '0'}</span>
               </div>
               <div>
-                <span className="text-slate-500 block font-semibold">Emisor:</span>
-                <span className="text-slate-300 font-medium">Casa Matriz (Cochabamba)</span>
+                <span className="text-zinc-500 block font-semibold">Emisor:</span>
+                <span className="text-zinc-300 font-medium">Casa Matriz (Cochabamba)</span>
               </div>
               <div>
-                <span className="text-slate-500 block font-semibold">Atendido por:</span>
-                <span className="text-slate-300 font-medium">{selectedInvoice.empleado}</span>
+                <span className="text-zinc-500 block font-semibold">Atendido por:</span>
+                <span className="text-zinc-300 font-medium">{selectedInvoice.empleado}</span>
               </div>
             </div>
 
             {/* Tabla de Productos */}
             <div>
-              <h4 className="text-xs font-bold text-slate-300 mb-2 uppercase tracking-wide">
-                Detalle de Productos Facturados ({selectedInvoice.itemsCount})
+              <h4 className="text-xs font-bold text-zinc-300 mb-2 uppercase tracking-wide">
+                Detalle de Productos Facturados (<span className="font-mono tabular-nums">{selectedInvoice.itemsCount}</span>)
               </h4>
-              <div className="border border-slate-800 rounded-xl overflow-hidden">
+              <div className="border border-zinc-800/80 rounded-xl overflow-hidden">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-950 text-slate-400 border-b border-slate-800 font-extrabold uppercase text-[10px]">
-                      <th className="py-2 px-3">Código</th>
-                      <th className="py-2 px-3">Descripción</th>
-                      <th className="py-2 px-3 text-center">Cant.</th>
-                      <th className="py-2 px-3 text-right">P. Unit</th>
-                      <th className="py-2 px-3 text-right">Subtotal</th>
+                    <tr className="bg-[#0c0e12] text-zinc-400 border-b border-zinc-800/80 font-extrabold uppercase text-[10px]">
+                      <th className="py-2.5 px-3">Código</th>
+                      <th className="py-2.5 px-3">Descripción</th>
+                      <th className="py-2.5 px-3 text-center">Cant.</th>
+                      <th className="py-2.5 px-3 text-right">P. Unit</th>
+                      <th className="py-2.5 px-3 text-right">Subtotal</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 font-medium">
+                  <tbody className="divide-y divide-zinc-800/60 font-medium">
                     {selectedInvoice.detalles && selectedInvoice.detalles.length > 0 ? (
                       selectedInvoice.detalles.map((dt, i) => (
-                        <tr key={i} className="hover:bg-slate-800/30 text-slate-200">
-                          <td className="py-2 px-3 font-mono text-cyan-400 text-[11px]">{dt.codigo}</td>
+                        <tr key={i} className="hover:bg-zinc-900/50 text-zinc-200 transition-colors">
+                          <td className="py-2 px-3 font-mono tabular-nums text-amber-400 text-[11px]">{dt.codigo}</td>
                           <td className="py-2 px-3 font-semibold uppercase">{dt.nombre}</td>
-                          <td className="py-2 px-3 text-center font-mono">{dt.cantidad.toFixed(2)}</td>
-                          <td className="py-2 px-3 text-right font-mono">Bs. {dt.precioUnitario.toFixed(2)}</td>
-                          <td className="py-2 px-3 text-right font-mono font-bold text-white">Bs. {dt.subtotal.toFixed(2)}</td>
+                          <td className="py-2 px-3 text-center font-mono tabular-nums">{dt.cantidad.toFixed(2)}</td>
+                          <td className="py-2 px-3 text-right font-mono tabular-nums">Bs. {dt.precioUnitario.toFixed(2)}</td>
+                          <td className="py-2 px-3 text-right font-mono tabular-nums font-bold text-zinc-100">Bs. {dt.subtotal.toFixed(2)}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="5" className="py-4 text-center text-slate-500 text-xs">
+                        <td colSpan="5" className="py-4 text-center text-zinc-500 text-xs">
                           Venta registrada como monto directo
                         </td>
                       </tr>
@@ -637,37 +650,37 @@ function InvoiceListView() {
             </div>
 
             {/* Resumen de Importes */}
-            <div className="flex justify-between items-center p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs font-mono">
-              <div className="space-y-0.5 text-slate-400">
-                <div>Base Crédito Fiscal: <strong className="text-white">Bs. {selectedInvoice.total.toFixed(2)}</strong></div>
-                <div>Impuesto IVA (13%): <strong className="text-cyan-400">Bs. {selectedInvoice.impuesto.toFixed(2)}</strong></div>
+            <div className="flex justify-between items-center p-3.5 bg-[#0c0e12] rounded-xl border border-zinc-800/80 text-xs font-mono tabular-nums">
+              <div className="space-y-0.5 text-zinc-400">
+                <div>Base Crédito Fiscal: <strong className="text-zinc-100">Bs. {selectedInvoice.total.toFixed(2)}</strong></div>
+                <div>Impuesto IVA (13%): <strong className="text-amber-400">Bs. {selectedInvoice.impuesto.toFixed(2)}</strong></div>
               </div>
               <div className="text-right">
-                <span className="text-xs text-slate-400 block uppercase font-sans font-bold">Total Facturado</span>
-                <span className="text-xl font-black text-white">Bs. {selectedInvoice.total.toFixed(2)}</span>
+                <span className="text-[10px] text-zinc-400 block uppercase font-sans font-bold tracking-wider">Total Facturado</span>
+                <span className="text-xl font-black text-zinc-100">Bs. {selectedInvoice.total.toFixed(2)}</span>
               </div>
             </div>
 
             {/* Botones del Modal */}
-            <div className="flex gap-2 pt-2 border-t border-slate-800">
+            <div className="flex gap-2 pt-2 border-t border-zinc-800/80">
               <button
                 type="button"
                 onClick={() => setShowDetailModal(false)}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                className="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 font-bold rounded-xl text-xs transition-colors duration-150 btn-press cursor-pointer"
               >
                 Cerrar
               </button>
               <button
                 type="button"
                 onClick={() => handlePrintLetter(selectedInvoice)}
-                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 btn-press cursor-pointer"
               >
                 <span>Imprimir Carta</span>
               </button>
               <button
                 type="button"
                 onClick={() => handlePrintTicket(selectedInvoice)}
-                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 btn-press cursor-pointer"
               >
                 <span>Imprimir Ticket</span>
               </button>
@@ -680,34 +693,36 @@ function InvoiceListView() {
       {/* MODAL: ANULACIÓN DE FACTURA                                               */}
       {/* ========================================================================= */}
       {showVoidModal && selectedInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-rose-900/40 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm">
+          <div className="bg-[#12151c] border border-red-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-modal-in">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center text-xl font-bold flex-shrink-0">
-                ⚠️
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
               </div>
               <div>
-                <h3 className="text-base font-black text-white">
-                  ¿Anular Factura No. {selectedInvoice.numeroFactura}?
+                <h3 className="text-base font-extrabold text-zinc-100">
+                  ¿Anular Factura No. <span className="font-mono tabular-nums">{selectedInvoice.numeroFactura}</span>?
                 </h3>
-                <p className="text-xs text-slate-400">
-                  Total: <strong className="text-white font-mono">Bs. {selectedInvoice.total.toFixed(2)}</strong> • Cliente: {selectedInvoice.cliente}
+                <p className="text-xs text-zinc-400">
+                  Total: <strong className="text-zinc-100 font-mono tabular-nums">Bs. {selectedInvoice.total.toFixed(2)}</strong> • Cliente: {selectedInvoice.cliente}
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-              Al anular esta factura, el comprobante cambiará a estado <strong>Anulada</strong> y las unidades de los productos se restituirán automáticamente al inventario (Lotes / Kardex).
+            <p className="text-xs text-zinc-300 leading-relaxed bg-[#0c0e12] p-3 rounded-xl border border-zinc-800/80">
+              Al anular esta factura, el comprobante cambiará a estado <strong className="text-red-400">Anulada</strong> y las unidades de los productos se restituirán automáticamente al inventario (Lotes / Kardex).
             </p>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
                 Motivo de anulación:
               </label>
               <select
                 value={voidReason}
                 onChange={(e) => setVoidReason(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-rose-500 font-medium"
+                className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-red-500/60 font-medium cursor-pointer transition-colors"
               >
                 <option value="Error en datos del cliente o emisión">1. Error en datos del cliente / emisión</option>
                 <option value="Devolución total de mercadería">2. Devolución total de mercadería</option>
@@ -716,12 +731,12 @@ function InvoiceListView() {
               </select>
             </div>
 
-            <div className="flex gap-2 pt-2 border-t border-slate-800">
+            <div className="flex gap-2 pt-2 border-t border-zinc-800/80">
               <button
                 type="button"
                 disabled={voidingLoading}
                 onClick={() => setShowVoidModal(false)}
-                className="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                className="w-1/2 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 font-bold rounded-xl text-xs transition-colors duration-150 btn-press cursor-pointer disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -729,10 +744,13 @@ function InvoiceListView() {
                 type="button"
                 disabled={voidingLoading}
                 onClick={handleConfirmVoid}
-                className="w-1/2 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-rose-600/30 transition-all cursor-pointer disabled:opacity-50"
+                className="w-1/2 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 btn-press cursor-pointer disabled:opacity-50"
               >
                 {voidingLoading ? (
-                  <span className="animate-spin text-sm">⏳</span>
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Anulando...</span>
+                  </>
                 ) : (
                   <span>Confirmar Anulación</span>
                 )}
@@ -746,3 +764,4 @@ function InvoiceListView() {
 }
 
 export default InvoiceListView;
+

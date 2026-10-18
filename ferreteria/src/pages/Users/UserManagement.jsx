@@ -272,30 +272,30 @@ function UserManagement() {
     switch (rol) {
       case "Administrador":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-500/10 border border-purple-500/30 text-purple-300 rounded-lg text-xs font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 border border-amber-500/25 text-amber-400 rounded-lg text-[11px] font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
             Administrador
           </span>
         );
       case "Vendedor":
       case "Cajero":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 border border-blue-500/30 text-blue-300 rounded-lg text-xs font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-zinc-800 border border-zinc-700 text-zinc-200 rounded-lg text-[11px] font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
             Vendedor / Cajero
           </span>
         );
       case "Cliente":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-semibold">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 rounded-lg text-[11px] font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
             Cliente (Revertido)
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 border border-slate-700 text-slate-300 rounded-lg text-xs font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg text-[11px] font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>
             {rol || "Operador"}
           </span>
         );
@@ -303,12 +303,12 @@ function UserManagement() {
   };
 
   return (
-    <div className="bg-slate-950 text-white min-h-screen font-sans flex">
+    <div className="bg-[#0c0e12] text-zinc-100 min-h-screen font-sans flex">
       {/* Sidebar fijo con elemento activo */}
       <Sidebar activeItem="usuarios" />
 
       {/* Contenedor Principal con margen dinámico según estado colapsado */}
-      <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-slate-950 flex flex-col`}>
+      <main className={`flex-1 transition-[margin-left] duration-220 ease-out-expo ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-[#0c0e12] flex flex-col`}>
         <Topbar />
 
         <div className="p-6 md:p-8 max-w-[1920px] w-full mx-auto space-y-6 flex-1">
@@ -316,13 +316,10 @@ function UserManagement() {
           {/* Encabezado Principal */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-cyan-400 text-[11px] font-bold uppercase tracking-wider mb-2">
-                <span>SEGURIDAD Y CONTROL DE ACCESO</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-100 tracking-tight" style={{ textWrap: "balance" }}>
                 Gestión de Usuarios y Roles
               </h1>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">
+              <p className="text-xs text-zinc-400 font-medium mt-1">
                 Administración de cuentas de acceso, asignación de permisos e invitación de operadores
               </p>
             </div>
@@ -332,7 +329,7 @@ function UserManagement() {
                 setModalError("");
                 setIsCreateModalOpen(true);
               }}
-              className="px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20 text-xs flex items-center justify-center gap-2 transition-all active:scale-95 self-start sm:self-auto"
+              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl shadow-sm text-xs flex items-center justify-center gap-2 transition-colors duration-150 btn-press self-start sm:self-auto cursor-pointer"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -344,12 +341,12 @@ function UserManagement() {
           {/* Tarjetas de Métricas de Usuarios con Iconos SVG Limpios */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Total Empleados */}
-            <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
+            <div className="bg-[#12151c] border border-zinc-800/80 p-4 rounded-2xl flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-400 font-semibold">Total Personal</p>
-                <h3 className="text-2xl font-extrabold text-white mt-1">{totalEmployees}</h3>
+                <p className="text-xs text-zinc-400 font-semibold">Total Personal</p>
+                <h3 className="text-2xl font-extrabold text-zinc-100 font-mono tabular-nums mt-1">{totalEmployees}</h3>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+              <div className="w-10 h-10 rounded-xl bg-zinc-800/80 border border-zinc-700/80 flex items-center justify-center text-zinc-300">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
@@ -357,12 +354,12 @@ function UserManagement() {
             </div>
 
             {/* Administradores */}
-            <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
+            <div className="bg-[#12151c] border border-zinc-800/80 p-4 rounded-2xl flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-400 font-semibold">Administradores</p>
-                <h3 className="text-2xl font-extrabold text-purple-400 mt-1">{adminCount}</h3>
+                <p className="text-xs text-zinc-400 font-semibold">Administradores</p>
+                <h3 className="text-2xl font-extrabold text-amber-400 font-mono tabular-nums mt-1">{adminCount}</h3>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
@@ -370,12 +367,12 @@ function UserManagement() {
             </div>
 
             {/* Vendedores / Cajeros */}
-            <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
+            <div className="bg-[#12151c] border border-zinc-800/80 p-4 rounded-2xl flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-400 font-semibold">Vendedores / Cajeros</p>
-                <h3 className="text-2xl font-extrabold text-blue-400 mt-1">{salesCount}</h3>
+                <p className="text-xs text-zinc-400 font-semibold">Vendedores / Cajeros</p>
+                <h3 className="text-2xl font-extrabold text-zinc-200 font-mono tabular-nums mt-1">{salesCount}</h3>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+              <div className="w-10 h-10 rounded-xl bg-zinc-800/80 border border-zinc-700/80 flex items-center justify-center text-zinc-300">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
@@ -383,10 +380,10 @@ function UserManagement() {
             </div>
 
             {/* Operadores Activos */}
-            <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
+            <div className="bg-[#12151c] border border-zinc-800/80 p-4 rounded-2xl flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-400 font-semibold">Cuentas Activas</p>
-                <h3 className="text-2xl font-extrabold text-emerald-400 mt-1">{activeCount}</h3>
+                <p className="text-xs text-zinc-400 font-semibold">Cuentas Activas</p>
+                <h3 className="text-2xl font-extrabold text-emerald-400 font-mono tabular-nums mt-1">{activeCount}</h3>
               </div>
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -397,9 +394,9 @@ function UserManagement() {
           </div>
 
           {/* Barra de Filtros y Búsqueda */}
-          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
             <div className="relative flex-1">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -409,7 +406,7 @@ function UserManagement() {
                 placeholder="Buscar por nombre, correo o CI/NIT..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-500 transition-colors"
+                className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl pl-10 pr-4 py-2 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500/60 transition-colors"
               />
             </div>
 
@@ -418,7 +415,7 @@ function UserManagement() {
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="bg-slate-950 border border-slate-800 text-slate-300 text-xs font-bold px-3 py-2 rounded-xl outline-none cursor-pointer hover:text-white"
+                className="bg-[#0c0e12] border border-zinc-800 text-zinc-300 text-xs font-bold px-3 py-2 rounded-xl outline-none cursor-pointer hover:text-zinc-100 focus:border-amber-500/60 transition-colors"
               >
                 <option value="ALL">Todos los Roles</option>
                 <option value="Administrador">Administrador</option>
@@ -430,7 +427,7 @@ function UserManagement() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-slate-950 border border-slate-800 text-slate-300 text-xs font-bold px-3 py-2 rounded-xl outline-none cursor-pointer hover:text-white"
+                className="bg-[#0c0e12] border border-zinc-800 text-zinc-300 text-xs font-bold px-3 py-2 rounded-xl outline-none cursor-pointer hover:text-zinc-100 focus:border-amber-500/60 transition-colors"
               >
                 <option value="ALL">Todos los Estados</option>
                 <option value="ACTIVE">Activos</option>
@@ -440,26 +437,26 @@ function UserManagement() {
           </div>
 
           {/* Tabla de Empleados */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl overflow-hidden shadow-lg">
             {loading ? (
               <div className="py-20 text-center space-y-3">
-                <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p className="text-xs text-slate-400 font-semibold">Cargando operadores del sistema...</p>
+                <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-xs text-zinc-400 font-semibold">Cargando operadores del sistema...</p>
               </div>
             ) : filteredEmployees.length === 0 ? (
               <div className="py-16 text-center space-y-2">
-                <div className="w-12 h-12 rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-400 mx-auto">
+                <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 mx-auto">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <h3 className="text-sm font-bold text-white">No se encontraron operadores</h3>
-                <p className="text-xs text-slate-500">Prueba ajustando los filtros de búsqueda.</p>
+                <h3 className="text-sm font-bold text-zinc-100">No se encontraron operadores</h3>
+                <p className="text-xs text-zinc-500">Prueba ajustando los filtros de búsqueda.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="bg-slate-950/80 text-[11px] font-bold uppercase text-slate-400 tracking-wider border-b border-slate-800">
+                <table className="w-full text-left text-xs text-zinc-300">
+                  <thead className="bg-[#0c0e12] text-[11px] font-bold uppercase text-zinc-400 tracking-wider border-b border-zinc-800/80">
                     <tr>
                       <th className="py-3.5 px-4">Operador / Personal</th>
                       <th className="py-3.5 px-4">Rol en Sistema</th>
@@ -469,22 +466,22 @@ function UserManagement() {
                       <th className="py-3.5 px-4 text-right">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-zinc-800/60">
                     {filteredEmployees.map((emp) => {
                       const fullName = `${emp.Persona?.Nombre || ""} ${emp.Persona?.PrimerApellido || ""} ${emp.Persona?.SegundoApellido || ""}`.trim();
                       const initial = emp.Persona?.Nombre ? emp.Persona.Nombre.charAt(0).toUpperCase() : "U";
 
                       return (
-                        <tr key={emp.EmpleadoID} className="hover:bg-slate-800/30 transition-colors">
+                        <tr key={emp.EmpleadoID} className="hover:bg-zinc-900/50 transition-colors">
                           {/* Operador */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm">
+                              <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 text-amber-400 font-extrabold text-xs flex items-center justify-center shrink-0">
                                 {initial}
                               </div>
                               <div>
-                                <p className="font-bold text-white text-xs">{fullName || "Sin nombre"}</p>
-                                <p className="text-[10px] text-slate-500 font-mono">CI: {emp.Persona?.CI_NIT || "N/A"}</p>
+                                <p className="font-bold text-zinc-100 text-xs">{fullName || "Sin nombre"}</p>
+                                <p className="text-[10px] text-zinc-500 font-mono tabular-nums">CI: {emp.Persona?.CI_NIT || "N/A"}</p>
                               </div>
                             </div>
                           </td>
@@ -495,12 +492,12 @@ function UserManagement() {
                           </td>
 
                           {/* Correo */}
-                          <td className="py-3.5 px-4 font-mono text-cyan-400 text-[11px]">
+                          <td className="py-3.5 px-4 font-mono text-zinc-300 text-[11px]">
                             {emp.CuentaUsuario?.Correo || "Sin correo"}
                           </td>
 
                           {/* Teléfono */}
-                          <td className="py-3.5 px-4 text-slate-400">
+                          <td className="py-3.5 px-4 font-mono tabular-nums text-zinc-400">
                             {emp.Persona?.Telefono || "—"}
                           </td>
 
@@ -508,12 +505,12 @@ function UserManagement() {
                           <td className="py-3.5 px-4 text-center">
                             {emp.estado ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                                 Activo
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                                <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
                                 Suspendido
                               </span>
                             )}
@@ -525,7 +522,7 @@ function UserManagement() {
                               {/* Botón Editar */}
                               <button
                                 onClick={() => handleOpenEdit(emp)}
-                                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-cyan-400 rounded-lg transition-colors"
+                                className="p-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 text-zinc-300 hover:text-zinc-100 rounded-lg transition-colors duration-150 btn-press cursor-pointer"
                                 title="Editar Operador"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -536,7 +533,7 @@ function UserManagement() {
                               {/* Botón Cambiar Contraseña */}
                               <button
                                 onClick={() => handleOpenPasswordModal(emp)}
-                                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-400 rounded-lg transition-colors"
+                                className="p-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 text-zinc-300 hover:text-amber-400 rounded-lg transition-colors duration-150 btn-press cursor-pointer"
                                 title="Cambiar Contraseña"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -547,10 +544,10 @@ function UserManagement() {
                               {/* Botón Activar/Suspender */}
                               <button
                                 onClick={() => handleOpenStatusModal(emp)}
-                                className={`p-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
+                                className={`p-1.5 rounded-lg border transition-colors duration-150 btn-press cursor-pointer ${
                                   emp.estado
-                                    ? "bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:scale-105"
-                                    : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:scale-105"
+                                    ? "bg-red-500/10 hover:bg-red-500/20 border-red-500/20 text-red-400"
+                                    : "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-400"
                                 }`}
                                 title={emp.estado ? "Suspender Acceso" : "Activar Acceso"}
                               >
@@ -579,30 +576,30 @@ function UserManagement() {
 
       {/* MODAL 1: REGISTRAR NUEVO OPERADOR */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-          <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative animate-fade-in my-8">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-xl bg-[#12151c] border border-zinc-800/80 rounded-2xl p-6 sm:p-7 shadow-2xl relative animate-modal-in my-8">
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4 mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 font-bold">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-white">Registrar Nuevo Operador</h3>
-                  <p className="text-xs text-slate-400">Crea el perfil del operador y envía la invitación de activación por correo</p>
+                  <h3 className="text-base font-extrabold text-zinc-100">Registrar Nuevo Operador</h3>
+                  <p className="text-xs text-zinc-400">Crea el perfil del operador y envía la invitación de activación por correo</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg text-lg font-bold"
+                className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800/60 transition-colors cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             {modalError && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-400 font-semibold mb-4">
+              <div className="p-3 bg-red-500/10 border border-red-500/25 rounded-xl text-xs text-red-400 font-semibold mb-4">
                 {modalError}
               </div>
             )}
@@ -611,25 +608,25 @@ function UserManagement() {
               {/* Nombres */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">Nombre *</label>
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Nombre *</label>
                   <input
                     type="text"
                     required
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                     placeholder="Ej. Oscar"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">Primer Apellido *</label>
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Primer Apellido *</label>
                   <input
                     type="text"
                     required
                     value={formData.primerApellido}
                     onChange={(e) => setFormData({ ...formData, primerApellido: e.target.value })}
                     placeholder="Ej. Claros"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
               </div>
@@ -637,69 +634,69 @@ function UserManagement() {
               {/* Segundo Apellido, CI, Teléfono */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">Segundo Apellido</label>
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Segundo Apellido</label>
                   <input
                     type="text"
                     value={formData.segundoApellido}
                     onChange={(e) => setFormData({ ...formData, segundoApellido: e.target.value })}
                     placeholder="Ej. Davalos"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">CI / NIT</label>
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">CI / NIT</label>
                   <input
                     type="text"
                     value={formData.ciNit}
                     onChange={(e) => setFormData({ ...formData, ciNit: e.target.value })}
                     placeholder="Ej. 9895300"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">Teléfono</label>
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Teléfono</label>
                   <input
                     type="tel"
                     value={formData.telefono}
                     onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
                     placeholder="Ej. 67524675"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
               </div>
 
               {/* Dirección */}
               <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1">Dirección Domiciliaria</label>
+                <label className="text-xs font-bold text-zinc-300 block mb-1">Dirección Domiciliaria</label>
                 <input
                   type="text"
                   value={formData.direccion}
                   onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
                   placeholder="Ej. Av. Blanco Galindo Km 5, Cochabamba"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                 />
               </div>
 
               {/* Correo y Rol */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-zinc-800/80">
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">Correo Electrónico de Acceso *</label>
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Correo Electrónico de Acceso *</label>
                   <input
                     type="email"
                     required
                     value={formData.correo}
                     onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
                     placeholder="operador@ferreteria.com"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">Rol en el Sistema *</label>
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Rol en el Sistema *</label>
                   <select
                     value={formData.rol}
                     onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500 cursor-pointer font-bold"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 cursor-pointer font-bold transition-colors"
                   >
                     <option value="Administrador">Administrador (Acceso Total)</option>
                     <option value="Vendedor">Vendedor (Vendedor / Cajero)</option>
@@ -708,31 +705,33 @@ function UserManagement() {
               </div>
 
               {/* Notificación de Onboarding y Seguridad */}
-              <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-xl flex items-start gap-3">
-                <div className="w-5 h-5 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs">
-                  ℹ
+              <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-xl flex items-start gap-3">
+                <div className="w-5 h-5 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
                 </div>
-                <div className="text-[11px] text-slate-300 leading-relaxed">
-                  <strong className="text-cyan-300 font-bold block mb-0.5">Invitación y Activación por Correo:</strong>
+                <div className="text-[11px] text-zinc-300 leading-relaxed">
+                  <strong className="text-zinc-100 font-bold block mb-0.5">Invitación y Activación por Correo:</strong>
                   Se enviará un correo de bienvenida automático a la dirección ingresada con un enlace de activación seguro para que el operador configure su propia contraseña personal.
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800/80">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold"
+                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold transition-colors duration-150 btn-press cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={modalLoading}
-                  className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 flex items-center gap-2"
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors duration-150 btn-press cursor-pointer disabled:opacity-50"
                 >
                   {modalLoading && (
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-3.5 h-3.5 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin"></div>
                   )}
                   <span>{modalLoading ? "Enviando Invitación..." : "Registrar y Enviar Invitación"}</span>
                 </button>
@@ -744,30 +743,30 @@ function UserManagement() {
 
       {/* MODAL 2: EDITAR OPERADOR */}
       {isEditModalOpen && selectedEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-          <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative animate-fade-in my-8">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-xl bg-[#12151c] border border-zinc-800/80 rounded-2xl p-6 sm:p-7 shadow-2xl relative animate-modal-in my-8">
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4 mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-amber-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-white">Editar Datos del Operador</h3>
-                  <p className="text-xs text-slate-400">Modifica la información y rol asignado</p>
+                  <h3 className="text-base font-extrabold text-zinc-100">Editar Datos del Operador</h3>
+                  <p className="text-xs text-zinc-400">Modifica la información y rol asignado</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg text-lg font-bold"
+                className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800/60 transition-colors cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             {modalError && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-400 font-semibold mb-4">
+              <div className="p-3 bg-red-500/10 border border-red-500/25 rounded-xl text-xs text-red-400 font-semibold mb-4">
                 {modalError}
               </div>
             )}
@@ -776,23 +775,23 @@ function UserManagement() {
               {/* Nombres */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">Nombre *</label>
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Nombre *</label>
                   <input
                     type="text"
                     required
                     value={editFormData.nombre}
                     onChange={(e) => setEditFormData({ ...editFormData, nombre: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">Primer Apellido *</label>
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Primer Apellido *</label>
                   <input
                     type="text"
                     required
                     value={editFormData.primerApellido}
                     onChange={(e) => setEditFormData({ ...editFormData, primerApellido: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
               </div>
@@ -800,65 +799,65 @@ function UserManagement() {
               {/* Segundo Apellido, CI, Teléfono */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">Segundo Apellido</label>
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Segundo Apellido</label>
                   <input
                     type="text"
                     value={editFormData.segundoApellido}
                     onChange={(e) => setEditFormData({ ...editFormData, segundoApellido: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">CI / NIT</label>
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">CI / NIT</label>
                   <input
                     type="text"
                     value={editFormData.ciNit}
                     onChange={(e) => setEditFormData({ ...editFormData, ciNit: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">Teléfono</label>
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Teléfono</label>
                   <input
                     type="tel"
                     value={editFormData.telefono}
                     onChange={(e) => setEditFormData({ ...editFormData, telefono: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
               </div>
 
               {/* Dirección */}
               <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1">Dirección Domiciliaria</label>
+                <label className="text-xs font-bold text-zinc-300 block mb-1">Dirección Domiciliaria</label>
                 <input
                   type="text"
                   value={editFormData.direccion}
                   onChange={(e) => setEditFormData({ ...editFormData, direccion: e.target.value })}
                   placeholder="Ej. Av. Blanco Galindo Km 5, Cochabamba"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                 />
               </div>
 
               {/* Correo y Rol */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-zinc-800/80">
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">Correo de Acceso *</label>
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Correo de Acceso *</label>
                   <input
                     type="email"
                     required
                     value={editFormData.correo}
                     onChange={(e) => setEditFormData({ ...editFormData, correo: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">Rol en el Sistema *</label>
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Rol en el Sistema *</label>
                   <select
                     value={editFormData.rol}
                     onChange={(e) => setEditFormData({ ...editFormData, rol: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500 font-bold"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 font-bold cursor-pointer transition-colors"
                   >
                     <option value="Administrador">Administrador (Acceso Total)</option>
                     <option value="Vendedor">Vendedor (Vendedor / Cajero POS)</option>
@@ -869,8 +868,10 @@ function UserManagement() {
 
               {/* Advertencia contextual si se revierte a Cliente */}
               {editFormData.rol === 'Cliente' && (
-                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-2.5 animate-fade-in">
-                  <span className="text-amber-400 text-sm font-bold shrink-0 mt-0.5">⚠️</span>
+                <div className="p-3 bg-amber-500/10 border border-amber-500/25 rounded-xl flex items-start gap-2.5 animate-fade-in">
+                  <svg className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
                   <div className="text-[11px] text-amber-200 leading-relaxed">
                     <strong className="text-amber-300 font-bold block mb-0.5">Reversión de Acceso a Cliente:</strong>
                     El usuario perderá acceso inmediato al Punto de Venta (POS) y al panel administrativo. Al iniciar sesión, accederá únicamente como cliente al catálogo de compras de la tienda.
@@ -878,18 +879,18 @@ function UserManagement() {
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800/80">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold"
+                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold transition-colors duration-150 btn-press cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={modalLoading}
-                  className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20"
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-xl text-xs font-bold transition-colors duration-150 btn-press cursor-pointer disabled:opacity-50"
                 >
                   {modalLoading ? "Guardando..." : "Guardar Cambios"}
                 </button>
@@ -901,73 +902,73 @@ function UserManagement() {
 
       {/* MODAL 3: CAMBIAR CONTRASEÑA DIRECTA */}
       {isPasswordModalOpen && selectedEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative animate-fade-in">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-[#12151c] border border-zinc-800/80 rounded-2xl p-6 sm:p-7 shadow-2xl relative animate-modal-in">
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4 mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-white">Cambiar Contraseña</h3>
-                  <p className="text-xs text-slate-400">
-                    Operador: <strong className="text-white">{selectedEmployee.Persona?.Nombre}</strong>
+                  <h3 className="text-base font-extrabold text-zinc-100">Cambiar Contraseña</h3>
+                  <p className="text-xs text-zinc-400">
+                    Operador: <strong className="text-zinc-100">{selectedEmployee.Persona?.Nombre}</strong>
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsPasswordModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg text-lg font-bold"
+                className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800/60 transition-colors cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             {modalError && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-400 font-semibold mb-4">
+              <div className="p-3 bg-red-500/10 border border-red-500/25 rounded-xl text-xs text-red-400 font-semibold mb-4">
                 {modalError}
               </div>
             )}
 
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1">Nueva Contraseña *</label>
+                <label className="text-xs font-bold text-zinc-300 block mb-1">Nueva Contraseña *</label>
                 <input
                   type="password"
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1">Confirmar Nueva Contraseña *</label>
+                <label className="text-xs font-bold text-zinc-300 block mb-1">Confirmar Nueva Contraseña *</label>
                 <input
                   type="password"
                   required
                   value={confirmNewPassword}
                   onChange={(e) => setConfirmNewPassword(e.target.value)}
                   placeholder="Repite la contraseña"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800/80">
                 <button
                   type="button"
                   onClick={() => setIsPasswordModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold"
+                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold transition-colors duration-150 btn-press cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={modalLoading}
-                  className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-amber-500/20"
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-xl text-xs font-bold transition-colors duration-150 btn-press cursor-pointer disabled:opacity-50"
                 >
                   {modalLoading ? "Actualizando..." : "Actualizar Clave"}
                 </button>
@@ -979,20 +980,20 @@ function UserManagement() {
 
       {/* MODAL 4: CONFIRMACIÓN DE ACTIVAR / SUSPENDER OPERADOR */}
       {isStatusModalOpen && targetEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
           <div
-            className={`w-full max-w-md bg-slate-900 border ${
-              targetEmployee.estado ? "border-rose-500/30 shadow-rose-950/40" : "border-emerald-500/30 shadow-emerald-950/40"
-            } rounded-3xl p-6 sm:p-7 shadow-2xl relative space-y-5 animate-fade-in`}
+            className={`w-full max-w-md bg-[#12151c] border ${
+              targetEmployee.estado ? "border-red-500/30" : "border-emerald-500/30"
+            } rounded-2xl p-6 sm:p-7 shadow-2xl relative space-y-5 animate-modal-in`}
           >
             {/* Encabezado del Modal con Icono Distintivo */}
-            <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+            <div className="flex items-start justify-between border-b border-zinc-800/80 pb-4">
               <div className="flex items-center gap-3">
                 <div
                   className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 ${
                     targetEmployee.estado
-                      ? "bg-rose-500/10 border border-rose-500/30 text-rose-400"
-                      : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+                      ? "bg-red-500/10 border border-red-500/25 text-red-400"
+                      : "bg-emerald-500/10 border border-emerald-500/25 text-emerald-400"
                   }`}
                 >
                   {targetEmployee.estado ? (
@@ -1006,10 +1007,10 @@ function UserManagement() {
                   )}
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-white">
+                  <h3 className="text-base font-extrabold text-zinc-100">
                     {targetEmployee.estado ? "¿Suspender Acceso del Operador?" : "¿Activar Acceso del Operador?"}
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-zinc-400 mt-0.5">
                     {targetEmployee.estado
                       ? "Inhabilitar temporalmente el inicio de sesión."
                       : "Habilitar credenciales y permisos en el sistema."}
@@ -1025,26 +1026,26 @@ function UserManagement() {
                     setTargetEmployee(null);
                   }
                 }}
-                className="text-slate-400 hover:text-white p-1 rounded-lg text-lg font-bold transition-colors cursor-pointer"
+                className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800/60 transition-colors cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             {/* Ficha de Información del Operador */}
-            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+            <div className="bg-[#0c0e12] border border-zinc-800/80 rounded-2xl p-3.5 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white font-extrabold text-sm flex items-center justify-center shrink-0 shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 text-amber-400 font-extrabold text-sm flex items-center justify-center shrink-0">
                   {targetEmployee.Persona?.Nombre ? targetEmployee.Persona.Nombre.charAt(0).toUpperCase() : "U"}
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white">
+                  <h4 className="text-xs font-bold text-zinc-100">
                     {`${targetEmployee.Persona?.Nombre || ""} ${targetEmployee.Persona?.PrimerApellido || ""} ${targetEmployee.Persona?.SegundoApellido || ""}`.trim() || "Operador"}
                   </h4>
-                  <p className="text-[11px] font-mono text-cyan-400">
+                  <p className="text-[11px] font-mono text-zinc-300">
                     {targetEmployee.CuentaUsuario?.Correo || "Sin correo"}
                   </p>
-                  <p className="text-[10px] text-slate-500 font-mono">
+                  <p className="text-[10px] text-zinc-500 font-mono tabular-nums">
                     CI: {targetEmployee.Persona?.CI_NIT || "N/A"}
                   </p>
                 </div>
@@ -1057,16 +1058,14 @@ function UserManagement() {
 
             {/* Mensaje Explicativo / Contextual */}
             <div
-              className={`p-3.5 rounded-2xl border text-xs leading-relaxed ${
+              className={`p-3.5 rounded-xl border text-xs leading-relaxed ${
                 targetEmployee.estado
-                  ? "bg-rose-500/10 border-rose-500/20 text-rose-200"
+                  ? "bg-red-500/10 border-red-500/20 text-red-200"
                   : "bg-emerald-500/10 border-emerald-500/20 text-emerald-200"
               }`}
             >
               <div className="flex items-start gap-2.5">
-                <span className="text-sm font-bold shrink-0 mt-0.5">
-                  {targetEmployee.estado ? "⛔" : "✅"}
-                </span>
+                <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${targetEmployee.estado ? "bg-red-400" : "bg-emerald-400"}`} />
                 <p>
                   {targetEmployee.estado
                     ? "Al suspender la cuenta, el operador no podrá ingresar al POS, realizar ventas ni acceder a los módulos hasta que sea reactivado por un administrador."
@@ -1076,7 +1075,7 @@ function UserManagement() {
             </div>
 
             {/* Botones de Acción */}
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-zinc-800/80">
               <button
                 type="button"
                 disabled={statusActionLoading}
@@ -1084,7 +1083,7 @@ function UserManagement() {
                   setIsStatusModalOpen(false);
                   setTargetEmployee(null);
                 }}
-                className="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition-colors cursor-pointer disabled:opacity-50"
+                className="w-1/2 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 font-bold rounded-xl text-xs transition-colors duration-150 btn-press cursor-pointer disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -1093,10 +1092,10 @@ function UserManagement() {
                 type="button"
                 disabled={statusActionLoading}
                 onClick={handleConfirmStatusToggle}
-                className={`w-1/2 py-2.5 font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer disabled:opacity-50 ${
+                className={`w-1/2 py-2.5 font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-colors duration-150 btn-press cursor-pointer disabled:opacity-50 ${
                   targetEmployee.estado
-                    ? "bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-rose-600/25"
-                    : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/25"
+                    ? "bg-red-600 hover:bg-red-500 text-white"
+                    : "bg-emerald-600 hover:bg-emerald-500 text-white"
                 }`}
               >
                 {statusActionLoading ? (
@@ -1117,11 +1116,19 @@ function UserManagement() {
 
       {/* TOAST FLOTANTE */}
       {toast.show && (
-        <div className="fixed top-20 right-8 z-50 max-w-sm w-full bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-2xl p-4 flex items-center gap-3 backdrop-blur-md animate-slide-in">
-          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 font-bold">
-            ✓
-          </div>
-          <p className="text-xs font-bold text-white flex-1">{toast.message}</p>
+        <div
+          className={`fixed bottom-6 right-6 z-50 max-w-sm w-full bg-[#12151c] border rounded-xl shadow-2xl px-4 py-3.5 flex items-center gap-3 animate-toast-in ${
+            toast.type === "error"
+              ? "border-red-500/30 text-red-200"
+              : "border-emerald-500/30 text-emerald-200"
+          }`}
+        >
+          <span
+            className={`w-2 h-2 rounded-full shrink-0 ${
+              toast.type === "error" ? "bg-red-400" : "bg-emerald-400"
+            }`}
+          />
+          <p className="text-xs font-bold text-zinc-100 flex-1">{toast.message}</p>
         </div>
       )}
     </div>
@@ -1129,3 +1136,4 @@ function UserManagement() {
 }
 
 export default UserManagement;
+

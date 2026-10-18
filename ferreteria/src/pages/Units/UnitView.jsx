@@ -182,12 +182,12 @@ function UnitView() {
   const currentPageUnits = filteredUnits.slice(startIndex, endIndex);
 
   return (
-    <div className="bg-slate-950 text-white min-h-screen font-sans flex">
+    <div className="bg-[#0c0e12] text-zinc-100 min-h-screen font-sans flex">
       {/* Sidebar Lateral Fijo */}
       <Sidebar activeItem={activeMenu} />
 
       {/* Área del Contenido Principal */}
-      <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-slate-950 flex flex-col`}>
+      <main className={`flex-1 transition-[margin-left] duration-220 ease-out-expo ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-[#0c0e12] flex flex-col`}>
         {/* Barra Superior (Topbar) */}
         <Topbar />
 
@@ -196,16 +196,21 @@ function UnitView() {
           {/* Encabezado de la página */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+              <h1
+                className="text-2xl md:text-3xl font-bold tracking-tight text-zinc-100"
+                style={{ textWrap: 'balance' }}
+              >
                 Gestión de Unidades
-              </h2>
-              <p className="text-slate-400 text-sm mt-1">Administra las unidades de medida de los productos (ej. caja, docena, kilo, etc.) de la ferretería.</p>
+              </h1>
+              <p className="text-zinc-400 text-sm mt-1 max-w-[65ch]">
+                Administra las unidades de medida de los productos (caja, docena, kilo, metro) de la ferretería.
+              </p>
             </div>
             <button
               onClick={() => openUpsertModal("create")}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20 transition-all text-sm"
+              className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl transition-colors duration-150 btn-press active:scale-[0.97] text-sm"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
               Registrar Unidad
@@ -213,9 +218,9 @@ function UnitView() {
           </div>
 
           {/* Buscador y Controles */}
-          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
-            {/* Selector de cantidad a mostrar (Estilo DataTables) */}
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 order-2 sm:order-1">
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
+            {/* Selector de cantidad a mostrar */}
+            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400 order-2 sm:order-1">
               <span>Mostrar</span>
               <select
                 value={itemsPerPage}
@@ -223,7 +228,7 @@ function UnitView() {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs font-bold outline-none focus:border-cyan-500/50 cursor-pointer transition-all"
+                className="bg-[#0c0e12] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 font-mono tabular-nums text-xs font-bold outline-none focus:border-amber-500/60 cursor-pointer transition-colors duration-150"
               >
                 <option value={10}>10</option>
                 <option value={25}>25</option>
@@ -235,8 +240,8 @@ function UnitView() {
 
             {/* Input de búsqueda local */}
             <div className="relative w-full sm:max-w-md order-1 sm:order-2">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-zinc-500">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </span>
@@ -248,45 +253,51 @@ function UnitView() {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 text-sm text-white placeholder-slate-500 transition-all outline-none"
+                className="w-full pl-9 pr-4 py-2 bg-[#0c0e12] border border-zinc-800 rounded-lg focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/20 text-sm text-zinc-100 placeholder-zinc-500 transition-colors duration-150 outline-none"
               />
             </div>
           </div>
 
-          {/* Tabla de Unidades Estilizada en Cristal */}
-          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl overflow-hidden shadow-2xl">
+          {/* Tabla de Unidades */}
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left text-slate-300">
-                <thead className="text-xs uppercase bg-slate-900/60 text-slate-400 border-b border-slate-800">
+              <table className="w-full text-sm text-left text-zinc-300">
+                <thead className="text-xs uppercase bg-[#0c0e12] text-zinc-400 border-b border-zinc-800/80">
                   <tr>
-                    <th scope="col" className="px-6 py-4 font-bold tracking-wider">Unidad de Medida</th>
-                    <th scope="col" className="px-6 py-4 font-bold tracking-wider">Descripción</th>
-                    <th scope="col" className="px-6 py-4 font-bold tracking-wider text-right">Acciones</th>
+                    <th scope="col" className="px-6 py-3.5 font-semibold tracking-wider w-24">ID</th>
+                    <th scope="col" className="px-6 py-3.5 font-semibold tracking-wider">Unidad de Medida</th>
+                    <th scope="col" className="px-6 py-3.5 font-semibold tracking-wider">Descripción</th>
+                    <th scope="col" className="px-6 py-3.5 font-semibold tracking-wider text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-900/60">
+                <tbody className="divide-y divide-zinc-800/60">
                   {currentPageUnits.length > 0 ? (
                     currentPageUnits.map((unit) => (
                       <tr 
                         key={unit.UnidadID} 
-                        className="border-b border-slate-900/80 hover:bg-slate-900/30 transition-colors duration-150"
+                        className="hover:bg-zinc-800/30 transition-colors duration-150"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap text-white font-semibold">
+                        <td className="px-6 py-3.5 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/25 text-amber-400 font-mono tabular-nums text-xs font-semibold">
+                            #{unit.UnidadID}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3.5 whitespace-nowrap text-zinc-100 font-semibold">
                           {unit.Nombre}
                         </td>
-                        <td className="px-6 py-4 text-slate-400 max-w-xs truncate">
-                          {unit.Descripcion ? unit.Descripcion : <span className="text-slate-600 italic text-xs">Sin descripción</span>}
+                        <td className="px-6 py-3.5 text-zinc-400 max-w-xs truncate">
+                          {unit.Descripcion ? unit.Descripcion : <span className="text-zinc-500 italic text-xs">Sin descripción</span>}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-xs font-semibold space-x-2">
+                        <td className="px-6 py-3.5 whitespace-nowrap text-right text-xs font-semibold space-x-2">
                           <button
                             onClick={() => openUpsertModal("edit", unit)}
-                            className="px-3 py-1.5 border border-blue-500/30 text-blue-400 hover:bg-blue-500 hover:text-white rounded-lg text-xs font-bold transition-all"
+                            className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/25 text-amber-400 hover:bg-amber-500 hover:text-zinc-950 rounded-lg text-xs font-bold transition-colors duration-150 btn-press active:scale-[0.97]"
                           >
                             Editar
                           </button>
                           <button
                             onClick={() => openDeleteModal(unit)}
-                            className="px-3 py-1.5 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-bold transition-all"
+                            className="px-3 py-1.5 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-600 hover:text-white rounded-lg text-xs font-bold transition-colors duration-150 btn-press active:scale-[0.97]"
                           >
                             Eliminar
                           </button>
@@ -295,7 +306,7 @@ function UnitView() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="3" className="px-6 py-12 text-center text-slate-500 text-sm font-medium">
+                      <td colSpan="4" className="px-6 py-12 text-center text-zinc-500 text-sm font-medium">
                         No se encontraron unidades registradas.
                       </td>
                     </tr>
@@ -305,15 +316,15 @@ function UnitView() {
             </div>
 
             {/* Pie de Tabla con Información y Paginador */}
-            <div className="px-6 py-4 bg-slate-900/40 border-t border-slate-900/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="px-6 py-4 bg-[#0c0e12] border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
               {/* Información de Entradas */}
-              <div className="text-xs font-bold text-slate-400">
+              <div className="text-xs font-medium text-zinc-400">
                 {totalItems > 0 ? (
                   <>
-                    Mostrando <span className="text-cyan-400">{startIndex + 1}</span> a <span className="text-cyan-400">{endIndex}</span> de <span className="text-slate-300">{totalItems}</span> entradas
+                    Mostrando <span className="font-mono tabular-nums font-bold text-amber-400">{startIndex + 1}</span> a <span className="font-mono tabular-nums font-bold text-amber-400">{endIndex}</span> de <span className="font-mono tabular-nums font-bold text-zinc-200">{totalItems}</span> entradas
                   </>
                 ) : (
-                  "Mostrando 0 a 0 de 0 entradas"
+                  <span className="font-mono tabular-nums">Mostrando 0 a 0 de 0 entradas</span>
                 )}
               </div>
 
@@ -323,10 +334,10 @@ function UnitView() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-150 ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors duration-150 btn-press active:scale-[0.97] ${
                       currentPage === 1
-                        ? "bg-slate-950/40 border border-slate-900 text-slate-600 cursor-not-allowed"
-                        : "bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-850"
+                        ? "bg-[#12151c] border border-zinc-800/60 text-zinc-600 cursor-not-allowed"
+                        : "bg-[#12151c] border border-zinc-800 text-zinc-300 hover:text-zinc-100 hover:border-zinc-700"
                     }`}
                   >
                     Anterior
@@ -341,7 +352,7 @@ function UnitView() {
                     if (!shouldShow) {
                       if (page === 2 || page === totalPages - 1) {
                         return (
-                          <span key={page} className="text-slate-600 text-xs px-1 select-none">
+                          <span key={page} className="text-zinc-600 font-mono tabular-nums text-xs px-1 select-none">
                             ...
                           </span>
                         );
@@ -353,10 +364,10 @@ function UnitView() {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-150 ${
+                        className={`px-3 py-1.5 rounded-lg font-mono tabular-nums text-xs font-bold transition-colors duration-150 btn-press active:scale-[0.97] ${
                           currentPage === page
-                            ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20"
-                            : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-855"
+                            ? "bg-amber-500 text-zinc-950"
+                            : "bg-[#12151c] border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:border-zinc-700"
                         }`}
                       >
                         {page}
@@ -367,10 +378,10 @@ function UnitView() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-150 ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors duration-150 btn-press active:scale-[0.97] ${
                       currentPage === totalPages
-                        ? "bg-slate-950/40 border border-slate-900 text-slate-600 cursor-not-allowed"
-                        : "bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-850"
+                        ? "bg-[#12151c] border border-zinc-800/60 text-zinc-600 cursor-not-allowed"
+                        : "bg-[#12151c] border border-zinc-800 text-zinc-300 hover:text-zinc-100 hover:border-zinc-700"
                     }`}
                   >
                     Siguiente
@@ -384,34 +395,34 @@ function UnitView() {
 
       {/* Modal de Confirmación de Eliminación */}
       {isDeleteModalOpen && (
-        <div className="bg-slate-950/80 backdrop-blur-sm fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-6 shadow-2xl animate-scale-in">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-rose-600/10 border border-rose-500/20 flex items-center justify-center text-rose-400 flex-shrink-0">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+        <div className="bg-black/75 fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-xl max-w-md w-full p-6 space-y-5 shadow-2xl animate-modal-in">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/25 flex items-center justify-center text-red-400 flex-shrink-0">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
               <div className="space-y-1">
-                <h3 className="text-lg font-bold text-white">¿Confirmar Eliminación?</h3>
-                <p className="text-slate-400 text-xs mt-0.5">Esta acción no se puede revertir.</p>
+                <h3 className="text-lg font-bold text-zinc-100">¿Confirmar eliminación?</h3>
+                <p className="text-zinc-400 text-xs">Esta acción no se puede revertir.</p>
               </div>
             </div>
 
-            <p className="text-sm text-slate-300 leading-relaxed">
-              ¿Estás seguro de que deseas eliminar permanentemente la unidad de medida <span className="font-bold text-white">"{unitToDelete?.Nombre}"</span> del catálogo de la ferretería?
+            <p className="text-sm text-zinc-300 leading-relaxed">
+              ¿Estás seguro de que deseas eliminar permanentemente la unidad de medida <span className="font-bold text-zinc-100">"{unitToDelete?.Nombre}"</span> del catálogo de la ferretería?
             </p>
 
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex justify-end gap-2.5 pt-2">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2.5 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/40 text-slate-300 font-semibold rounded-xl text-xs transition-all"
+                className="px-4 py-2 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 text-zinc-300 font-semibold rounded-lg text-xs transition-colors duration-150 btn-press active:scale-[0.97]"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-rose-600/20 transition-all"
+                className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-xs transition-colors duration-150 btn-press active:scale-[0.97]"
               >
                 Sí, eliminar unidad
               </button>
@@ -422,45 +433,46 @@ function UnitView() {
 
       {/* Modal de Agregar/Editar Unidad (Upsert) */}
       {isUpsertModalOpen && (
-        <div className="bg-slate-950/80 backdrop-blur-sm fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-2xl animate-scale-in">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-cyan-600/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 flex-shrink-0">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+        <div className="bg-black/75 fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-modal-in">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 flex-shrink-0">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </div>
               <div className="space-y-1">
-                <h3 className="text-lg font-bold text-white">
+                <h3 className="text-lg font-bold text-zinc-100">
                   {upsertMode === "create" ? "Registrar Nueva Unidad" : "Editar Unidad"}
                 </h3>
-                <p className="text-slate-400 text-xs mt-0.5">Completa los datos de la unidad de medida a continuación.</p>
+                <p className="text-zinc-400 text-xs">Completa los datos de la unidad de medida a continuación.</p>
               </div>
             </div>
 
-            <form onSubmit={handleUpsertSubmit} className="space-y-5">
+            <form onSubmit={handleUpsertSubmit} className="space-y-4">
               {formError && (
-                <div className="p-3.5 bg-rose-600/10 border border-rose-500/20 text-rose-400 font-bold rounded-xl text-xs">
+                <div className="p-3 bg-red-500/10 border border-red-500/25 text-red-400 font-semibold rounded-lg text-xs flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0" />
                   {formError}
                 </div>
               )}
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-                  Nombre de la Unidad <span className="text-cyan-400">*</span>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-300 block">
+                  Nombre de la Unidad <span className="text-amber-400">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej. Kilo, Caja, Bolas, Unidad, Docena..."
+                  placeholder="Ej. Kilo, Caja, Bolsa, Unidad, Docena..."
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 text-sm text-white placeholder-slate-600 transition-all outline-none"
+                  className="w-full px-3.5 py-2.5 bg-[#0c0e12] border border-zinc-800 rounded-lg focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/20 text-sm text-zinc-100 placeholder-zinc-500 transition-colors duration-150 outline-none"
                   required
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-300 block">
                   Descripción
                 </label>
                 <textarea
@@ -468,21 +480,21 @@ function UnitView() {
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
                   rows="3"
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 text-sm text-white placeholder-slate-600 transition-all outline-none resize-none"
+                  className="w-full px-3.5 py-2.5 bg-[#0c0e12] border border-zinc-800 rounded-lg focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/20 text-sm text-zinc-100 placeholder-zinc-500 transition-colors duration-150 outline-none resize-none"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setIsUpsertModalOpen(false)}
-                  className="px-4 py-2.5 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/40 text-slate-300 font-semibold rounded-xl text-xs transition-all"
+                  className="px-4 py-2 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 text-zinc-300 font-semibold rounded-lg text-xs transition-colors duration-150 btn-press active:scale-[0.97]"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-cyan-500/20 transition-all"
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-lg text-xs transition-colors duration-150 btn-press active:scale-[0.97]"
                 >
                   {upsertMode === "create" ? "Registrar Unidad" : "Guardar Cambios"}
                 </button>
@@ -494,19 +506,18 @@ function UnitView() {
 
       {/* Toast Notification flotante en la esquina superior derecha */}
       {showToast && (
-        <div className="fixed top-20 right-8 z-50 max-w-sm w-full bg-slate-900/90 border border-emerald-500/30 rounded-2xl shadow-2xl p-4 flex items-center gap-3 backdrop-blur-md animate-slide-in">
-          <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+        <div className="fixed top-20 right-8 z-50 max-w-sm w-full bg-[#12151c] border border-emerald-500/30 rounded-xl shadow-2xl p-4 flex items-center gap-3 animate-toast-in">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 flex-shrink-0">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div className="flex-1">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Operación Exitosa</h4>
-            <p className="text-sm font-semibold text-white mt-0.5">{toastMessage}</p>
+            <p className="text-sm font-semibold text-zinc-100">{toastMessage}</p>
           </div>
           <button 
             onClick={() => setShowToast(false)}
-            className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors outline-none"
+            className="text-zinc-400 hover:text-zinc-100 p-1 rounded-lg transition-colors duration-150 outline-none"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

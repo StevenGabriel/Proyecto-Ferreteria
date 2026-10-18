@@ -565,7 +565,7 @@ function ClientView() {
   const renderClientFormFields = () => (
     <div className="space-y-4 text-xs">
       {formError && (
-        <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-xl font-bold flex items-center gap-2">
+        <div className="p-3 bg-red-500/10 border border-red-500/25 text-red-400 rounded-xl font-bold flex items-center gap-2">
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
@@ -574,11 +574,11 @@ function ClientView() {
       )}
 
       {/* Fila 1: Tipo de Contacto | Tipo (Individual vs Empresa) | ID de Contacto */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-[#0c0e12] p-3.5 rounded-xl border border-zinc-800/80">
         <div>
-          <label className="block text-slate-400 font-bold mb-1">Tipo de Contacto:</label>
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 font-semibold">
-            <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <label className="block text-zinc-400 font-bold mb-1">Tipo de Contacto:</label>
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-[#12151c] border border-zinc-800 rounded-lg text-zinc-200 font-semibold">
+            <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
             <span>Clientes</span>
@@ -586,27 +586,27 @@ function ClientView() {
         </div>
 
         <div>
-          <label className="block text-slate-400 font-bold mb-1">Tipo:</label>
+          <label className="block text-zinc-400 font-bold mb-1">Tipo:</label>
           <div className="flex items-center gap-4 py-2">
-            <label className="flex items-center gap-1.5 text-slate-200 cursor-pointer font-semibold">
+            <label className="flex items-center gap-1.5 text-zinc-200 cursor-pointer font-semibold">
               <input
                 type="radio"
                 name="TipoContacto"
                 value="Individual"
                 checked={formData.TipoContacto === 'Individual'}
                 onChange={() => setFormData({ ...formData, TipoContacto: 'Individual' })}
-                className="w-4 h-4 text-blue-600 bg-slate-900 border-slate-700 focus:ring-0 cursor-pointer"
+                className="w-4 h-4 accent-amber-500 bg-[#12151c] border-zinc-700 focus:ring-0 cursor-pointer"
               />
               <span>Individual</span>
             </label>
-            <label className="flex items-center gap-1.5 text-slate-200 cursor-pointer font-semibold">
+            <label className="flex items-center gap-1.5 text-zinc-200 cursor-pointer font-semibold">
               <input
                 type="radio"
                 name="TipoContacto"
                 value="Empresa"
                 checked={formData.TipoContacto === 'Empresa'}
                 onChange={() => setFormData({ ...formData, TipoContacto: 'Empresa' })}
-                className="w-4 h-4 text-blue-600 bg-slate-900 border-slate-700 focus:ring-0 cursor-pointer"
+                className="w-4 h-4 accent-amber-500 bg-[#12151c] border-zinc-700 focus:ring-0 cursor-pointer"
               />
               <span>Empresa</span>
             </label>
@@ -614,23 +614,23 @@ function ClientView() {
         </div>
 
         <div>
-          <label className="block text-slate-400 font-bold mb-1">ID de contacto:</label>
+          <label className="block text-zinc-400 font-bold mb-1">ID de contacto:</label>
           <input
             type="text"
             value={formData.CodigoContacto}
             onChange={(e) => setFormData({ ...formData, CodigoContacto: e.target.value })}
             placeholder="Dejar vacío para autogenerar"
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono outline-none focus:border-cyan-500"
+            className="w-full bg-[#12151c] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
           />
         </div>
       </div>
 
       {/* Condicional: Nombre de la Empresa (Solo si Tipo == 'Empresa') */}
       {formData.TipoContacto === 'Empresa' && (
-        <div className="bg-blue-950/20 border border-blue-800/40 p-3 rounded-xl animate-fade-in">
-          <label className="block text-cyan-300 font-bold mb-1">Nombre de la empresa:*</label>
+        <div className="bg-amber-500/5 border border-amber-500/20 p-3 rounded-xl animate-fade-in">
+          <label className="block text-amber-400 font-bold mb-1">Nombre de la empresa:*</label>
           <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-cyan-400">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-amber-400">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
@@ -640,7 +640,7 @@ function ClientView() {
               value={formData.NombreEmpresa}
               onChange={(e) => handleCompanyNameChange(e.target.value)}
               placeholder="Nombre de la empresa (Ej. PORTE ASESORIA Y CONFECCION S.R.L.)"
-              className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-cyan-700/60 rounded-lg text-white font-bold outline-none focus:border-cyan-400 uppercase"
+              className="w-full pl-9 pr-3 py-2 bg-[#0c0e12] border border-amber-500/30 rounded-lg text-zinc-100 font-bold outline-none focus:border-amber-500 uppercase transition-colors"
             />
           </div>
         </div>
@@ -649,18 +649,18 @@ function ClientView() {
       {/* Fila Nombres: Prefijo | Nombres:* | Segundo nombre | Apellidos */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
         <div>
-          <label className="block text-slate-400 font-bold mb-1">Prefijo:</label>
+          <label className="block text-zinc-400 font-bold mb-1">Prefijo:</label>
           <input
             type="text"
             value={formData.Prefijo}
             onChange={(e) => handleIndividualNameChange('Prefijo', e.target.value)}
             placeholder="Señor, señora, señorita..."
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
+            className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
           />
         </div>
 
         <div>
-          <label className="block text-slate-400 font-bold mb-1">
+          <label className="block text-zinc-400 font-bold mb-1">
             Nombres:{formData.TipoContacto === 'Individual' && <span className="text-amber-400">*</span>}
           </label>
           <input
@@ -668,29 +668,29 @@ function ClientView() {
             value={formData.Nombres}
             onChange={(e) => handleIndividualNameChange('Nombres', e.target.value)}
             placeholder="Nombres"
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white font-semibold outline-none focus:border-cyan-500"
+            className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 font-semibold outline-none focus:border-amber-500/60 transition-colors"
           />
         </div>
 
         <div>
-          <label className="block text-slate-400 font-bold mb-1">Segundo nombre:</label>
+          <label className="block text-zinc-400 font-bold mb-1">Segundo nombre:</label>
           <input
             type="text"
             value={formData.SegundoNombre}
             onChange={(e) => handleIndividualNameChange('SegundoNombre', e.target.value)}
             placeholder="Segundo nombre"
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
+            className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
           />
         </div>
 
         <div>
-          <label className="block text-slate-400 font-bold mb-1">Apellidos:</label>
+          <label className="block text-zinc-400 font-bold mb-1">Apellidos:</label>
           <input
             type="text"
             value={formData.Apellidos}
             onChange={(e) => handleIndividualNameChange('Apellidos', e.target.value)}
             placeholder="Apellidos"
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
+            className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
           />
         </div>
       </div>
@@ -698,79 +698,79 @@ function ClientView() {
       {/* Fila Contactos: Móvil cliente:* (Default 0) | Contacto alternativo | Línea fija | Email */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
         <div>
-          <label className="block text-slate-400 font-bold mb-1">
-            Móvil cliente:* <span className="text-[10px] text-slate-500"></span>
+          <label className="block text-zinc-400 font-bold mb-1">
+            Móvil cliente:*
           </label>
           <input
             type="text"
             value={formData.Movil}
             onChange={(e) => setFormData({ ...formData, Movil: e.target.value })}
             placeholder="0"
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-cyan-300 font-bold outline-none focus:border-cyan-500 font-mono"
+            className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 font-bold outline-none focus:border-amber-500/60 font-mono tabular-nums transition-colors"
           />
         </div>
 
         <div>
-          <label className="block text-slate-400 font-bold mb-1">Contacto alternativo:</label>
+          <label className="block text-zinc-400 font-bold mb-1">Contacto alternativo:</label>
           <input
             type="text"
             value={formData.TelefonoAlternativo}
             onChange={(e) => setFormData({ ...formData, TelefonoAlternativo: e.target.value })}
             placeholder="Número de contacto alternativo"
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
+            className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
           />
         </div>
 
         <div>
-          <label className="block text-slate-400 font-bold mb-1">Línea fija:</label>
+          <label className="block text-zinc-400 font-bold mb-1">Línea fija:</label>
           <input
             type="text"
             value={formData.LineaFija}
             onChange={(e) => setFormData({ ...formData, LineaFija: e.target.value })}
             placeholder="Línea fija"
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
+            className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
           />
         </div>
 
         <div>
-          <label className="block text-slate-400 font-bold mb-1">Email:</label>
+          <label className="block text-zinc-400 font-bold mb-1">Email:</label>
           <input
             type="email"
             value={formData.Email}
             onChange={(e) => setFormData({ ...formData, Email: e.target.value })}
             placeholder="Email para facturación electrónica"
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white outline-none focus:border-cyan-500"
+            className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 font-mono outline-none focus:border-amber-500/60 transition-colors"
           />
         </div>
       </div>
 
       {/* SECCIÓN FACTURACIÓN */}
-      <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3">
-        <h4 className="font-extrabold text-cyan-400 text-xs flex items-center gap-1.5 uppercase tracking-wide">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <div className="p-3.5 bg-[#0c0e12] border border-zinc-800/80 rounded-xl space-y-3">
+        <h4 className="font-extrabold text-zinc-200 text-xs flex items-center gap-1.5 uppercase tracking-wide">
+          <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           Datos de Facturación
         </h4>
 
         <div>
-          <label className="block text-slate-300 font-bold mb-1">Razón social:</label>
+          <label className="block text-zinc-300 font-bold mb-1">Razón social:</label>
           <input
             type="text"
             value={formData.RazonSocial}
             onChange={(e) => setFormData({ ...formData, RazonSocial: e.target.value.toUpperCase() })}
             placeholder="Razón social que figurará en la factura (Ej. DANIEL RODRIGUEZ o PORTE ASESORIA Y CONFECCION S.R.L.)"
-            className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-white font-bold outline-none focus:border-cyan-500 uppercase tracking-wide"
+            className="w-full bg-[#12151c] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 font-bold outline-none focus:border-amber-500/60 uppercase tracking-wide transition-colors"
           />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-slate-300 font-bold mb-1">Tipo de Documento de Identidad:</label>
+            <label className="block text-zinc-300 font-bold mb-1">Tipo de Documento de Identidad:</label>
             <select
               value={formData.TipoDocumentoSIAT}
               onChange={(e) => setFormData({ ...formData, TipoDocumentoSIAT: e.target.value })}
-              className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-slate-200 outline-none focus:border-cyan-500 font-semibold"
+              className="w-full bg-[#12151c] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-amber-500/60 font-semibold transition-colors"
             >
               {SIAT_DOC_TYPES.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -779,23 +779,25 @@ function ClientView() {
           </div>
 
           <div>
-            <label className="block text-slate-300 font-bold mb-1">Número de impuesto / Documento:</label>
+            <label className="block text-zinc-300 font-bold mb-1">Número de impuesto / Documento:</label>
             <input
               type="text"
               value={formData.NIT}
               onChange={(e) => setFormData({ ...formData, NIT: e.target.value })}
               placeholder="Ej. 4502616-1S, 280376027 o 0 si no tiene"
-              className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-cyan-300 font-mono font-bold outline-none focus:border-cyan-500"
+              className="w-full bg-[#12151c] border border-zinc-800 rounded-lg px-3 py-2 text-amber-400 font-mono tabular-nums font-bold outline-none focus:border-amber-500/60 transition-colors"
             />
           </div>
         </div>
       </div>
 
       {/* SECCIÓN PROGRAMA DE LEALTAD Y DESCUENTOS */}
-      <div className="p-3.5 bg-slate-950/80 border border-amber-500/30 rounded-xl space-y-3">
+      <div className="p-3.5 bg-[#0c0e12] border border-amber-500/25 rounded-xl space-y-3">
         <div className="flex items-center justify-between">
           <h4 className="font-extrabold text-amber-400 text-xs flex items-center gap-1.5 uppercase tracking-wide">
-            <span>👑</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
             Programa de Lealtad e Incentivos
           </h4>
           <span className="text-[10px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg">
@@ -805,7 +807,7 @@ function ClientView() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-slate-300 font-bold mb-1">Nivel de Fidelidad:</label>
+            <label className="block text-zinc-300 font-bold mb-1">Nivel de Fidelidad:</label>
             <select
               value={formData.NivelLealtad || 'Estandar'}
               onChange={(e) => {
@@ -817,17 +819,17 @@ function ClientView() {
                   DescuentoPorcentaje: tier.discount
                 });
               }}
-              className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-slate-200 outline-none focus:border-amber-500 font-semibold"
+              className="w-full bg-[#12151c] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-amber-500/60 font-semibold transition-colors"
             >
-              <option value="Estandar">🥉 Bronce (0% Dcto)</option>
-              <option value="Frecuente">🥈 Plata (3% Dcto)</option>
-              <option value="Constructor">🥇 Oro (6% Dcto)</option>
-              <option value="Mayorista">💎 Diamante (10% Dcto)</option>
+              <option value="Estandar">Bronce (0% Dcto)</option>
+              <option value="Frecuente">Plata (3% Dcto)</option>
+              <option value="Constructor">Oro (6% Dcto)</option>
+              <option value="Mayorista">Diamante (10% Dcto)</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-slate-300 font-bold mb-1">Descuento Asignado (%):</label>
+            <label className="block text-zinc-300 font-bold mb-1">Descuento Asignado (%):</label>
             <div className="relative">
               <input
                 type="number"
@@ -836,16 +838,16 @@ function ClientView() {
                 max="100"
                 value={formData.DescuentoPorcentaje ?? 0}
                 onChange={(e) => setFormData({ ...formData, DescuentoPorcentaje: parseFloat(e.target.value) || 0 })}
-                className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-emerald-400 font-mono font-bold outline-none focus:border-emerald-500 pr-8"
+                className="w-full bg-[#12151c] border border-zinc-800 rounded-lg px-3 py-2 text-emerald-400 font-mono tabular-nums font-bold outline-none focus:border-emerald-500 pr-8 transition-colors"
               />
-              <span className="absolute right-3 top-2 text-slate-500 font-bold">%</span>
+              <span className="absolute right-3 top-2 text-zinc-500 font-bold font-mono">%</span>
             </div>
           </div>
         </div>
 
-        <div className="text-[11px] text-slate-400 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80 flex items-center justify-between">
+        <div className="text-[11px] text-zinc-400 bg-[#12151c] p-2.5 rounded-lg border border-zinc-800/80 flex items-center justify-between">
           <span>Histórico de compras acumulado:</span>
-          <span className="font-extrabold text-white font-mono">
+          <span className="font-extrabold text-zinc-100 font-mono tabular-nums">
             Bs. {parseFloat(formData.TotalComprasAcumulado || 0).toFixed(2)}
           </span>
         </div>
@@ -854,49 +856,49 @@ function ClientView() {
   );
 
   return (
-    <div className="bg-slate-950 text-white min-h-screen font-sans flex w-full max-w-full overflow-x-hidden">
+    <div className="bg-[#0c0e12] text-zinc-100 min-h-screen font-sans flex w-full max-w-full overflow-x-hidden">
       <Sidebar activeItem="clientes" />
 
-      <main className={`flex-1 min-w-0 w-full transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-slate-950 flex flex-col overflow-x-hidden`}>
+      <main className={`flex-1 min-w-0 w-full transition-[margin-left] duration-220 ease-out-expo ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-[#0c0e12] flex flex-col overflow-x-hidden`}>
         <Topbar />
 
         <div className="p-6 md:p-8 max-w-[1920px] w-full mx-auto space-y-6 flex-1 min-w-0">
           {/* Encabezado */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-baseline gap-3">
-              <h1 className="text-3xl font-extrabold tracking-tight text-white">
+              <h1 className="text-3xl font-extrabold tracking-tight text-zinc-100" style={{ textWrap: "balance" }}>
                 Clientes
               </h1>
-              <span className="text-slate-400 text-sm font-medium">
+              <span className="text-zinc-400 text-sm font-medium">
                 Administra tus Clientes y datos de Facturación
               </span>
             </div>
 
             <button
               onClick={handleOpenAddModal}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all text-sm cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl shadow-sm transition-colors duration-150 btn-press text-sm cursor-pointer"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              + Añadir Cliente
+              <span>Añadir Cliente</span>
             </button>
           </div>
 
           {/* Tarjeta Filtros Colapsables */}
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl overflow-hidden">
             <button
               onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-              className="w-full px-5 py-4 flex items-center justify-between text-left font-bold text-sm text-cyan-400 hover:bg-slate-800/40 transition-colors"
+              className="w-full px-5 py-4 flex items-center justify-between text-left font-bold text-sm text-zinc-200 hover:bg-zinc-900/50 transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
-                <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
-                <span>Filtros</span>
+                <span>Filtros de Segmentación</span>
               </div>
               <svg
-                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isFiltersOpen ? 'transform rotate-180' : ''}`}
+                className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ease-out-expo ${isFiltersOpen ? 'rotate-180' : ''}`}
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
@@ -907,13 +909,13 @@ function ClientView() {
             </button>
 
             {isFiltersOpen && (
-              <div className="p-5 border-t border-slate-800/60 grid grid-cols-1 sm:grid-cols-4 gap-4 bg-slate-950/40 animate-fade-in text-xs">
+              <div className="p-5 border-t border-zinc-800/80 grid grid-cols-1 sm:grid-cols-4 gap-4 bg-[#0c0e12]/60 animate-fade-in text-xs">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1.5">Tipo de cliente:</label>
+                  <label className="block text-zinc-400 font-semibold mb-1.5">Tipo de cliente:</label>
                   <select
                     value={filterTipoContacto}
                     onChange={(e) => { setFilterTipoContacto(e.target.value); setCurrentPage(1); }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-medium outline-none focus:border-cyan-500/50"
+                    className="w-full bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 font-medium outline-none focus:border-amber-500/60 transition-colors"
                   >
                     <option value="ALL">Todos (Individual y Empresa)</option>
                     <option value="Individual">Individual</option>
@@ -922,11 +924,11 @@ function ClientView() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1.5">Tipo de documento:</label>
+                  <label className="block text-zinc-400 font-semibold mb-1.5">Tipo de documento:</label>
                   <select
                     value={filterDocType}
                     onChange={(e) => { setFilterDocType(e.target.value); setCurrentPage(1); }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-medium outline-none focus:border-cyan-500/50"
+                    className="w-full bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 font-medium outline-none focus:border-amber-500/60 transition-colors"
                   >
                     <option value="ALL">Todos los documentos</option>
                     <option value="WITH_NIT">Con NIT / CI (Factura)</option>
@@ -935,24 +937,24 @@ function ClientView() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1.5">Programa de Lealtad:</label>
+                  <label className="block text-zinc-400 font-semibold mb-1.5">Programa de Lealtad:</label>
                   <select
                     value={filterLoyaltyTier}
                     onChange={(e) => { setFilterLoyaltyTier(e.target.value); setCurrentPage(1); }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-medium outline-none focus:border-amber-500/50"
+                    className="w-full bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 font-medium outline-none focus:border-amber-500/60 transition-colors"
                   >
                     <option value="ALL">Todos los niveles</option>
-                    <option value="Estandar">🥉 Bronce (0%)</option>
-                    <option value="Frecuente">🥈 Plata (3%)</option>
-                    <option value="Constructor">🥇 Oro (6%)</option>
-                    <option value="Mayorista">💎 Diamante (10%)</option>
+                    <option value="Estandar">Bronce (0%)</option>
+                    <option value="Frecuente">Plata (3%)</option>
+                    <option value="Constructor">Oro (6%)</option>
+                    <option value="Mayorista">Diamante (10%)</option>
                   </select>
                 </div>
 
                 <div className="flex items-end">
                   <button
                     onClick={() => { setFilterDocType('ALL'); setFilterTipoContacto('ALL'); setFilterLoyaltyTier('ALL'); setSearchTerm(''); }}
-                    className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition-colors"
+                    className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold rounded-xl transition-colors duration-150 btn-press cursor-pointer"
                   >
                     Limpiar Filtros
                   </button>
@@ -962,20 +964,20 @@ function ClientView() {
           </div>
 
           {/* Tarjeta Principal: Todos sus Clientes */}
-          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-2xl space-y-5 min-w-0 w-full">
-            <h2 className="text-lg font-bold text-white tracking-wide">
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl p-6 shadow-lg space-y-5 min-w-0 w-full">
+            <h2 className="text-lg font-bold text-zinc-100 tracking-tight">
               Todos sus Clientes
             </h2>
 
             {/* Barra de Herramientas */}
             <div className="flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
               {/* Mostrar entradas */}
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 flex-shrink-0">
+              <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 flex-shrink-0">
                 <span>Mostrar</span>
                 <select
                   value={itemsPerPage}
                   onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                  className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-white text-xs font-bold outline-none cursor-pointer"
+                  className="bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-1.5 text-zinc-100 text-xs font-mono tabular-nums font-bold outline-none cursor-pointer focus:border-amber-500/60 transition-colors"
                 >
                   <option value={10}>10</option>
                   <option value={25}>25</option>
@@ -989,7 +991,7 @@ function ClientView() {
               <div className="flex flex-wrap items-center gap-1.5 text-xs">
                 <button
                   onClick={exportToCSV}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 rounded-lg text-slate-300 hover:text-white font-medium transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 rounded-lg text-zinc-300 hover:text-zinc-100 font-medium transition-colors duration-150 btn-press cursor-pointer"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -999,7 +1001,7 @@ function ClientView() {
 
                 <button
                   onClick={exportToCSV}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 rounded-lg text-slate-300 hover:text-white font-medium transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 rounded-lg text-zinc-300 hover:text-zinc-100 font-medium transition-colors duration-150 btn-press cursor-pointer"
                 >
                   <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1009,7 +1011,7 @@ function ClientView() {
 
                 <button
                   onClick={() => window.print()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 rounded-lg text-slate-300 hover:text-white font-medium transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 rounded-lg text-zinc-300 hover:text-zinc-100 font-medium transition-colors duration-150 btn-press cursor-pointer"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -1021,9 +1023,9 @@ function ClientView() {
                 <div className="relative">
                   <button
                     onClick={(e) => { e.stopPropagation(); setIsColumnVisibilityOpen(!isColumnVisibilityOpen); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 rounded-lg text-slate-300 hover:text-white font-medium transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 rounded-lg text-zinc-300 hover:text-zinc-100 font-medium transition-colors duration-150 btn-press cursor-pointer"
                   >
-                    <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
@@ -1033,16 +1035,16 @@ function ClientView() {
                   {isColumnVisibilityOpen && (
                     <div
                       onClick={(e) => e.stopPropagation()}
-                      className="absolute right-0 mt-2 w-52 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-3 z-50 space-y-1.5 text-xs animate-fade-in"
+                      className="absolute right-0 mt-2 w-52 bg-[#12151c] border border-zinc-800 rounded-xl shadow-2xl p-3 z-50 space-y-1.5 text-xs origin-top-right animate-dropdown-in"
                     >
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Columnas visibles</span>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-2">Columnas visibles</span>
                       {Object.keys(visibleColumns).map((colKey) => (
-                        <label key={colKey} className="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer select-none">
+                        <label key={colKey} className="flex items-center gap-2 text-zinc-300 hover:text-zinc-100 cursor-pointer select-none">
                           <input
                             type="checkbox"
                             checked={visibleColumns[colKey]}
                             onChange={() => toggleColumn(colKey)}
-                            className="rounded border-slate-700 bg-slate-950 text-cyan-500"
+                            className="rounded border-zinc-700 bg-[#0c0e12] accent-amber-500"
                           />
                           <span className="capitalize">{colKey.replace(/([A-Z])/g, ' $1')}</span>
                         </label>
@@ -1053,9 +1055,9 @@ function ClientView() {
 
                 <button
                   onClick={() => window.print()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 rounded-lg text-slate-300 hover:text-white font-medium transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 rounded-lg text-zinc-300 hover:text-zinc-100 font-medium transition-colors duration-150 btn-press cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                   Exportar a PDF
@@ -1064,7 +1066,7 @@ function ClientView() {
 
               {/* Buscador */}
               <div className="relative w-full sm:w-64 flex-shrink-0">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-zinc-500">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
@@ -1074,21 +1076,21 @@ function ClientView() {
                   placeholder="Buscar por cliente, NIT, email..."
                   value={searchTerm}
                   onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                  className="w-full pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl focus:border-cyan-500/50 text-xs text-white outline-none"
+                  className="w-full pl-9 pr-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-xl focus:border-amber-500/60 text-xs text-zinc-100 outline-none transition-colors"
                 />
               </div>
             </div>
 
             {/* Tabla DataTable */}
-            <div className="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-950/40 w-full">
+            <div className="border border-zinc-800/80 rounded-xl overflow-hidden bg-[#0c0e12]/50 w-full">
               <div className="overflow-x-auto w-full custom-scrollbar">
-                <table className="w-full text-xs text-left text-slate-300 min-w-[1000px]">
-                  <thead className="uppercase bg-slate-900/90 text-slate-400 border-b border-slate-800 text-[11px] whitespace-nowrap">
+                <table className="w-full text-xs text-left text-zinc-300 min-w-[1000px]">
+                  <thead className="uppercase bg-[#0c0e12] text-zinc-400 border-b border-zinc-800/80 text-[11px] whitespace-nowrap">
                     <tr>
                       {visibleColumns.accion && <th className="px-4 py-3.5 font-bold">Acción</th>}
                       {visibleColumns.codigoContacto && <th className="px-4 py-3.5 font-bold">ID Contacto</th>}
                       {visibleColumns.tipo && <th className="px-4 py-3.5 font-bold">Tipo</th>}
-                      {visibleColumns.programaLealtad && <th className="px-4 py-3.5 font-bold text-amber-400">👑 Nivel Lealtad</th>}
+                      {visibleColumns.programaLealtad && <th className="px-4 py-3.5 font-bold text-amber-400">Nivel Lealtad</th>}
                       {visibleColumns.nombre && <th className="px-4 py-3.5 font-bold">Nombre / Empresa</th>}
                       {visibleColumns.razonSocial && <th className="px-4 py-3.5 font-bold">Razón Social Factura</th>}
                       {visibleColumns.nit && <th className="px-4 py-3.5 font-bold">NIT / CI</th>}
@@ -1098,7 +1100,7 @@ function ClientView() {
                       {visibleColumns.añadido && <th className="px-4 py-3.5 font-bold">Añadido</th>}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-zinc-800/60">
                     {currentClients.length > 0 ? (
                       currentClients.map((clie) => {
                         const isActionOpen = openActionMenuId === clie.ClienteID;
@@ -1108,7 +1110,7 @@ function ClientView() {
                         const discountVal = clie.DescuentoPorcentaje !== undefined ? parseFloat(clie.DescuentoPorcentaje) : tier.discount;
 
                         return (
-                          <tr key={clie.ClienteID} className="hover:bg-slate-900/50 transition-colors whitespace-nowrap">
+                          <tr key={clie.ClienteID} className="hover:bg-zinc-900/50 transition-colors whitespace-nowrap">
                             {visibleColumns.accion && (
                               <td className="px-4 py-3 relative">
                                 <button
@@ -1116,10 +1118,10 @@ function ClientView() {
                                     e.stopPropagation();
                                     setOpenActionMenuId(isActionOpen ? null : clie.ClienteID);
                                   }}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[11px] rounded-md shadow transition-colors cursor-pointer"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 font-bold text-[11px] rounded-md transition-colors duration-150 btn-press cursor-pointer"
                                 >
                                   <span>Acciones</span>
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                  <svg className="w-3 h-3 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                                   </svg>
                                 </button>
@@ -1127,13 +1129,13 @@ function ClientView() {
                                 {isActionOpen && (
                                   <div
                                     onClick={(e) => e.stopPropagation()}
-                                    className="absolute left-4 top-10 w-40 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-1.5 z-50 animate-fade-in"
+                                    className="absolute left-4 top-10 w-40 bg-[#12151c] border border-zinc-800 rounded-xl shadow-2xl py-1.5 z-50 origin-top-left animate-dropdown-in"
                                   >
                                     <button
                                       onClick={(e) => handleOpenViewModal(clie, e)}
-                                      className="w-full text-left px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2"
+                                      className="w-full text-left px-4 py-2 text-xs text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800/80 flex items-center gap-2 transition-colors cursor-pointer"
                                     >
-                                      <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                      <svg className="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                       </svg>
@@ -1141,7 +1143,7 @@ function ClientView() {
                                     </button>
                                     <button
                                       onClick={(e) => handleOpenEditModal(clie, e)}
-                                      className="w-full text-left px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2"
+                                      className="w-full text-left px-4 py-2 text-xs text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800/80 flex items-center gap-2 transition-colors cursor-pointer"
                                     >
                                       <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1150,9 +1152,9 @@ function ClientView() {
                                     </button>
                                     <button
                                       onClick={(e) => handleOpenDeleteModal(clie, e)}
-                                      className="w-full text-left px-4 py-2 text-xs text-rose-400 hover:bg-rose-500/10 flex items-center gap-2"
+                                      className="w-full text-left px-4 py-2 text-xs text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors cursor-pointer"
                                     >
-                                      <svg className="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                      <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                       </svg>
                                       Eliminar
@@ -1161,15 +1163,15 @@ function ClientView() {
                                 )}
                               </td>
                             )}
-                            {visibleColumns.codigoContacto && <td className="px-4 py-3 font-semibold text-slate-200 font-mono">{clie.CodigoContacto || '—'}</td>}
+                            {visibleColumns.codigoContacto && <td className="px-4 py-3 font-semibold text-zinc-200 font-mono tabular-nums">{clie.CodigoContacto || '—'}</td>}
                             {visibleColumns.tipo && (
                               <td className="px-4 py-3">
                                 {isCompany ? (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/25">
                                     Empresa
                                   </span>
                                 ) : (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-800 text-zinc-300 border border-zinc-700">
                                     Individual
                                   </span>
                                 )}
@@ -1182,7 +1184,7 @@ function ClientView() {
                                     {tier.badge}
                                   </span>
                                   {discountVal > 0 && (
-                                    <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md">
+                                    <span className="text-[10px] font-black font-mono tabular-nums text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md">
                                       {discountVal}% OFF
                                     </span>
                                   )}
@@ -1190,30 +1192,30 @@ function ClientView() {
                               </td>
                             )}
                             {visibleColumns.nombre && (
-                              <td className="px-4 py-3 font-bold text-white uppercase">
+                              <td className="px-4 py-3 font-bold text-zinc-100 uppercase">
                                 {clie.Nombre || clie.NombreEmpresa || 'SIN NOMBRE'}
                               </td>
                             )}
                             {visibleColumns.razonSocial && (
-                              <td className="px-4 py-3 text-slate-300 uppercase font-semibold">
+                              <td className="px-4 py-3 text-zinc-300 uppercase font-semibold">
                                 {clie.RazonSocial || 'SIN NOMBRE'}
                               </td>
                             )}
                             {visibleColumns.nit && (
-                              <td className="px-4 py-3 text-cyan-300 font-mono font-bold">
+                              <td className="px-4 py-3 text-amber-400 font-mono tabular-nums font-bold">
                                 {clie.NIT || '0'}
                               </td>
                             )}
-                            {visibleColumns.email && <td className="px-4 py-3 text-slate-400">{clie.Email || '—'}</td>}
-                            {visibleColumns.telefono && <td className="px-4 py-3 text-slate-300 font-mono">{clie.Movil || clie.Telefono || '0'}</td>}
-                            {visibleColumns.direccion && <td className="px-4 py-3 text-slate-400 max-w-xs truncate">{clie.Direccion || '—'}</td>}
-                            {visibleColumns.añadido && <td className="px-4 py-3 text-slate-400">{formatDate(clie.createdAt)}</td>}
+                            {visibleColumns.email && <td className="px-4 py-3 text-zinc-400 font-mono text-[11px]">{clie.Email || '—'}</td>}
+                            {visibleColumns.telefono && <td className="px-4 py-3 text-zinc-300 font-mono tabular-nums">{clie.Movil || clie.Telefono || '0'}</td>}
+                            {visibleColumns.direccion && <td className="px-4 py-3 text-zinc-400 max-w-xs truncate">{clie.Direccion || '—'}</td>}
+                            {visibleColumns.añadido && <td className="px-4 py-3 text-zinc-400 font-mono tabular-nums">{formatDate(clie.createdAt)}</td>}
                           </tr>
                         );
                       })
                     ) : (
                       <tr>
-                        <td colSpan={11} className="py-12 text-center text-slate-500 font-semibold">
+                        <td colSpan={11} className="py-12 text-center text-zinc-500 font-semibold">
                           No se encontraron clientes registrados con estos filtros.
                         </td>
                       </tr>
@@ -1224,22 +1226,22 @@ function ClientView() {
             </div>
 
             {/* Paginación */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-slate-400 pt-2">
-              <div>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-zinc-400 pt-2">
+              <div className="font-mono tabular-nums">
                 Mostrando {filteredClients.length === 0 ? 0 : startIndex + 1} a {Math.min(startIndex + itemsPerPage, filteredClients.length)} de {filteredClients.length} entradas
               </div>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg hover:bg-slate-800 text-slate-300 disabled:opacity-40 cursor-pointer"
+                  className="px-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg hover:bg-zinc-800 text-zinc-300 disabled:opacity-40 transition-colors duration-150 btn-press cursor-pointer"
                 >
                   Anterior
                 </button>
                 <button
                   onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg hover:bg-slate-800 text-slate-300 disabled:opacity-40 cursor-pointer"
+                  className="px-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg hover:bg-zinc-800 text-zinc-300 disabled:opacity-40 transition-colors duration-150 btn-press cursor-pointer"
                 >
                   Siguiente
                 </button>
@@ -1251,16 +1253,16 @@ function ClientView() {
 
       {/* MODAL AÑADIR (Agregar un nuevo contacto) */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl p-6 space-y-4 my-8">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-extrabold text-lg text-white flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl p-6 space-y-4 my-8 animate-modal-in">
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+              <h3 className="font-extrabold text-lg text-zinc-100 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                 Agregar un nuevo contacto
               </h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+                className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800/60 transition-colors cursor-pointer"
               >
                 ✕
               </button>
@@ -1269,17 +1271,17 @@ function ClientView() {
             <form onSubmit={handleCreateClient} className="space-y-4">
               {renderClientFormFields()}
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800/80">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                  className="px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold rounded-xl text-xs transition-colors duration-150 btn-press cursor-pointer"
                 >
                   Cerrar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30 text-xs transition-all cursor-pointer"
+                  className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl shadow-sm text-xs transition-colors duration-150 btn-press cursor-pointer"
                 >
                   Guardar
                 </button>
@@ -1291,16 +1293,16 @@ function ClientView() {
 
       {/* MODAL EDITAR (Editar contacto) */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl p-6 space-y-4 my-8">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-extrabold text-lg text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl p-6 space-y-4 my-8 animate-modal-in">
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+              <h3 className="font-extrabold text-lg text-zinc-100 flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                 Editar contacto: <span className="text-amber-400">{selectedClient?.Nombre}</span>
               </h3>
               <button
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+                className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800/60 transition-colors cursor-pointer"
               >
                 ✕
               </button>
@@ -1309,17 +1311,17 @@ function ClientView() {
             <form onSubmit={handleUpdateClient} className="space-y-4">
               {renderClientFormFields()}
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800/80">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                  className="px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold rounded-xl text-xs transition-colors duration-150 btn-press cursor-pointer"
                 >
                   Cerrar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30 text-xs transition-all cursor-pointer"
+                  className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl shadow-sm text-xs transition-colors duration-150 btn-press cursor-pointer"
                 >
                   Actualizar
                 </button>
@@ -1331,78 +1333,83 @@ function ClientView() {
 
       {/* MODAL VER DETALLES */}
       {isViewModalOpen && selectedClient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-extrabold text-lg text-white flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl p-6 space-y-4 animate-modal-in">
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+              <h3 className="font-extrabold text-lg text-zinc-100 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
                 Ficha de Contacto: {selectedClient.Nombre}
               </h3>
-              <button onClick={() => setIsViewModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg hover:bg-zinc-800/60 transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 grid grid-cols-2 gap-3">
+              <div className="bg-[#0c0e12] p-4 rounded-xl border border-zinc-800/80 grid grid-cols-2 gap-3">
                 <div>
-                  <span className="text-slate-500 block font-semibold">Tipo de Contacto:</span>
-                  <span className="font-bold text-cyan-400">{selectedClient.TipoContacto || 'Individual'}</span>
+                  <span className="text-zinc-500 block font-semibold">Tipo de Contacto:</span>
+                  <span className="font-bold text-amber-400">{selectedClient.TipoContacto || 'Individual'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block font-semibold">ID Contacto:</span>
-                  <span className="font-mono font-bold text-white">{selectedClient.CodigoContacto || '—'}</span>
+                  <span className="text-zinc-500 block font-semibold">ID Contacto:</span>
+                  <span className="font-mono tabular-nums font-bold text-zinc-100">{selectedClient.CodigoContacto || '—'}</span>
                 </div>
                 {selectedClient.NombreEmpresa && (
                   <div className="col-span-2">
-                    <span className="text-slate-500 block font-semibold">Nombre de la Empresa:</span>
-                    <span className="font-bold text-white uppercase">{selectedClient.NombreEmpresa}</span>
+                    <span className="text-zinc-500 block font-semibold">Nombre de la Empresa:</span>
+                    <span className="font-bold text-zinc-100 uppercase">{selectedClient.NombreEmpresa}</span>
                   </div>
                 )}
                 <div className="col-span-2">
-                  <span className="text-slate-500 block font-semibold">Razón Social para Facturación:</span>
-                  <span className="font-bold text-white uppercase">{selectedClient.RazonSocial || 'SIN NOMBRE'}</span>
+                  <span className="text-zinc-500 block font-semibold">Razón Social para Facturación:</span>
+                  <span className="font-bold text-zinc-100 uppercase">{selectedClient.RazonSocial || 'SIN NOMBRE'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block font-semibold">Tipo Documento:</span>
-                  <span className="font-semibold text-slate-300">{selectedClient.TipoDocumentoSIAT || 'NIT'}</span>
+                  <span className="text-zinc-500 block font-semibold">Tipo Documento:</span>
+                  <span className="font-semibold text-zinc-300">{selectedClient.TipoDocumentoSIAT || 'NIT'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block font-semibold">NIT / CI:</span>
-                  <span className="font-mono font-bold text-cyan-400">{selectedClient.NIT || '0'}</span>
+                  <span className="text-zinc-500 block font-semibold">NIT / CI:</span>
+                  <span className="font-mono tabular-nums font-bold text-amber-400">{selectedClient.NIT || '0'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block font-semibold">Móvil / Celular:</span>
-                  <span className="font-mono font-semibold text-slate-300">{selectedClient.Movil || '0'}</span>
+                  <span className="text-zinc-500 block font-semibold">Móvil / Celular:</span>
+                  <span className="font-mono tabular-nums font-semibold text-zinc-300">{selectedClient.Movil || '0'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block font-semibold">Email:</span>
-                  <span className="font-semibold text-slate-300">{selectedClient.Email || '—'}</span>
+                  <span className="text-zinc-500 block font-semibold">Email:</span>
+                  <span className="font-mono font-semibold text-zinc-300">{selectedClient.Email || '—'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block font-semibold">Ciudad:</span>
-                  <span className="font-semibold text-slate-300">{selectedClient.Ciudad || 'Cochabamba'}</span>
+                  <span className="text-zinc-500 block font-semibold">Ciudad:</span>
+                  <span className="font-semibold text-zinc-300">{selectedClient.Ciudad || 'Cochabamba'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block font-semibold">Asignado a:</span>
-                  <span className="font-semibold text-slate-300">{selectedClient.AsignadoA || 'General'}</span>
+                  <span className="text-zinc-500 block font-semibold">Asignado a:</span>
+                  <span className="font-semibold text-zinc-300">{selectedClient.AsignadoA || 'General'}</span>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-slate-500 block font-semibold">Dirección:</span>
-                  <span className="font-semibold text-slate-300">{selectedClient.Direccion || '—'}</span>
+                  <span className="text-zinc-500 block font-semibold">Dirección:</span>
+                  <span className="font-semibold text-zinc-300">{selectedClient.Direccion || '—'}</span>
                 </div>
 
                 {/* Resumen de Lealtad */}
-                <div className="col-span-2 p-3 bg-slate-900/90 rounded-xl border border-amber-500/30 flex items-center justify-between">
+                <div className="col-span-2 p-3 bg-[#12151c] rounded-xl border border-amber-500/25 flex items-center justify-between">
                   <div>
                     <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wide block">
-                      👑 Programa de Lealtad:
+                      Programa de Lealtad:
                     </span>
-                    <span className="text-xs font-black text-white">
-                      {LOYALTY_TIERS[selectedClient.NivelLealtad || 'Estandar']?.badge || '🥉 Bronce'} — {selectedClient.NivelLealtad || 'Estándar'}
+                    <span className="text-xs font-black text-zinc-100">
+                      {LOYALTY_TIERS[selectedClient.NivelLealtad || 'Estandar']?.badge || 'Bronce'} — {selectedClient.NivelLealtad || 'Estándar'}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-slate-400 block font-semibold">Descuento Activo:</span>
-                    <span className="text-xs font-black text-emerald-400">
+                    <span className="text-[10px] text-zinc-400 block font-semibold">Descuento Activo:</span>
+                    <span className="text-xs font-black font-mono tabular-nums text-emerald-400">
                       {selectedClient.DescuentoPorcentaje ?? 0}% OFF
                     </span>
                   </div>
@@ -1410,8 +1417,13 @@ function ClientView() {
               </div>
             </div>
 
-            <div className="flex justify-end pt-3 border-t border-slate-800">
-              <button onClick={() => setIsViewModalOpen(false)} className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs">Cerrar</button>
+            <div className="flex justify-end pt-3 border-t border-zinc-800/80">
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-bold rounded-xl text-xs transition-colors duration-150 btn-press cursor-pointer"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
@@ -1419,20 +1431,30 @@ function ClientView() {
 
       {/* MODAL ELIMINAR */}
       {isDeleteModalOpen && selectedClient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-6 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-500 mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-6 text-center space-y-4 animate-modal-in">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center text-red-400 mx-auto">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h3 className="text-base font-extrabold text-white">¿Eliminar Cliente?</h3>
-            <p className="text-xs text-slate-400">
-              ¿Estás seguro de que deseas eliminar al cliente <strong className="text-white">{selectedClient.Nombre}</strong>?
+            <h3 className="text-base font-extrabold text-zinc-100">¿Eliminar Cliente?</h3>
+            <p className="text-xs text-zinc-400">
+              ¿Estás seguro de que deseas eliminar al cliente <strong className="text-zinc-100">{selectedClient.Nombre}</strong>?
             </p>
             <div className="flex justify-center gap-3 pt-2">
-              <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2 bg-slate-800 text-slate-300 font-bold rounded-xl text-xs">Cancelar</button>
-              <button onClick={handleConfirmDelete} className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs shadow-lg">Sí, Eliminar</button>
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold rounded-xl text-xs transition-colors duration-150 btn-press cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition-colors duration-150 btn-press cursor-pointer"
+              >
+                Sí, Eliminar
+              </button>
             </div>
           </div>
         </div>
@@ -1440,8 +1462,8 @@ function ClientView() {
 
       {/* Toast Notification */}
       {showToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-cyan-500/40 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 animate-fade-in">
-          <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></div>
+        <div className="fixed bottom-6 right-6 z-50 bg-[#12151c] border border-emerald-500/30 text-zinc-100 px-4 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 animate-toast-in">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></div>
           <span className="text-xs font-bold">{toastMessage}</span>
         </div>
       )}
@@ -1450,4 +1472,5 @@ function ClientView() {
 }
 
 export default ClientView;
+
 
