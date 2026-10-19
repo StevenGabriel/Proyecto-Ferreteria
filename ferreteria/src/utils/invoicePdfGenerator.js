@@ -302,7 +302,33 @@ export async function generateInvoicePdf(receiptData, options = { openInTab: tru
     doc.save(fileName);
   }
 
-  if (options.openInTab) {
+  if (options.print) {
+    doc.autoPrint();
+    const pdfBlobUrl = doc.output('bloburl');
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.src = pdfBlobUrl;
+      document.body.appendChild(iframe);
+      iframe.onload = () => {
+        setTimeout(() => {
+          try {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          } catch (e) {
+            window.open(pdfBlobUrl, '_blank');
+          }
+        }, 200);
+      };
+    } catch (e) {
+      window.open(pdfBlobUrl, '_blank');
+    }
+  } else if (options.openInTab) {
     const pdfBlobUrl = doc.output('bloburl');
     window.open(pdfBlobUrl, '_blank');
   }
@@ -556,7 +582,33 @@ export async function generateInvoiceTicketPdf(receiptData, options = { openInTa
     doc.save(fileName);
   }
 
-  if (options.openInTab) {
+  if (options.print) {
+    doc.autoPrint();
+    const pdfBlobUrl = doc.output('bloburl');
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.src = pdfBlobUrl;
+      document.body.appendChild(iframe);
+      iframe.onload = () => {
+        setTimeout(() => {
+          try {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          } catch (e) {
+            window.open(pdfBlobUrl, '_blank');
+          }
+        }, 200);
+      };
+    } catch (e) {
+      window.open(pdfBlobUrl, '_blank');
+    }
+  } else if (options.openInTab) {
     const pdfBlobUrl = doc.output('bloburl');
     window.open(pdfBlobUrl, '_blank');
   }

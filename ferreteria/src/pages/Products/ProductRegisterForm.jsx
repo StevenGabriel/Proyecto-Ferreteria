@@ -240,8 +240,24 @@ function ProductRegisterForm() {
       setErrorMessage("Debes seleccionar una Ubicación en Almacén.");
       return;
     }
-    if (!Precio || isNaN(parseFloat(Precio))) {
-      setErrorMessage("Debes especificar un Precio Con Factura válido.");
+    if (!Precio || isNaN(parseFloat(Precio)) || parseFloat(Precio) <= 0) {
+      setErrorMessage("Debes especificar un Precio Con Factura válido y mayor a 0.");
+      return;
+    }
+    if (PrecioCompra && (isNaN(parseFloat(PrecioCompra)) || parseFloat(PrecioCompra) < 0)) {
+      setErrorMessage("El precio de compra no puede ser un valor negativo.");
+      return;
+    }
+    if (Margen && (isNaN(parseFloat(Margen)) || parseFloat(Margen) < 0)) {
+      setErrorMessage("El margen de ganancia no puede ser un valor negativo.");
+      return;
+    }
+    if (LoteMinimo && (isNaN(parseInt(LoteMinimo)) || parseInt(LoteMinimo) < 1)) {
+      setErrorMessage("El stock mínimo de alerta debe ser al menos de 1 unidad.");
+      return;
+    }
+    if (ManejaCaducidad && (!DiasAlertaCaducidad || isNaN(parseInt(DiasAlertaCaducidad)) || parseInt(DiasAlertaCaducidad) < 1)) {
+      setErrorMessage("Los días de alerta preventiva de caducidad deben ser al menos 1 día.");
       return;
     }
 

@@ -178,6 +178,18 @@ function OnlineOrdersView() {
   // Ejecutar Confirmación y Entrega
   const handleConfirmPickup = async () => {
     if (!selectedOrder) return;
+
+    if (issueInvoice) {
+      if (!billingNit.trim() || billingNit.trim() === '0') {
+        showToast('Para emitir Factura oficial es obligatorio ingresar un NIT o CI válido.', 'error');
+        return;
+      }
+      if (!billingName.trim() && !selectedOrder.ClienteNombre) {
+        showToast('Para emitir Factura oficial es obligatorio ingresar la Razón Social.', 'error');
+        return;
+      }
+    }
+
     setActionLoading(true);
     try {
       const payload = {
@@ -252,6 +264,22 @@ function OnlineOrdersView() {
     } catch (err) {
       console.error('Error al generar PDF:', err);
       showToast('Error al generar el documento PDF.', 'error');
+    }
+  };
+
+  // Imprimir Comprobante PDF Oficial directamente
+  const handlePrintReceiptPdf = async (customIsInvoice = null) => {
+    if (!lastSaleReceipt) return;
+    try {
+      const isInv = customIsInvoice !== null ? customIsInvoice : lastSaleReceipt.isInvoice;
+      showToast(`Abriendo visor de impresión para ${isInv ? 'Factura SIAT' : 'Recibo Oficial'}...`, 'info');
+      await generateInvoiceTicketPdf({
+        ...lastSaleReceipt,
+        isInvoice: isInv
+      }, { print: true, download: false, openInTab: false });
+    } catch (err) {
+      console.warn('Fallback a impresión nativa:', err);
+      window.print();
     }
   };
 
@@ -981,11 +1009,10 @@ function OnlineOrdersView() {
       {showReceiptModal && lastSaleReceipt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto">
           <div
-            id="printable-receipt-online"
             className="bg-white text-zinc-900 rounded-2xl max-w-xl w-full p-6 sm:p-8 shadow-2xl space-y-4 font-sans text-xs max-h-[95vh] overflow-y-auto relative border border-zinc-200 animate-modal-in"
           >
-            {/* Header / Botón Cerrar */}
-            <div className="flex items-center justify-between no-print border-b border-zinc-200 pb-3">
+            {/* Header / Botón Cerrar (solo pantalla) */}
+            <div className="flex items-center justify-between no-print print:hidden border-b border-zinc-200 pb-3">
               <div className="flex items-center gap-2.5">
                 <span className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-base font-bold">
                   ✓
@@ -1006,7 +1033,9 @@ function OnlineOrdersView() {
               </button>
             </div>
 
-            {/* 1. Cabecera Empresa */}
+            {/* DOCUMENTO IMPRIMIBLE: SOLO CONTIENE EL COMPROBANTE */}
+            <div id="printable-receipt-online" className="space-y-4 bg-white text-zinc-900 font-sans text-xs">
+              {/* 1. Cabecera Empresa */}
             <div className="text-center space-y-0.5 border-b border-zinc-300 pb-3">
               <h2 className="font-extrabold text-base tracking-wider uppercase text-black">CASA Y CONSTRUCCIÓN</h2>
               <p className="text-[10px] text-zinc-600 font-medium">AV. BEIJING Y AV. TADEO HAENKE, COCHABAMBA, BOLIVIA</p>
@@ -1110,9 +1139,10 @@ function OnlineOrdersView() {
                 </div>
               </div>
             </div>
+            </div>
 
-            {/* Botones de Acción en Pantalla (ocultos al imprimir) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-4 no-print border-t border-zinc-200">
+            {/* Botones de Acción en Pantalla (estrictamente ocultos al imprimir) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-4 no-print print:hidden border-t border-zinc-200">
               <button
                 type="button"
                 onClick={() => setShowReceiptModal(false)}
@@ -1134,8 +1164,9 @@ function OnlineOrdersView() {
 
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={() => handlePrintReceiptPdf(lastSaleReceipt.isInvoice)}
                 className="btn-press py-2.5 px-4 bg-zinc-900 hover:bg-zinc-800 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                title="Imprimir comprobante oficial en alta resolución"
               >
                 <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -1150,6 +1181,10 @@ function OnlineOrdersView() {
       {/* Estilos CSS para Impresión exacta del Recibo */}
       <style>{`
         @media print {
+          @page {
+            margin: 6mm;
+            size: auto;
+          }
           body * {
             visibility: hidden !important;
           }
@@ -1161,13 +1196,39 @@ function OnlineOrdersView() {
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
+            max-width: 100% !important;
             margin: 0 !important;
-            padding: 20px !important;
+            padding: 4mm 6mm !important;
             box-shadow: none !important;
             border: none !important;
+            background: white !important;
           }
-          .no-print {
+          #printable-receipt-online table {
+            display: table !important;
+            width: 100% !important;
+          }
+          #printable-receipt-online thead {
+            display: table-header-group !important;
+          }
+          #printable-receipt-online tbody {
+            display: table-row-group !important;
+          }
+          #printable-receipt-online tr {
+            display: table-row !important;
+          }
+          #printable-receipt-online th, #printable-receipt-online td {
+            display: table-cell !important;
+          }
+          .no-print,
+          .no-print *,
+          #printable-receipt-online .no-print,
+          #printable-receipt-online .no-print * {
             display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
           }
         }
       `}</style>

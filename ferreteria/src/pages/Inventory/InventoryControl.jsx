@@ -142,9 +142,19 @@ function InventoryControl() {
     e.preventDefault();
     setAdjustError('');
 
-    if (!adjustForm.ProductoID || !adjustForm.cantidad || adjustForm.cantidad <= 0) {
+    if (!adjustForm.ProductoID || !adjustForm.cantidad || isNaN(parseFloat(adjustForm.cantidad)) || parseFloat(adjustForm.cantidad) <= 0) {
       setAdjustError('Por favor selecciona un producto e ingresa una cantidad válida (> 0).');
       return;
+    }
+
+    const selectedProduct = allProducts.find((p) => p.ProductoID === parseInt(adjustForm.ProductoID));
+    if ((adjustForm.tipoAjuste === 'AJUSTE_SALIDA' || adjustForm.tipoAjuste === 'MERMA') && selectedProduct) {
+      const currentStock = parseFloat(selectedProduct.Stock || 0);
+      const requestedExit = parseFloat(adjustForm.cantidad);
+      if (requestedExit > currentStock) {
+        setAdjustError(`No se puede dar de baja más stock del existente en almacén. Stock actual: ${currentStock} unidades.`);
+        return;
+      }
     }
 
     try {

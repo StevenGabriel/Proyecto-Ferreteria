@@ -336,6 +336,20 @@ function ClientCatalog() {
       return;
     }
 
+    if (!checkoutPhone.trim() || !/^[0-9+ -]{7,15}$/.test(checkoutPhone.trim())) {
+      setToastMessage("Por favor ingresa un número de teléfono o celular válido (mínimo 7 dígitos).");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3500);
+      return;
+    }
+
+    if (cart.some(it => !it.quantity || it.quantity <= 0)) {
+      setToastMessage("Uno o más productos en el carrito tienen una cantidad inválida.");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3500);
+      return;
+    }
+
     setProcessingOrder(true);
     try {
       const itemsPayload = cart.map(item => ({

@@ -99,6 +99,22 @@ function UserManagement() {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.correo.trim())) {
+      setModalError("Por favor ingresa un correo electrónico válido (ej. usuario@dominio.com).");
+      return;
+    }
+
+    if (formData.ciNit && formData.ciNit.trim().length < 5) {
+      setModalError("El documento CI/NIT debe tener al menos 5 dígitos.");
+      return;
+    }
+
+    if (formData.telefono && !/^[0-9+ -]{7,15}$/.test(formData.telefono.trim())) {
+      setModalError("El número de teléfono o celular debe tener al menos 7 dígitos válidos.");
+      return;
+    }
+
     try {
       setModalLoading(true);
       const res = await createEmployee(formData);
@@ -144,6 +160,27 @@ function UserManagement() {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!selectedEmployee) return;
+
+    if (!editFormData.nombre.trim() || !editFormData.primerApellido.trim() || !editFormData.rol) {
+      setModalError("Por favor completa los campos obligatorios (*).");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (editFormData.correo && !emailRegex.test(editFormData.correo.trim())) {
+      setModalError("Por favor ingresa un correo electrónico válido.");
+      return;
+    }
+
+    if (editFormData.ciNit && editFormData.ciNit.trim().length < 5) {
+      setModalError("El documento CI/NIT debe tener al menos 5 dígitos.");
+      return;
+    }
+
+    if (editFormData.telefono && !/^[0-9+ -]{7,15}$/.test(editFormData.telefono.trim())) {
+      setModalError("El número de teléfono o celular debe tener al menos 7 dígitos válidos.");
+      return;
+    }
 
     try {
       setModalLoading(true);

@@ -66,6 +66,10 @@ function InvoiceListView() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
+    if (fechaInicio && fechaFin && new Date(fechaInicio) > new Date(fechaFin)) {
+      showToast('La fecha de inicio no puede ser posterior a la fecha final.', 'error');
+      return;
+    }
     setCurrentPage(1);
     fetchInvoices();
   };
@@ -127,6 +131,10 @@ function InvoiceListView() {
   // Confirmar Anulación
   const handleConfirmVoid = async () => {
     if (!selectedInvoice) return;
+    if (!voidReason.trim()) {
+      showToast('Por favor especifica un motivo válido para la anulación.', 'error');
+      return;
+    }
     setVoidingLoading(true);
     try {
       await voidInvoice(selectedInvoice.ventaID, { motivo: voidReason });

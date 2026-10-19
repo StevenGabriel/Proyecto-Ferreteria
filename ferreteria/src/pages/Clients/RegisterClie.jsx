@@ -64,6 +64,17 @@ function RegisterClie() {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(correo.trim())) {
+      setErrorMessage("Por favor ingresa un correo electrónico válido (ej. usuario@dominio.com).");
+      return;
+    }
+
+    if (telefono.trim() && !/^[0-9+ -]{7,15}$/.test(telefono.trim())) {
+      setErrorMessage("El número de teléfono o celular debe tener al menos 7 dígitos válidos.");
+      return;
+    }
+
     if (contrasena.length < 6) {
       setErrorMessage("La contraseña debe tener un mínimo de 6 caracteres.");
       return;

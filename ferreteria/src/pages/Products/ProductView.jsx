@@ -137,7 +137,8 @@ function ProductView() {
         })
         .catch((err) => {
           console.error("Error al eliminar producto:", err);
-          alert("Error al eliminar el producto.");
+          setToastMessage(err.response?.data?.message || "Error al eliminar el producto en la base de datos.");
+          setShowToast(true);
           setIsDeleteModalOpen(false);
         });
     }
@@ -229,7 +230,8 @@ function ProductView() {
     );
 
     if (newRowsToSave.length === 0) {
-      alert("Por favor ingresa al menos una nueva cantidad válida para agregar.");
+      setToastMessage("Por favor ingresa al menos una nueva cantidad válida (> 0) para agregar.");
+      setShowToast(true);
       return;
     }
 
@@ -237,16 +239,24 @@ function ProductView() {
 
     for (const r of newRowsToSave) {
       if (!r.fecha) {
-        alert("La Fecha de Ingreso es obligatoria para registrar el stock.");
+        setToastMessage("La Fecha de Ingreso es obligatoria para registrar el stock.");
+        setShowToast(true);
+        return;
+      }
+      if (r.costo && (isNaN(parseFloat(r.costo)) || parseFloat(r.costo) < 0)) {
+        setToastMessage("El costo unitario del lote no puede ser un valor negativo.");
+        setShowToast(true);
         return;
       }
       if (stockProduct.ManejaCaducidad) {
         if (!r.fechaVencimiento) {
-          alert(`El producto "${stockProduct.Nombre}" está configurado con caducidad. Es obligatorio ingresar la Fecha de Caducidad para cada lote.`);
+          setToastMessage(`El producto "${stockProduct.Nombre}" maneja caducidad. Es obligatorio ingresar la Fecha de Vencimiento para cada lote.`);
+          setShowToast(true);
           return;
         }
         if (r.fechaVencimiento < todayStr) {
-          alert(`La Fecha de Caducidad (${r.fechaVencimiento}) no puede ser anterior a la fecha actual (${todayStr}).`);
+          setToastMessage(`La Fecha de Caducidad (${r.fechaVencimiento}) no puede ser anterior a la fecha actual (${todayStr}).`);
+          setShowToast(true);
           return;
         }
       }
@@ -274,7 +284,8 @@ function ProductView() {
       })
       .catch((err) => {
         console.error("Error al guardar lotes:", err);
-        alert("Error al registrar los lotes de stock.");
+        setToastMessage(err.response?.data?.message || "Error al registrar los lotes de stock en la base de datos.");
+        setShowToast(true);
       });
   };
 

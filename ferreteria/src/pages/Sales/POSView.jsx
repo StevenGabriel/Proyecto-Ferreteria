@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/sidebar/sidebar';
 import Topbar from '../../components/topbar/topbar';
 import { useSidebar } from '../../context/SidebarContext';
-import { getProducts, getCategories, getBrands, createSale, updateSale, updateSaleInvoice, getRecentSales, getCashRegisterStatus, openCashRegister, getLastCashRegister, closeCashRegister, addCashInflow } from '../../services/api';
+import { getProducts, getCategories, getBrands, createSale, updateSale, updateSaleInvoice, getRecentSales, getCashRegisterStatus, openCashRegister, getLastCashRegister, closeCashRegister, addCashInflow, getOnlineOrders } from '../../services/api';
 import { generateInvoicePdf } from '../../utils/invoicePdfGenerator';
 
 function POSView() {
@@ -95,6 +95,34 @@ function POSView() {
   const [cart, setCart] = useState([]);
   const [barcodeInput, setBarcodeInput] = useState('');
   const barcodeInputRef = useRef(null);
+  const barcodeSearchContainerRef = useRef(null);
+  const [showBarcodeSuggestions, setShowBarcodeSuggestions] = useState(false);
+  const [selectedBarcodeSuggestionIndex, setSelectedBarcodeSuggestionIndex] = useState(-1);
+
+  // Sugerencias predictivas de productos en tiempo real para el buscador del ticket
+  const barcodeSuggestions = useMemo(() => {
+    const term = barcodeInput.trim().toLowerCase();
+    if (!term) return [];
+    return products
+      .filter((p) => {
+        const nameMatch = p.Nombre && p.Nombre.toLowerCase().includes(term);
+        const codeMatch = p.Codigo && p.Codigo.toLowerCase().includes(term);
+        const barcodeMatch = p.CodigoBarras && p.CodigoBarras.toLowerCase().includes(term);
+        return nameMatch || codeMatch || barcodeMatch;
+      })
+      .slice(0, 10);
+  }, [barcodeInput, products]);
+
+  // Cerrar sugerencias al hacer clic fuera del buscador del ticket
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (barcodeSearchContainerRef.current && !barcodeSearchContainerRef.current.contains(e.target)) {
+        setShowBarcodeSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Cliente seleccionado
   const [clients, setClients] = useState(() => {
@@ -166,7 +194,8 @@ function POSView() {
     const contactCode = `CO0${462 + clients.length}`;
     const tier = newClientForm.NivelLealtad || 'Estandar';
     const tierDiscount = tier === 'Mayorista' ? 15 : tier === 'Constructor' ? 10 : tier === 'Frecuente' ? 5 : 0;
-    const finalDescPct = newClientForm.DescuentoPorcentaje !== undefined ? parseFloat(newClientForm.DescuentoPorcentaje) : tierDiscount;
+    const rawDescPct = newClientForm.DescuentoPorcentaje !== undefined ? parseFloat(newClientForm.DescuentoPorcentaje) : tierDiscount;
+    const finalDescPct = Math.min(100, Math.max(0, isNaN(rawDescPct) ? 0 : rawDescPct));
 
     const created = {
       id: newId,
@@ -236,7 +265,8 @@ function POSView() {
   const [invoiceDocNumber, setInvoiceDocNumber] = useState('0');
   const [invoiceComplemento, setInvoiceComplemento] = useState('');
   const [invoiceEmail, setInvoiceEmail] = useState('');
-  const [invoicePaymentMethod, setInvoicePaymentMethod] = useState('EFECTIVO'); // 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'BILLETERA_MOVIL' | 'GIFT_CARD'
+  const [invoicePaymentMethod, setInvoicePaymentMethod] = useState('EFECTIVO'); // 'EFECTIVO' | 'BILLETERA_MOVIL'
+  const [showClientSuggestions, setShowClientSuggestions] = useState(false);
 
   // Modales de cobro y utilidades
   const [showCashModal, setShowCashModal] = useState(false);
@@ -309,6 +339,149 @@ function POSView() {
     } catch (e) {
       console.warn('Audio context error:', e);
     }
+  };
+
+  // Sonido de Timbre de Mostrador para Pedidos Online Entrantes (Chime de 2 tonos armónicos)
+  const playOrderChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const audioCtx = new AudioCtx();
+      const now = audioCtx.currentTime;
+
+      // Primer tono (E5: 659.25Hz)
+      const osc1 = audioCtx.createOscillator();
+      const gain1 = audioCtx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(659.25, now);
+      gain1.gain.setValueAtTime(0.18, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.35);
+
+      // Segundo tono (A5: 880Hz)
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(880, now + 0.16);
+      gain2.gain.setValueAtTime(0.22, now + 0.16);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start(now + 0.16);
+      osc2.stop(now + 0.65);
+    } catch (e) {
+      console.warn('Audio context error:', e);
+    }
+  };
+
+  // Pedidos Online en Tiempo Real (Alertas y Notificaciones de Mostrador)
+  const [pendingOnlineOrdersCount, setPendingOnlineOrdersCount] = useState(0);
+  const [newOnlineOrderAlert, setNewOnlineOrderAlert] = useState(null);
+  const knownOrderIdsRef = useRef(new Set());
+  const isFirstOrderFetchRef = useRef(true);
+
+  // Verificación periódica de pedidos online pendientes (cada 20 segundos)
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkPendingOrders = async () => {
+      try {
+        const res = await getOnlineOrders({ estado: 'PENDIENTE' });
+        if (!isMounted || !res) return;
+
+        const pendingOrders = Array.isArray(res.orders) ? res.orders : [];
+        const count = res.stats?.pendientes ?? pendingOrders.length;
+        setPendingOnlineOrdersCount(count);
+
+        if (isFirstOrderFetchRef.current) {
+          // Registro inicial de pedidos existentes sin disparar alarma sonora
+          pendingOrders.forEach((o) => {
+            const id = o.PedidoOnlineID || o.id;
+            if (id) knownOrderIdsRef.current.add(id);
+          });
+          isFirstOrderFetchRef.current = false;
+        } else {
+          // Detección de nuevos pedidos entrantes
+          const newlyArrived = pendingOrders.filter((o) => {
+            const id = o.PedidoOnlineID || o.id;
+            return id && !knownOrderIdsRef.current.has(id);
+          });
+
+          if (newlyArrived.length > 0) {
+            newlyArrived.forEach((o) => {
+              const id = o.PedidoOnlineID || o.id;
+              if (id) knownOrderIdsRef.current.add(id);
+            });
+
+            // Disparar sonido de timbre de mostrador
+            playOrderChime();
+
+            // Desplegar aviso de nuevo pedido en pantalla
+            const latest = newlyArrived[0];
+            setNewOnlineOrderAlert(latest);
+            showToast(`🛎️ ¡Nuevo pedido online ${latest.CodigoPedido || ''}!`, 'warning');
+          }
+        }
+      } catch (err) {
+        console.warn('Error consultando pedidos online en segundo plano:', err);
+      }
+    };
+
+    checkPendingOrders();
+    const interval = setInterval(checkPendingOrders, 20000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Cargar pedido online directamente al ticket actual del mostrador
+  const handleLoadOnlineOrderToTicket = (order) => {
+    if (!order) return;
+    const detalles = order.Detalles || [];
+    if (detalles.length === 0) {
+      showToast('El pedido online no contiene productos para cargar.', 'error');
+      return;
+    }
+
+    const newCartItems = detalles.map((d) => {
+      const prod = d.Producto || {};
+      const prodId = d.ProductoID || prod.ProductoID;
+      const price = parseFloat(d.PrecioUnitario || prod.PrecioVenta || prod.Precio || 0);
+      const qty = parseInt(d.Cantidad || 1);
+
+      return {
+        ProductoID: prodId,
+        name: prod.Nombre || d.ProductoNombre || 'Producto Online',
+        code: prod.Codigo || prod.CodigoBarras || `PRD-${prodId}`,
+        price: price,
+        PrecioVenta: price,
+        PrecioSinFactura: parseFloat(prod.PrecioSinFactura || (price * 0.87)),
+        unit: prod.Unidad?.Nombre || 'PZA',
+        quantity: qty,
+        discountType: 'Fijo',
+        discountAmount: 0,
+        customNote: `Pedido Online ${order.CodigoPedido || ''}`,
+        maxStock: parseInt(prod.Stock || 999),
+        subtotal: price * qty,
+        image: prod.Imagen
+      };
+    });
+
+    setCart(newCartItems);
+
+    if (order.ClienteNombre) {
+      setInvoiceRazonSocial(order.ClienteNombre);
+      setInvoiceDocNumber(order.NIT_CI || '0');
+      setInvoiceCustomerType(order.ClienteNombre === 'SIN NOMBRE' ? 'SIN_NOMBRE' : 'NORMAL');
+    }
+
+    setNewOnlineOrderAlert(null);
+    playBeep();
+    showToast(`Pedido ${order.CodigoPedido || ''} cargado al ticket (${newCartItems.length} productos)`, 'success');
   };
 
   // Cargar productos, categorías, marcas y transacciones recientes desde la BD
@@ -757,22 +930,71 @@ function POSView() {
     showToast(`"${product.Nombre}" añadido al ticket`);
   };
 
+  // Selección de sugerencia predictiva desde el buscador
+  const handleSelectBarcodeSuggestion = (product) => {
+    if (!product) return;
+    addToCart(product);
+    setBarcodeInput('');
+    setShowBarcodeSuggestions(false);
+    setSelectedBarcodeSuggestionIndex(-1);
+    if (barcodeInputRef.current) {
+      barcodeInputRef.current.focus();
+    }
+  };
+
+  // Navegación por teclado en el desplegable de sugerencias
+  const handleBarcodeKeyDown = (e) => {
+    if (!showBarcodeSuggestions || barcodeSuggestions.length === 0) {
+      if (e.key === 'Escape') {
+        setShowBarcodeSuggestions(false);
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedBarcodeSuggestionIndex((prev) =>
+        prev < barcodeSuggestions.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedBarcodeSuggestionIndex((prev) =>
+        prev > 0 ? prev - 1 : barcodeSuggestions.length - 1
+      );
+    } else if (e.key === 'Enter') {
+      if (selectedBarcodeSuggestionIndex >= 0 && selectedBarcodeSuggestionIndex < barcodeSuggestions.length) {
+        e.preventDefault();
+        handleSelectBarcodeSuggestion(barcodeSuggestions[selectedBarcodeSuggestionIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setShowBarcodeSuggestions(false);
+    }
+  };
+
   // Buscar por escáner de código de barras
   const handleBarcodeSubmit = (e) => {
     e.preventDefault();
     if (!barcodeInput.trim()) return;
 
+    if (selectedBarcodeSuggestionIndex >= 0 && selectedBarcodeSuggestionIndex < barcodeSuggestions.length) {
+      handleSelectBarcodeSuggestion(barcodeSuggestions[selectedBarcodeSuggestionIndex]);
+      return;
+    }
+
     const term = barcodeInput.trim().toLowerCase();
-    const found = products.find(
+    const exactMatch = products.find(
       (p) =>
         (p.CodigoBarras && p.CodigoBarras.toLowerCase() === term) ||
-        (p.Codigo && p.Codigo.toLowerCase() === term) ||
-        p.Nombre.toLowerCase().includes(term)
+        (p.Codigo && p.Codigo.toLowerCase() === term)
+    );
+
+    const found = exactMatch || products.find(
+      (p) => p.Nombre && p.Nombre.toLowerCase().includes(term)
     );
 
     if (found) {
-      addToCart(found);
-      setBarcodeInput('');
+      handleSelectBarcodeSuggestion(found);
     } else {
       showToast(`No se encontró ningún producto con el código "${barcodeInput}"`, 'error');
     }
@@ -842,11 +1064,34 @@ function POSView() {
     setShowCancelConfirmModal(true);
   };
 
-  // Confirmar vaciado del ticket
-  const handleConfirmClearCart = () => {
+  // Resetear completamente el POS para iniciar una nueva venta limpia
+  const resetPosForNextSale = (customClientsList = null) => {
+    const list = customClientsList || clients;
+    const defaultClient = list[0] || {
+      id: 1,
+      name: 'Cliente General (Sin Factura)',
+      nit: '0',
+      NivelLealtad: 'Estandar',
+      DescuentoPorcentaje: 0
+    };
+    setSelectedClient(defaultClient);
     setCart([]);
     setManualDiscount(null);
     setEditingSaleId(null);
+    setInvoiceCustomerType('SIN_NOMBRE');
+    setInvoiceRazonSocial('SIN NOMBRE');
+    setInvoiceDocType('NIT');
+    setInvoiceDocNumber('0');
+    setInvoiceComplemento('');
+    setInvoiceEmail('');
+    setInvoicePaymentMethod('EFECTIVO');
+    setReceivedCash('');
+    setShowClientSuggestions(false);
+  };
+
+  // Confirmar vaciado del ticket
+  const handleConfirmClearCart = () => {
+    resetPosForNextSale();
     setShowCancelConfirmModal(false);
     showToast('Venta cancelada y ticket vaciado', 'info');
   };
@@ -1004,6 +1249,7 @@ function POSView() {
   // Cambio de modalidad de cliente en el modal de factura
   const handleCustomerTypeChange = (type) => {
     setInvoiceCustomerType(type);
+    setShowClientSuggestions(false);
     if (type === 'SIN_NOMBRE') {
       setInvoiceRazonSocial('SIN NOMBRE');
       setInvoiceDocType('NIT');
@@ -1018,9 +1264,13 @@ function POSView() {
       if (selectedClient && selectedClient.id !== 1) {
         setInvoiceRazonSocial(selectedClient.name);
         setInvoiceDocNumber(selectedClient.nit !== '0' ? selectedClient.nit : '');
+        setInvoiceDocType(selectedClient.nit && selectedClient.nit.length > 8 ? 'NIT' : 'CI');
+        setInvoiceEmail(selectedClient.email && selectedClient.email !== '-' ? selectedClient.email : '');
       } else {
         setInvoiceRazonSocial('');
         setInvoiceDocNumber('');
+        setInvoiceDocType('NIT');
+        setInvoiceComplemento('');
       }
     } else if (type === 'CASO_ESPECIAL') {
       setInvoiceRazonSocial('CASO ESPECIAL');
@@ -1028,27 +1278,53 @@ function POSView() {
     }
   };
 
-  // Confirmar Factura (actualiza la venta con NIT/Razón Social y emite Factura)
+  // Seleccionar cliente de las sugerencias predictivas
+  const handleSelectClientSuggestion = (c) => {
+    const chosenName = c.name || c.RazonSocial || '';
+    const chosenNit = c.nit !== '0' ? c.nit : '';
+    setInvoiceRazonSocial(chosenName);
+    setInvoiceDocNumber(chosenNit);
+    setInvoiceDocType(chosenNit.length > 8 ? 'NIT' : 'CI');
+    setInvoiceEmail(c.email && c.email !== '-' ? c.email : '');
+    setSelectedClient(c);
+    setShowClientSuggestions(false);
+    showToast(`Cliente "${chosenName}" seleccionado`, 'info');
+  };
+
+  // Confirmar Factura o Recibo (según modalidad seleccionada)
   const confirmInvoice = async () => {
     if (!lastSaleReceipt) {
       setShowCashModal(false);
       return;
     }
 
-    const finalClientName = invoiceRazonSocial.trim() || 'CLIENTE GENERAL';
-    const finalNit = invoiceDocNumber.trim() || '0';
+    if (invoicePaymentMethod === 'EFECTIVO') {
+      const rec = parseFloat(receivedCash);
+      if (isNaN(rec) || rec < (lastSaleReceipt.total - 0.01)) {
+        showToast(`El efectivo recibido (Bs. ${isNaN(rec) ? '0.00' : rec.toFixed(2)}) es menor al total a cobrar (Bs. ${lastSaleReceipt.total.toFixed(2)}).`, 'error');
+        return;
+      }
+    }
+
+    const isSinNombre = invoiceCustomerType === 'SIN_NOMBRE';
+    const isRealInvoice = !isSinNombre;
+
+    const finalClientName = isSinNombre ? 'SIN NOMBRE' : (invoiceRazonSocial.trim() || 'CLIENTE GENERAL');
+    const finalNit = isSinNombre ? '0' : (invoiceDocNumber.trim() || '0');
 
     const updatedSale = {
       ...lastSaleReceipt,
-      id: lastSaleReceipt.id.startsWith('FAC') ? lastSaleReceipt.id : lastSaleReceipt.id.replace('VNT', 'FAC'),
+      id: isRealInvoice
+        ? (lastSaleReceipt.id.startsWith('FAC') ? lastSaleReceipt.id : lastSaleReceipt.id.replace('VNT', 'FAC').replace('REC', 'FAC'))
+        : (lastSaleReceipt.id.startsWith('REC') ? lastSaleReceipt.id : lastSaleReceipt.id.replace('VNT', 'REC').replace('FAC', 'REC')),
       client: finalClientName,
       nit: finalNit,
-      docType: invoiceDocType,
+      docType: isRealInvoice ? invoiceDocType : 'NIT',
       complemento: invoiceComplemento,
       email: invoiceEmail,
       customerType: invoiceCustomerType,
       paymentMethod: invoicePaymentMethod,
-      isInvoice: true,
+      isInvoice: isRealInvoice,
       cashReceived: invoicePaymentMethod === 'EFECTIVO' ? (parseFloat(receivedCash) || lastSaleReceipt.total) : lastSaleReceipt.total,
       change: invoicePaymentMethod === 'EFECTIVO' ? Math.max(0, (parseFloat(receivedCash) || lastSaleReceipt.total) - lastSaleReceipt.total) : 0
     };
@@ -1063,34 +1339,149 @@ function POSView() {
       return updated;
     });
 
-    // Sincronizar actualización de factura con la base de datos SQL Server
-    const rawId = (lastSaleReceipt.ventaID || lastSaleReceipt.id || '').toString().replace(/^[A-Z-]+/i, '');
-    if (rawId && !isNaN(parseInt(rawId))) {
-      try {
-        await updateSaleInvoice(rawId, {
-          razonSocial: finalClientName,
-          clienteNombre: finalClientName,
+    // Sincronizar actualización de factura con la base de datos SQL Server solo si es fiscal
+    if (isRealInvoice) {
+      const rawId = (lastSaleReceipt.ventaID || lastSaleReceipt.id || '').toString().replace(/^[A-Z-]+/i, '');
+      if (rawId && !isNaN(parseInt(rawId))) {
+        try {
+          await updateSaleInvoice(rawId, {
+            razonSocial: finalClientName,
+            clienteNombre: finalClientName,
+            nit: finalNit,
+            tipoDocumento: invoiceDocType
+          });
+          // Refrescar lista de transacciones recientes desde la base de datos
+          getRecentSales().then((salesData) => {
+            if (Array.isArray(salesData)) setRecentSales(salesData);
+          }).catch(() => {});
+        } catch (err) {
+          console.warn('No se pudo sincronizar factura en base de datos:', err);
+        }
+      }
+    }
+
+    let nextClientsList = clients;
+    // Auto-registrar cliente en el catálogo de clientes si es un cliente nuevo nominal
+    if (isRealInvoice && finalClientName && finalClientName !== 'CLIENTE GENERAL' && finalClientName !== 'SIN NOMBRE') {
+      const matchExists = clients.some((c) =>
+        c.name.trim().toLowerCase() === finalClientName.toLowerCase() ||
+        (finalNit !== '0' && c.nit && c.nit.trim() === finalNit)
+      );
+      if (!matchExists) {
+        const newClientEntry = {
+          id: Date.now(),
+          ClienteID: Date.now(),
+          name: finalClientName,
+          Nombre: finalClientName,
+          RazonSocial: finalClientName,
           nit: finalNit,
-          tipoDocumento: invoiceDocType
-        });
-        // Refrescar lista de transacciones recientes desde la base de datos
-        getRecentSales().then((salesData) => {
-          if (Array.isArray(salesData)) setRecentSales(salesData);
-        }).catch(() => {});
-      } catch (err) {
-        console.warn('No se pudo sincronizar factura en base de datos:', err);
+          NIT: finalNit,
+          phone: '-',
+          email: invoiceEmail || '',
+          address: 'Ventas en Mostrador',
+          NivelLealtad: 'Estandar',
+          DescuentoPorcentaje: 0,
+          TotalComprasAcumulado: lastSaleReceipt.total || 0
+        };
+        nextClientsList = [...clients, newClientEntry];
+        setClients(nextClientsList);
+        try {
+          localStorage.setItem('cyc_pos_clients', JSON.stringify(nextClientsList));
+        } catch {}
       }
     }
 
     setShowCashModal(false);
     setShowReceiptModal(true);
-    showToast('¡Factura fiscal emitida con éxito!', 'success');
+    showToast(isRealInvoice ? '¡Factura fiscal emitida con éxito!' : '¡Recibo de venta emitido con éxito!', 'success');
+    // Limpiar campos y reiniciar cliente a Cliente General para el próximo ticket
+    resetPosForNextSale(nextClientsList);
+  };
+
+  // Emitir Solo Nota de Venta / Recibo para cliente nominal (sin registro fiscal SIAT)
+  const handleIssueReceiptOnly = () => {
+    if (!lastSaleReceipt) {
+      setShowCashModal(false);
+      return;
+    }
+
+    if (invoicePaymentMethod === 'EFECTIVO') {
+      const rec = parseFloat(receivedCash);
+      if (isNaN(rec) || rec < (lastSaleReceipt.total - 0.01)) {
+        showToast(`El efectivo recibido (Bs. ${isNaN(rec) ? '0.00' : rec.toFixed(2)}) es menor al total a cobrar (Bs. ${lastSaleReceipt.total.toFixed(2)}).`, 'error');
+        return;
+      }
+    }
+
+    const finalClientName = invoiceRazonSocial.trim() || 'CLIENTE GENERAL';
+    const finalNit = invoiceDocNumber.trim() || '0';
+
+    const updatedSale = {
+      ...lastSaleReceipt,
+      id: lastSaleReceipt.id.startsWith('REC') ? lastSaleReceipt.id : lastSaleReceipt.id.replace('VNT', 'REC').replace('FAC', 'REC'),
+      client: finalClientName,
+      nit: finalNit,
+      docType: invoiceDocType,
+      complemento: invoiceComplemento,
+      email: invoiceEmail,
+      customerType: invoiceCustomerType,
+      paymentMethod: invoicePaymentMethod,
+      isInvoice: false,
+      cashReceived: invoicePaymentMethod === 'EFECTIVO' ? (parseFloat(receivedCash) || lastSaleReceipt.total) : lastSaleReceipt.total,
+      change: invoicePaymentMethod === 'EFECTIVO' ? Math.max(0, (parseFloat(receivedCash) || lastSaleReceipt.total) - lastSaleReceipt.total) : 0
+    };
+
+    setLastSaleReceipt(updatedSale);
+    setRecentSales((prev) => prev.map((s) => (s.id === lastSaleReceipt.id || s.id === updatedSale.id ? updatedSale : s)));
+    setCurrentShiftSales((prev) => {
+      const updated = prev.map((s) => (s.id === lastSaleReceipt.id || s.id === updatedSale.id ? updatedSale : s));
+      try {
+        localStorage.setItem('cyc_current_shift_sales', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    let nextClientsList = clients;
+    if (invoiceCustomerType === 'NORMAL' && finalClientName && finalClientName !== 'CLIENTE GENERAL' && finalClientName !== 'SIN NOMBRE') {
+      const matchExists = clients.some((c) =>
+        c.name.trim().toLowerCase() === finalClientName.toLowerCase() ||
+        (finalNit !== '0' && c.nit && c.nit.trim() === finalNit)
+      );
+      if (!matchExists) {
+        const newClientEntry = {
+          id: Date.now(),
+          ClienteID: Date.now(),
+          name: finalClientName,
+          Nombre: finalClientName,
+          RazonSocial: finalClientName,
+          nit: finalNit,
+          NIT: finalNit,
+          phone: '-',
+          email: invoiceEmail || '',
+          address: 'Ventas en Mostrador',
+          NivelLealtad: 'Estandar',
+          DescuentoPorcentaje: 0,
+          TotalComprasAcumulado: lastSaleReceipt?.total || 0
+        };
+        nextClientsList = [...clients, newClientEntry];
+        setClients(nextClientsList);
+        try {
+          localStorage.setItem('cyc_pos_clients', JSON.stringify(nextClientsList));
+        } catch {}
+      }
+    }
+
+    setShowCashModal(false);
+    setShowReceiptModal(true);
+    showToast('¡Recibo / Nota de venta generado exitosamente!', 'success');
+    resetPosForNextSale(nextClientsList);
   };
 
   // Cerrar modal de factura sin problemas (la venta ya está registrada en efectivo)
   const handleCloseInvoiceModal = () => {
     setShowCashModal(false);
-    showToast('Venta finalizada como comprobante de mostrador.', 'success');
+    showToast('Venta finalizada como comprobante de mostrador.', 'info');
+    resetPosForNextSale(clients);
   };
 
   // Descargar comprobante / factura en formato PDF oficial y abrirlo en visor
@@ -1107,6 +1498,18 @@ function POSView() {
     }
   };
 
+  // Imprimir comprobante oficial directamente en alta fidelidad (PDF oficial)
+  const handlePrintReceipt = async () => {
+    if (!lastSaleReceipt) return;
+    try {
+      showToast('Abriendo visor de impresión...', 'info');
+      await generateInvoicePdf(lastSaleReceipt, { print: true, download: false, openInTab: false });
+    } catch (err) {
+      console.warn('Fallback a impresión nativa:', err);
+      window.print();
+    }
+  };
+
   // Abrir modal de transacciones recientes sincronizando con BD
   const handleOpenRecentSales = async () => {
     try {
@@ -1120,45 +1523,62 @@ function POSView() {
     setShowRecentSalesModal(true);
   };
 
-  // Impresión de comprobante desde Transacciones Recientes
-  const handlePrintRecentSale = (s) => {
-    const isNamed = s.client && s.client !== 'SIN NOMBRE';
-    const saleNum = s.ventaID || s.id.replace('VNT-', '');
+  // Impresión de comprobante desde Transacciones Recientes (Alta fidelidad oficial)
+  const handlePrintRecentSale = async (s) => {
+    // Determinar con precisión si la venta fue emitida formalmente con factura fiscal
+    const isRealInvoice =
+      s.isInvoice === true ||
+      s.esFactura === true ||
+      s.esFactura === 1 ||
+      (typeof s.id === 'string' && s.id.startsWith('FAC')) ||
+      (s.TipoDocumento && s.TipoDocumento.toLowerCase().includes('factura'));
+
+    const saleNum = s.ventaID || s.id.toString().replace(/^[A-Z-]+/i, '');
+    const clientName = s.client || s.cliente || 'CLIENTE GENERAL';
+    const isSinNombre = !clientName || clientName === 'SIN NOMBRE' || clientName === 'CLIENTE GENERAL';
+
     const receiptData = {
-      id: saleNum,
+      id: isRealInvoice ? `FAC-${saleNum}` : `REC-${saleNum}`,
+      numeroFactura: saleNum,
       ticketID: s.id,
-      client: isNamed ? s.client : 'SIN NOMBRE',
-      nit: s.nit || '0',
-      docType: 'NIT',
-      complemento: '',
-      email: '',
-      customerType: isNamed ? 'NORMAL' : 'SIN_NOMBRE',
-      items: (s.detalles || []).map((d, i) => ({
+      client: clientName,
+      cliente: clientName,
+      nit: s.nit && s.nit !== '0' ? s.nit : '0',
+      docType: s.docType || 'NIT',
+      complemento: s.complemento || '',
+      email: s.email || '',
+      customerType: isSinNombre ? 'SIN_NOMBRE' : 'NORMAL',
+      items: (s.detalles || s.items || []).map((d, i) => ({
         ProductoID: d.ProductoID || i,
-        name: d.producto,
-        quantity: d.cantidad,
-        price: d.precioUnitario,
-        unit: 'UNID',
-        subtotal: d.subtotal
+        name: d.name || d.producto || d.nombre || 'Producto',
+        producto: d.name || d.producto || d.nombre || 'Producto',
+        quantity: parseFloat(d.quantity || d.cantidad || 1),
+        price: parseFloat(d.price || d.precioUnitario || d.PrecioVenta || 0),
+        unit: d.unit || 'UNID',
+        subtotal: parseFloat(d.subtotal || 0)
       })),
-      totalItemsCount: s.items || 1,
-      subtotal: parseFloat(s.total || 0),
-      discount: 0,
+      detalles: s.detalles || s.items || [],
+      totalItemsCount: s.totalItemsCount || s.items?.length || 1,
+      subtotal: parseFloat(s.subtotal || s.total || 0),
+      discount: parseFloat(s.discount || 0),
       total: parseFloat(s.total || 0),
-      baseCreditoFiscal: parseFloat(s.total || 0),
-      creditoFiscal: parseFloat(s.total || 0) * 0.13,
-      cashReceived: parseFloat(s.total || 0),
-      change: 0,
-      time: s.time,
-      paymentMethod: 'EFECTIVO',
-      isInvoice: isNamed,
+      baseCreditoFiscal: isRealInvoice ? parseFloat(s.total || 0) : 0,
+      creditoFiscal: isRealInvoice ? parseFloat(s.total || 0) * 0.13 : 0,
+      cashReceived: parseFloat(s.cashReceived || s.total || 0),
+      change: parseFloat(s.change || 0),
+      time: s.time || s.fecha || new Date().toLocaleString('es-BO'),
+      paymentMethod: s.paymentMethod || s.metodoPago || 'EFECTIVO',
+      isInvoice: isRealInvoice,
       empleado: s.empleado || currentUser?.Nombre || 'Cajero'
     };
     setLastSaleReceipt(receiptData);
-    // Disparar la impresión nativa directamente sin dejar el modal flotante en pantalla
-    setTimeout(() => {
+    try {
+      showToast(`Abriendo visor de impresión (${isRealInvoice ? 'Factura SIAT' : 'Recibo de Venta'})...`, 'info');
+      await generateInvoicePdf(receiptData, { print: true, download: false, openInTab: false });
+    } catch (e) {
+      console.warn('Fallback a impresión nativa:', e);
       window.print();
-    }, 100);
+    }
   };
 
   // Facturar venta desde Transacciones Recientes
@@ -1685,16 +2105,7 @@ function POSView() {
             <span>Ingreso a caja</span>
           </button>
 
-          <button
-            onClick={() => setShowCalculatorModal(true)}
-            className="btn-press p-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 rounded-lg transition-colors border border-zinc-800"
-            title="Calculadora de mostrador"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-          </button>
-
+          {/* Botón Pantalla Completa */}
           <button
             onClick={() => {
               if (!document.fullscreenElement) {
@@ -1735,7 +2146,7 @@ function POSView() {
         {/* ======================================================================= */}
         <div className="w-full lg:w-[50%] xl:w-[48%] 2xl:w-[46%] bg-[#12151c] border-r border-zinc-800/80 flex flex-col justify-between overflow-hidden">
           {/* Fila 1: Selector de Cliente y Recibo No en Edición */}
-          <div className="p-3.5 border-b border-zinc-800/80 bg-[#0c0e12]/60 space-y-2.5">
+          <div className="p-3.5 border-b border-zinc-800/80 bg-[#0c0e12]/60 space-y-2.5 relative z-30">
             {editingSaleId && (
               <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/30 rounded-xl px-3.5 py-2 text-xs text-amber-300 font-bold">
                 <span className="flex items-center gap-1.5 font-mono tabular-nums">
@@ -1816,20 +2227,114 @@ function POSView() {
               </div>
             )}
 
-            {/* Fila 2: Buscador / Escáner de Código de Barras (CERO ANIMACIÓN LENTA - RESPUESTA INSTANTÁNEA) */}
+            {/* Fila 2: Buscador / Escáner de Código de Barras con Autocompletado Predictivo */}
             <form onSubmit={handleBarcodeSubmit} className="flex items-center gap-2">
-              <div className="relative flex-1">
+              <div ref={barcodeSearchContainerRef} className="relative flex-1">
                 <input
                   ref={barcodeInputRef}
                   type="text"
                   placeholder="Escanee código de barras, ingrese SKU o nombre y presione Enter..."
                   value={barcodeInput}
-                  onChange={(e) => setBarcodeInput(e.target.value)}
+                  onChange={(e) => {
+                    setBarcodeInput(e.target.value);
+                    setSelectedBarcodeSuggestionIndex(-1);
+                    setShowBarcodeSuggestions(true);
+                  }}
+                  onFocus={() => {
+                    if (barcodeInput.trim()) setShowBarcodeSuggestions(true);
+                  }}
+                  onKeyDown={handleBarcodeKeyDown}
                   className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-500 font-medium transition-colors duration-100"
                 />
                 <svg className="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
+
+                {/* Desplegable Predictivo de Sugerencias de Productos en Vivo */}
+                {showBarcodeSuggestions && barcodeInput.trim().length > 0 && (
+                  <div className="absolute z-50 left-0 right-0 top-full mt-1.5 bg-[#12151c] border border-zinc-700/90 rounded-2xl shadow-2xl overflow-hidden animate-dropdown-in origin-top">
+                    <div className="px-3 py-2 bg-[#0c0e12] border-b border-zinc-800/80 flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                        Sugerencias ({barcodeSuggestions.length})
+                      </span>
+                      <span className="text-[10px] text-zinc-500 font-mono">
+                        ↑↓ navegar • Enter añadir • Esc cerrar
+                      </span>
+                    </div>
+
+                    <div className="max-h-72 overflow-y-auto divide-y divide-zinc-800/60 custom-scrollbar">
+                      {barcodeSuggestions.length === 0 ? (
+                        <div className="py-6 px-4 text-center text-zinc-500">
+                          <p className="text-xs font-semibold text-zinc-400">Sin coincidencias para &ldquo;{barcodeInput}&rdquo;</p>
+                          <p className="text-[11px] text-zinc-600 mt-0.5">Verifique el SKU, código de barras o nombre del artículo</p>
+                        </div>
+                      ) : (
+                        barcodeSuggestions.map((prod, idx) => {
+                          const isSelected = idx === selectedBarcodeSuggestionIndex;
+                          const stock = parseInt(prod.Stock || 0);
+                          const isOut = stock <= 0;
+                          const price = parseFloat(prod.PrecioVenta || prod.Precio || 0);
+
+                          return (
+                            <div
+                              key={prod.ProductoID}
+                              onMouseEnter={() => setSelectedBarcodeSuggestionIndex(idx)}
+                              onClick={() => handleSelectBarcodeSuggestion(prod)}
+                              className={`p-2.5 flex items-center justify-between gap-3 cursor-pointer transition-colors duration-100 ${
+                                isSelected
+                                  ? 'bg-amber-500/15 border-l-2 border-amber-400 text-zinc-100'
+                                  : 'hover:bg-zinc-800/50 text-zinc-200'
+                              }`}
+                            >
+                              {/* Miniatura + Nombre y SKU */}
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                <div className="w-10 h-10 rounded-lg bg-[#0c0e12] border border-zinc-800 flex items-center justify-center p-1 flex-shrink-0 overflow-hidden">
+                                  {prod.Imagen ? (
+                                    <img src={prod.Imagen} alt={prod.Nombre} className="w-full h-full object-contain" />
+                                  ) : (
+                                    <svg className="w-4 h-4 text-zinc-600" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-bold text-zinc-100 truncate uppercase">
+                                    {prod.Nombre}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-0.5 text-[10px] text-zinc-400 font-mono">
+                                    <span className="text-amber-400/90 font-semibold">{prod.Codigo || prod.CodigoBarras || `PRD-${prod.ProductoID}`}</span>
+                                    {prod.Categoria?.Nombre && (
+                                      <span className="text-zinc-500 truncate max-w-[120px]">• {prod.Categoria.Nombre}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Stock y Precio */}
+                              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                                <span className="text-xs font-bold font-mono tabular-nums text-amber-400">
+                                  Bs. {price.toFixed(2)}
+                                </span>
+                                <span
+                                  className={`text-[10px] font-mono tabular-nums font-semibold px-1.5 py-0.5 rounded border ${
+                                    isOut
+                                      ? 'bg-red-500/10 text-red-400 border-red-500/25'
+                                      : stock <= (prod.LoteMinimo || 5)
+                                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/25'
+                                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                  }`}
+                                >
+                                  {isOut ? 'Agotado' : `Stock: ${stock}`}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <button
@@ -2136,7 +2641,7 @@ function POSView() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
-            <span>Cobrar (Efectivo / QR)</span>
+            <span>Cobrar</span>
           </button>
 
           <button
@@ -2158,33 +2663,28 @@ function POSView() {
         {/* Acciones Derecha */}
         <div className="flex items-center gap-2 text-xs">
           <button
-            onClick={() => {
-              if (!lastSaleReceipt) return showToast('No hay ventas previas en esta sesión', 'error');
-              setShowReceiptModal(true);
-            }}
-            className="btn-press px-3.5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 rounded-xl font-bold transition-colors"
-          >
-            Último Recibo
-          </button>
-
-          <button
             onClick={handleOpenRecentSales}
             className="btn-press px-3.5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 rounded-xl font-bold transition-colors flex items-center gap-1.5"
           >
             <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>Historial Turno</span>
+            <span>Historial</span>
           </button>
 
           <Link
             to="/pedidos-online"
-            className="btn-press px-3.5 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold rounded-xl transition-colors flex items-center gap-2"
+            className="btn-press px-3.5 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold rounded-xl transition-colors flex items-center gap-2 relative"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
             <span>Pedidos Online</span>
+            {pendingOnlineOrdersCount > 0 && (
+              <span className="px-1.5 py-0.5 bg-red-600 text-white text-[10px] font-mono font-black rounded-full border border-red-400/50 tabular-nums animate-pulse shadow-sm">
+                {pendingOnlineOrdersCount}
+              </span>
+            )}
           </Link>
         </div>
       </footer>
@@ -2245,19 +2745,130 @@ function POSView() {
                 </label>
               </div>
 
-              {/* Campo: Razón Social */}
-              <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">
-                  Razón social *
-                </label>
-                <input
-                  type="text"
-                  value={invoiceRazonSocial}
-                  onChange={(e) => setInvoiceRazonSocial(e.target.value)}
-                  placeholder="SIN NOMBRE o Nombre del cliente / Empresa"
-                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-4 py-2 text-xs text-zinc-100 uppercase focus:outline-none focus:border-amber-500 transition-colors font-semibold"
-                  required
-                />
+              {/* Campo: Razón Social con Autocompletado Predictivo */}
+              <div className="relative">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-zinc-400">
+                    Razón social / Cliente *
+                  </label>
+                  {invoiceCustomerType === 'NORMAL' && (
+                    <span className="text-[10px] text-zinc-500 font-mono">
+                      {showClientSuggestions ? 'Selecciona o escribe nuevo' : 'Buscar o ingresar nuevo'}
+                    </span>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={invoiceRazonSocial}
+                    onChange={(e) => {
+                      setInvoiceRazonSocial(e.target.value);
+                      if (invoiceCustomerType === 'NORMAL') {
+                        setShowClientSuggestions(true);
+                      }
+                    }}
+                    onFocus={() => {
+                      if (invoiceCustomerType === 'NORMAL') {
+                        setShowClientSuggestions(true);
+                      }
+                    }}
+                    placeholder={invoiceCustomerType === 'NORMAL' ? "Escribe nombre, empresa o NIT para buscar..." : "SIN NOMBRE"}
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-4 py-2 pr-10 text-xs text-zinc-100 uppercase focus:outline-none focus:border-amber-500 transition-colors font-semibold"
+                    required
+                  />
+
+                  {invoiceCustomerType === 'NORMAL' && (
+                    <button
+                      type="button"
+                      onClick={() => setShowClientSuggestions(!showClientSuggestions)}
+                      className="absolute right-2.5 top-2 p-0.5 text-zinc-500 hover:text-zinc-200 transition-colors"
+                      title="Ver clientes registrados"
+                    >
+                      <svg className={`w-3.5 h-3.5 transition-transform duration-150 ${showClientSuggestions ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {/* Desplegable Predictivo de Clientes Registrados */}
+                {invoiceCustomerType === 'NORMAL' && showClientSuggestions && (
+                  <>
+                    {/* Backdrop invisible para cerrar al hacer clic afuera */}
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowClientSuggestions(false)}
+                    ></div>
+
+                    <div className="absolute z-50 left-0 right-0 mt-1 bg-[#12151c] border border-zinc-700/80 rounded-xl shadow-2xl max-h-56 overflow-y-auto animate-dropdown-in custom-scrollbar">
+                      {(() => {
+                        const q = (invoiceRazonSocial || '').trim().toLowerCase();
+                        const matches = clients.filter((c) =>
+                          c.id !== 1 &&
+                          ((c.name && c.name.toLowerCase().includes(q)) ||
+                           (c.RazonSocial && c.RazonSocial.toLowerCase().includes(q)) ||
+                           (c.nit && c.nit.includes(q)))
+                        );
+
+                        return (
+                          <div className="p-1 space-y-0.5">
+                            {matches.length > 0 ? (
+                              <>
+                                <div className="px-2.5 py-1 text-[10px] font-bold text-zinc-500 uppercase tracking-wider flex justify-between items-center">
+                                  <span>Clientes Registrados ({matches.length})</span>
+                                  <span className="text-[10px] text-zinc-600 font-normal">Clic para autocompletar</span>
+                                </div>
+                                {matches.map((c) => (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    onClick={() => handleSelectClientSuggestion(c)}
+                                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-zinc-800/80 transition-colors flex items-center justify-between text-xs group cursor-pointer"
+                                  >
+                                    <div className="min-w-0 pr-2">
+                                      <span className="font-bold text-zinc-200 group-hover:text-amber-400 block truncate">
+                                        {c.name || c.RazonSocial}
+                                      </span>
+                                      <span className="text-[10px] text-zinc-500 font-mono">
+                                        NIT/CI: <strong className="text-zinc-300">{c.nit || '0'}</strong>
+                                        {c.phone && c.phone !== '-' && c.phone !== '0' && ` • Tel: ${c.phone}`}
+                                      </span>
+                                    </div>
+                                    {c.NivelLealtad && c.NivelLealtad !== 'Estandar' && (
+                                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-mono flex-shrink-0">
+                                        {c.NivelLealtad} ({c.DescuentoPorcentaje}%)
+                                      </span>
+                                    )}
+                                  </button>
+                                ))}
+                              </>
+                            ) : null}
+
+                            {/* Opción para registrar como cliente nuevo si está escribiendo un nombre nuevo */}
+                            <div className="p-2 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-400">
+                              <span className="flex items-center gap-1.5 text-[11px]">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                {q ? (
+                                  <span>Registrar <strong>"{invoiceRazonSocial}"</strong> como nuevo</span>
+                                ) : (
+                                  <span>Escribe el nombre o NIT para buscar o ingresar uno nuevo</span>
+                                )}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setShowClientSuggestions(false)}
+                                className="text-[11px] text-amber-400 hover:text-amber-300 font-bold px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20"
+                              >
+                                Continuar
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Fila: Tipo de Documento, Número de Impuesto, Complemento */}
@@ -2363,14 +2974,11 @@ function POSView() {
                 3. Modalidad de Cobro
               </h4>
 
-              {/* Radio buttons de métodos */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-semibold text-zinc-300">
+              {/* Radio buttons de métodos (Solo Efectivo y QR Simple) */}
+              <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-zinc-300">
                 {[
                   { id: 'EFECTIVO', label: 'EFECTIVO' },
-                  { id: 'TRANSFERENCIA', label: 'TRANSFERENCIA' },
-                  { id: 'TARJETA', label: 'TARJETA POS' },
-                  { id: 'BILLETERA_MOVIL', label: 'QR SIMPLE' },
-                  { id: 'GIFT_CARD', label: 'VALE / GIFT-CARD' }
+                  { id: 'BILLETERA_MOVIL', label: 'QR SIMPLE' }
                 ].map((m) => (
                   <label
                     key={m.id}
@@ -2429,43 +3037,53 @@ function POSView() {
               })()}
             </div>
 
-            {/* BOTONES DE ACCIÓN: IMPRESIÓN, CERRAR, FACTURAR */}
+            {/* BOTONES DE ACCIÓN: CERRAR, NOTA DE VENTA, EMISIÓN */}
             <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800/80">
-              <button
-                type="button"
-                onClick={() => {
-                  if (!lastSaleReceipt) {
-                    showToast('No hay una factura previa para previsualizar', 'info');
-                    return;
-                  }
-                  setShowReceiptModal(true);
-                }}
-                className="btn-press px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 rounded-xl text-xs font-bold border border-zinc-800 transition-colors flex items-center gap-1.5"
-              >
-                <svg className="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                <span>Vista Previa Recibo</span>
-              </button>
+              {invoiceCustomerType === 'NORMAL' ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleIssueReceiptOnly}
+                    className="btn-press px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                    title="Emitir comprobante de venta sin valor fiscal SIAT"
+                  >
+                    Solo Nota de Venta
+                  </button>
 
-              <button
-                type="button"
-                onClick={handleCloseInvoiceModal}
-                className="btn-press px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-bold transition-colors"
-              >
-                Solo Nota de Venta
-              </button>
+                  <button
+                    type="button"
+                    onClick={confirmInvoice}
+                    className="btn-press px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Emitir Factura Fiscal</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleCloseInvoiceModal}
+                    className="btn-press px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                    title="Cerrar sin generar comprobante para imprimir"
+                  >
+                    Cerrar sin Recibo
+                  </button>
 
-              <button
-                type="button"
-                onClick={confirmInvoice}
-                className="btn-press px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Emitir Factura Fiscal</span>
-              </button>
+                  <button
+                    type="button"
+                    onClick={confirmInvoice}
+                    className="btn-press px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    <span>Emitir Recibo de Venta</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -2475,10 +3093,10 @@ function POSView() {
       {/* 5. RECIBO DE LA VENTA                                                     */}
       {/* ========================================================================= */}
       {lastSaleReceipt && (
-        <div className={showReceiptModal ? "fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto" : "hidden print:block"}>
+        <div className={showReceiptModal ? "fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto print:static print:block print:p-0 print:m-0 print:bg-white print:overflow-visible" : "hidden print:block"}>
           <div
             id="printable-receipt"
-            className="bg-white text-zinc-900 rounded-2xl max-w-xl w-full p-6 sm:p-8 shadow-2xl space-y-4 font-sans text-xs max-h-[95vh] overflow-y-auto animate-modal-in"
+            className="bg-white text-zinc-900 rounded-2xl max-w-xl w-full p-6 sm:p-8 shadow-2xl space-y-4 font-sans text-xs max-h-[95vh] overflow-y-auto animate-modal-in print:animate-none print:max-h-none print:overflow-visible print:shadow-none print:rounded-none print:p-0 print:m-0 print:w-full print:max-w-none print:border-none"
           >
             {/* 1. Cabecera Empresa */}
             <div className="text-center space-y-0.5 border-b border-zinc-300 pb-3">
@@ -2583,8 +3201,8 @@ function POSView() {
               </div>
             </div>
 
-            {/* Botones de Acción en Pantalla (ocultos al imprimir) */}
-            <div className="grid grid-cols-3 gap-2 pt-4 no-print border-t border-zinc-200">
+            {/* Botones de Acción en Pantalla (estrictamente ocultos al imprimir) */}
+            <div className="grid grid-cols-3 gap-2 pt-4 no-print print:hidden border-t border-zinc-200">
               <button
                 type="button"
                 onClick={() => setShowReceiptModal(false)}
@@ -2605,8 +3223,9 @@ function POSView() {
               </button>
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={handlePrintReceipt}
                 className="btn-press py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                title="Imprimir comprobante oficial en alta resolución"
               >
                 <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -2621,15 +3240,37 @@ function POSView() {
       {/* Estilos CSS para Impresión exacta del Recibo */}
       <style>{`
         @media print {
+          @page {
+            margin: 6mm 10mm;
+            size: auto;
+          }
           body * {
             visibility: hidden !important;
           }
-          #printable-receipt, #printable-receipt * {
+          #printable-receipt,
+          #printable-receipt * {
             visibility: visible !important;
-            display: block !important;
+          }
+          #printable-receipt {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 4mm 8mm !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            border: none !important;
+            background: white !important;
+            max-height: none !important;
+            overflow: visible !important;
+            transform: none !important;
+            animation: none !important;
           }
           #printable-receipt table {
             display: table !important;
+            width: 100% !important;
           }
           #printable-receipt thead {
             display: table-header-group !important;
@@ -2643,20 +3284,17 @@ function POSView() {
           #printable-receipt th, #printable-receipt td {
             display: table-cell !important;
           }
-          #printable-receipt {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            padding: 8mm 12mm !important;
-            margin: 0 !important;
-            box-shadow: none !important;
-            border-radius: 0 !important;
-            background: white !important;
-          }
-          .no-print {
+          #printable-receipt .no-print,
+          #printable-receipt .no-print *,
+          .no-print,
+          .no-print * {
             display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
           }
         }
       `}</style>
@@ -3038,14 +3676,6 @@ function POSView() {
 
                           <button
                             type="button"
-                            onClick={() => handleInvoiceRecentSale(s)}
-                            className="btn-press px-2.5 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 font-bold text-[11px] transition-colors"
-                          >
-                            Facturar
-                          </button>
-
-                          <button
-                            type="button"
                             onClick={() => handleDeleteRecentSale(s)}
                             className="btn-press px-2 py-1.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 font-bold text-[11px] transition-colors"
                             title="Consultar estado fiscal"
@@ -3113,7 +3743,7 @@ function POSView() {
 
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={async () => {
                               const receiptData = {
                                 id: `COT-${q.quoteID || q.id}`,
                                 ticketID: `COT-${q.quoteID || q.id}`,
@@ -3145,9 +3775,12 @@ function POSView() {
                                 empleado: q.empleado || currentUser?.Nombre || 'Cajero'
                               };
                               setLastSaleReceipt(receiptData);
-                              setTimeout(() => {
+                              try {
+                                showToast('Abriendo visor de impresión para cotización...', 'info');
+                                await generateInvoicePdf(receiptData, { print: true, download: false, openInTab: false });
+                              } catch (e) {
                                 window.print();
-                              }, 100);
+                              }
                             }}
                             className="btn-press px-2.5 py-1.5 rounded-lg border border-zinc-700 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 font-bold text-[11px] transition-colors"
                           >
@@ -3724,6 +4357,81 @@ function POSView() {
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* BANNER FLOTANTE: ALERTA DE NUEVO PEDIDO ONLINE ENTRANTE                    */}
+      {/* ========================================================================= */}
+      {newOnlineOrderAlert && (
+        <div className="fixed top-5 right-5 z-50 w-96 max-w-[calc(100vw-2.5rem)] bg-[#12151c] border-2 border-amber-500/80 rounded-2xl p-4 shadow-2xl shadow-amber-500/10 text-zinc-100 animate-modal-in">
+          {/* Cabecera del Banner */}
+          <div className="flex items-center justify-between pb-2.5 border-b border-zinc-800">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+              </span>
+              <span className="font-extrabold text-xs text-amber-400 uppercase tracking-wide flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                ¡Nuevo Pedido Online!
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setNewOnlineOrderAlert(null)}
+              className="text-zinc-500 hover:text-zinc-300 p-1 rounded-lg transition-colors cursor-pointer"
+              title="Cerrar aviso"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Cuerpo Informativo */}
+          <div className="py-2.5 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="font-mono tabular-nums text-sm font-bold text-amber-400">
+                #{newOnlineOrderAlert.CodigoPedido || `PED-${newOnlineOrderAlert.PedidoOnlineID}`}
+              </span>
+              <span className="text-xs font-mono tabular-nums font-extrabold text-emerald-400">
+                Bs. {parseFloat(newOnlineOrderAlert.Total || 0).toFixed(2)}
+              </span>
+            </div>
+
+            <p className="text-xs font-bold text-zinc-100 truncate">
+              Cliente: {newOnlineOrderAlert.ClienteNombre || 'Cliente Web'}
+            </p>
+
+            <div className="text-[11px] text-zinc-400 font-mono flex items-center justify-between">
+              <span>{newOnlineOrderAlert.Detalles?.length || 1} producto(s) en reserva</span>
+              {newOnlineOrderAlert.Telefono && (
+                <span>Tel: {newOnlineOrderAlert.Telefono}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Botones de Acción */}
+          <div className="pt-2 border-t border-zinc-800 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleLoadOnlineOrderToTicket(newOnlineOrderAlert)}
+              className="btn-press flex-1 py-2 px-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Cargar al Ticket</span>
+            </button>
+
+            <Link
+              to="/pedidos-online"
+              className="btn-press py-2 px-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs rounded-xl transition-colors text-center"
+            >
+              Ver Cola
+            </Link>
           </div>
         </div>
       )}

@@ -36,6 +36,8 @@ function ProductEditForm() {
   const [categorias, setCategorias] = useState([]);
   const [unidades, setUnidades] = useState([]);
   const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
   const [activeMenu, setActiveMenu] = useState("productos-lista");
 
   useEffect(() => {
@@ -210,9 +212,10 @@ function ProductEditForm() {
     const file = e.target.files[0];
     if (!file) return;
 
+    setErrorMessage("");
     const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
     if (!validTypes.includes(file.type.toLowerCase())) {
-      alert("Formato de imagen no permitido. Selecciona únicamente fotos JPG, JPEG o PNG.");
+      setErrorMessage("Formato de imagen no permitido. Selecciona únicamente fotos JPG, JPEG o PNG.");
       return;
     }
 
@@ -222,34 +225,90 @@ function ProductEditForm() {
       setPendingImageFile({ base64Data: base64Normalized, fileName: file.name.replace(/\.[^/.]+$/, ".jpg") });
     } catch (err) {
       console.error("Error al recortar y normalizar imagen:", err);
-      alert("Error al procesar la imagen seleccionada.");
+      setErrorMessage("Error al procesar la imagen seleccionada. Intenta con otra imagen.");
     }
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setErrorMessage("");
+
+    if (!producto.Nombre || !producto.Nombre.trim()) {
+      setErrorMessage("El nombre del producto es obligatorio.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (!producto.UnidadID || isNaN(parseInt(producto.UnidadID))) {
+      setErrorMessage("Debes seleccionar una Unidad de medida válida.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (!producto.CategoriaID || isNaN(parseInt(producto.CategoriaID))) {
+      setErrorMessage("Debes seleccionar una Categoría válida.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (!producto.MarcaID || isNaN(parseInt(producto.MarcaID))) {
+      setErrorMessage("Debes seleccionar una Marca válida.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (!producto.UbicacionID || isNaN(parseInt(producto.UbicacionID))) {
+      setErrorMessage("Debes seleccionar una Ubicación en Almacén válida.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (!producto.Precio || isNaN(parseFloat(producto.Precio)) || parseFloat(producto.Precio) <= 0) {
+      setErrorMessage("Debes especificar un Precio Con Factura válido y mayor a 0.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (producto.PrecioCompra && (isNaN(parseFloat(producto.PrecioCompra)) || parseFloat(producto.PrecioCompra) < 0)) {
+      setErrorMessage("El precio de compra no puede ser un valor negativo.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (producto.Margen && (isNaN(parseFloat(producto.Margen)) || parseFloat(producto.Margen) < 0)) {
+      setErrorMessage("El margen de ganancia no puede ser un valor negativo.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (producto.LoteMinimo && (isNaN(parseInt(producto.LoteMinimo)) || parseInt(producto.LoteMinimo) < 1)) {
+      setErrorMessage("El stock mínimo de alerta debe ser al menos de 1 unidad.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (producto.ManejaCaducidad && (!producto.DiasAlertaCaducidad || isNaN(parseInt(producto.DiasAlertaCaducidad)) || parseInt(producto.DiasAlertaCaducidad) < 1)) {
+      setErrorMessage("Los días de alerta preventiva de caducidad deben ser al menos 1 día.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
 
     let finalImageUrl = (producto.Imagen && !producto.Imagen.startsWith("data:")) ? producto.Imagen : null;
 
     if (pendingImageFile) {
       try {
+        setIsUploading(true);
         const res = await uploadImage(pendingImageFile.base64Data, pendingImageFile.fileName);
         finalImageUrl = res.imageUrl;
+        setIsUploading(false);
       } catch (err) {
         console.error("Error al subir la imagen en edición:", err);
-        alert("Error al guardar la imagen en el servidor.");
+        setErrorMessage("Error al guardar la nueva imagen en el servidor.");
+        setIsUploading(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
     }
 
     const productData = {
-      Nombre: producto.Nombre,
-      Descripcion: producto.Descripcion ? producto.Descripcion : null,
+      Nombre: producto.Nombre.trim(),
+      Descripcion: producto.Descripcion ? producto.Descripcion.trim() : null,
       Precio: parseFloat(producto.Precio),
       PrecioSinFactura: producto.PrecioSinFactura ? parseFloat(producto.PrecioSinFactura) : null,
       Stock: parseInt(producto.Stock || "0"),
       FechaVencimiento: producto.FechaVencimiento ? producto.FechaVencimiento : null,
-      CodigoBarras: producto.CodigoBarras ? producto.CodigoBarras : null,
+      CodigoBarras: producto.CodigoBarras ? producto.CodigoBarras.trim() : null,
       MarcaID: parseInt(producto.MarcaID),
       UbicacionID: parseInt(producto.UbicacionID),
       UnidadID: parseInt(producto.UnidadID),
@@ -268,7 +327,9 @@ function ProductEditForm() {
       navigate("/productsView", { state: { message: "¡Producto actualizado con éxito!" } });
     } catch (error) {
       console.error("Error al actualizar el producto:", error);
-      alert("Error al actualizar el producto en la base de datos.");
+      const serverMsg = error.response?.data?.message || "Error al actualizar el producto en la base de datos.";
+      setErrorMessage(serverMsg);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -300,6 +361,23 @@ function ProductEditForm() {
               Volver al catálogo
             </Link>
           </div>
+
+          {/* Banner de Validación / Error */}
+          {errorMessage && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl text-xs flex items-center justify-between gap-3 animate-toast-in">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-red-400"></span>
+                <span className="font-semibold">{errorMessage}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setErrorMessage("")}
+                className="text-red-400 hover:text-red-300 font-bold ml-auto"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Formulario Principal Estilo ERP */}
           <form onSubmit={handleSubmit} className="bg-[#12151c] border border-zinc-800/80 rounded-2xl p-6 md:p-8 shadow-xl space-y-8">

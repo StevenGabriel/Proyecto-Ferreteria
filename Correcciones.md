@@ -1634,3 +1634,244 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
   * Todos los componentes preservan el 100% de la lógica de negocio, llamadas a la API, persistencia en localStorage y estado.
 * **Verificación:**
   * Compilación de producción exitosa en Vite (`npm run build`) en 7.37s con 0 errores y 0 advertencias de sintaxis.
+
+### 153. Auditoría Profunda de Validaciones y Casos Límite en Formularios y Flujos Críticos
+* **Solicitud del Usuario:**
+  * Realizar una auditoría profunda en todos los formularios, campos numéricos y pantallas de entrada de datos (POS, Registro y Edición de Productos, Gestión de Clientes, Pedidos Online, Facturación, Inventario y Usuarios) para verificar el correcto funcionamiento, identificar faltantes de validación (precios negativos o cero, campos obligatorios vacíos, formatos numéricos erróneos, montos insuficientes, estados extremos) y blindar la robustez del sistema.
+* **Diagnóstico y Correcciones Aplicadas:**
+  1. **Registro y Edición de Productos ([`ProductRegisterForm.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Products/ProductRegisterForm.jsx) y [`ProductEditForm.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Products/ProductEditForm.jsx)):**
+     * **Precios:** Se restringió el precio de venta facturado a valores estrictamente mayores a cero (`parseFloat(Precio) > 0`). Se bloqueó el ingreso de precios negativos o nulos.
+     * **Costo de Compra y Margen:** Se agregaron validaciones para impedir costos de adquisición negativos (`PrecioCompra < 0`) y márgenes negativos en caso de ser ingresados manualmente.
+     * **Stock Mínimo y Días de Alerta:** Se aseguró que `LoteMinimo` sea un entero positivo mayor o igual a 1 unidad y que `DiasAlertaCaducidad` sea al menos 1 día cuando el producto tiene activada la gestión de caducidad.
+     * **Eliminación de `alert()` nativo:** En `ProductEditForm.jsx` se eliminaron todos los diálogos `alert()` nativos del navegador sustituyéndolos por un banner estilizado de alerta con scroll automático hacia arriba y toasts integrados.
+     * **Validación previa en Edición:** Se verificó la presencia de `Nombre`, `UnidadID`, `CategoriaID`, `MarcaID` y `UbicacionID` antes de parsear a entero, evitando valores `NaN` que originaban errores 500 en la base de datos SQL Server.
+  2. **Ingreso y Lotes de Stock ([`ProductView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Products/ProductView.jsx)):**
+     * Se reemplazaron 5 llamadas a `alert()` nativo por toasts visuales fluidos (`setToastMessage`, `setShowToast`).
+     * Se añadió la validación `costo >= 0` en el modal de stock de apertura multi-fila para evitar registrar lotes con costos negativos.
+  3. **Punto de Venta POS ([`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx)):**
+     * **Control de Efectivo Recibido en Facturación:** En `confirmInvoice`, cuando el método de pago seleccionado es `EFECTIVO`, ahora se valida estrictamente que `receivedCash >= total`. Si el cajero ingresa un monto inferior al total a cobrar, se bloquea la emisión y se alerta: *"El efectivo recibido (Bs. X) es menor al total a cobrar (Bs. Y)"*.
+     * **Nuevo Cliente Rápido:** Se acotó el porcentaje de descuento a un rango estrictamente controlado entre 0% y 100% (`Math.min(100, Math.max(0, finalDescPct))`).
+  4. **Directorio de Clientes ([`ClientView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Contacts/ClientView.jsx)):**
+     * **Porcentaje de Descuento Personalizado:** Se incorporó validación para asegurar que el porcentaje ingresado esté acotado entre 0% y 100%.
+     * **Validación de Teléfono/Móvil:** Se verificó que el número de teléfono o celular contenga un formato válido de al menos 7 dígitos numéricos.
+     * Se reemplazó el `alert()` nativo que protegía al "Cliente General" por una notificación toast con feedback de error.
+  5. **Finalización de Compra Online ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+     * En el modal de checkout, ahora se exige obligatoriamente un número de teléfono o celular válido (mínimo 7 dígitos) para poder coordinar la entrega o recojo en mostrador.
+     * Se añadió una comprobación de seguridad para garantizar que ningún producto en el carrito posea una cantidad menor o igual a cero antes de crear el pedido.
+  6. **Revisión y Entrega de Pedidos Online ([`OnlineOrdersView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/OnlineOrdersView.jsx)):**
+     * Si el vendedor activa la opción de *"Emitir Factura Computarizada SIAT"*, ahora se valida obligatoriamente que `NIT/CI` y `Razón Social` no estén vacíos ni en "0" para cumplir la normativa tributaria.
+  7. **Historial de Facturación ([`InvoiceListView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/InvoiceListView.jsx)):**
+     * Se añadió verificación lógica en el filtro por fechas: la fecha de inicio no puede ser posterior a la fecha final.
+     * En la anulación de facturas ante el SIN/SIAT se añadió validación obligatoria del campo motivo de anulación.
+  8. **Control de Inventario y Kardex ([`InventoryControl.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Inventory/InventoryControl.jsx)):**
+     * En los ajustes de tipo `AJUSTE_SALIDA` o `MERMA`, ahora se comprueba si la cantidad que se desea dar de baja supera el stock existente del producto en almacén, impidiendo ajustes que generen stock negativo accidental.
+  9. **Gestión de Operadores y Usuarios ([`UserManagement.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Users/UserManagement.jsx)):**
+     * Validación de expresión regular para formato estricto de correo electrónico (`/^[^\s@]+@[^\s@]+\.[^\s@]+$/`) en creación y edición de operadores.
+     * Validación de longitud mínima para cédula de identidad / NIT (mínimo 5 dígitos) y número de contacto.
+  10. **Registro de Clientes ([`RegisterClie.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/RegisterClie.jsx)):**
+      * Validación de formato de correo electrónico y número de teléfono con feedback inmediato en pantalla.
+* **Verificación:**
+  * Ejecución de `npm run build` completada con éxito en 5.04s sin errores de compilación ni de sintaxis.
+
+### 154. Simplificación del Botón de Cobro en el Punto de Venta (POS)
+* **Solicitud del Usuario:**
+  * Modificar el texto del botón de cobro en el POS para que en lugar de *"Cobrar (Efectivo / QR)"* diga simplemente *"Cobrar"*.
+* **Solución Implementada:**
+  * En [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx), se actualizó la etiqueta del botón principal de checkout verde (`handleCashClick`) de `<span>Cobrar (Efectivo / QR)</span>` a `<span>Cobrar</span>`.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.65s con 0 errores.
+
+### 155. Retiro del Botón "Vista Previa Recibo" en Modal de Cobro/Facturación del POS
+* **Solicitud del Usuario:**
+  * Al presionar el botón *"Cobrar"* en el POS se despliega la ventana *"Emisión de Factura / Comprobante"*. De esta ventana, retirar el botón *"Vista Previa Recibo"*.
+* **Solución Implementada:**
+  * En [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx), en la barra de acciones inferiores del modal de facturación, se eliminó el botón *"Vista Previa Recibo"*, manteniendo exclusivamente las dos opciones de salida limpias: *"Solo Nota de Venta"* y *"✓ Emitir Factura Fiscal"*.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.97s con 0 errores.
+
+### 156. Depuración de Opciones en "Modalidad de Cobro" del POS
+* **Solicitud del Usuario:**
+  * En la ventana de cobro/facturación del POS, en la sección *"3. Modalidad de Cobro"*, quitar las opciones de *Transferencia*, *Tarjeta POS* y *Vale / Gift-Card*.
+* **Solución Implementada:**
+  * En [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx), se removieron los selectores de `TRANSFERENCIA`, `TARJETA` y `GIFT_CARD`. Se preservaron exclusivamente las dos modalidades operativas activas de mostrador:
+    1. **`EFECTIVO`** (con cálculo de monto recibido y vuelto exacto).
+    2. **`QR SIMPLE`** (`BILLETERA_MOVIL`).
+  * La grilla de opciones se reajustó a dos columnas uniformes (`grid-cols-2`).
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.75s con 0 errores.
+
+### 157. Autocompletado Predictivo y Registro Ágil de Clientes en Ventana de Facturación del POS
+* **Solicitud del Usuario:**
+  * En la ventana de cobro/facturación del POS, si se selecciona la opción *"Cliente Nominal (NIT / CI)"*, permitir que el campo de Razón Social cargue los nombres de clientes ya registrados al escribir, pero permitiendo registrarlo como nuevo si no existe en la base de datos.
+* **Solución Implementada:**
+  * En [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx):
+    1. **Buscador Combobox Predictivo:** Se transformó el campo de Razón Social en un combobox predictivo con apertura al enfocar o escribir. Muestra la lista de clientes registrados filtrados por Nombre, Razón Social o NIT, con sus badges de lealtad y teléfono.
+    2. **Autollenado Integral en un Clic:** Al seleccionar un cliente sugerido, se rellenan automáticamente la Razón Social, el NIT/CI, el Tipo de Documento (NIT o CI) y el correo electrónico.
+    3. **Soporte Transparente para Clientes Nuevos:** Si el cajero escribe un nombre o empresa que no figura en el catálogo, el sistema muestra el indicador *"Registrar como nuevo"*.
+    4. **Auto-Persistencia:** Al confirmar la venta o factura (tanto en *"Solo Nota de Venta"* como en *"✓ Emitir Factura Fiscal"*), si el cliente era nuevo se registra automáticamente en el catálogo local (`clients` y `localStorage`), quedando disponible para futuras transacciones en mostrador sin pasos adicionales.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.53s con 0 errores.
+
+### 158. Reseteo Automático de Datos de Cliente y Formulario al Concluir Venta en POS
+* **Solicitud del Usuario:**
+  * Al finalizar una venta y comenzar otra nueva, los datos del cliente y de la factura anterior continuaban cargados en el formulario en lugar de iniciar limpios.
+* **Solución Implementada:**
+  * En [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx), se creó la función centralizada `resetPosForNextSale()`.
+  * Ahora, tanto al presionar *"✓ Emitir Factura Fiscal"* como al pulsar *"Solo Nota de Venta"* (o el botón `✕` de cerrar modal), se restablece de forma atómica:
+    - `selectedClient` al *"Cliente General (Sin Factura)"* predeterminado.
+    - `invoiceCustomerType` a `'SIN_NOMBRE'`.
+    - `invoiceRazonSocial` a `'SIN NOMBRE'`.
+    - `invoiceDocNumber` a `'0'`.
+    - `invoiceDocType` a `'NIT'`.
+    - Campos de correo, complemento, efectivo recibido y sugerencias predictivas totalmente limpios.
+  * La siguiente venta inicia 100% limpia sin mezclar información del cliente anterior.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.74s con 0 errores.
+
+### 159. Emisión Dinámica de Recibo de Venta y Corrección de "Solo Nota de Venta" en el POS
+* **Solicitud del Usuario:**
+  * Al seleccionar la opción *"Sin Nombre"* en la ventana de cobro del POS, permitir generar un recibo de venta en lugar de obligar a emitir factura fiscal (cambiar el botón de acción principal para que refleje *"Emitir Recibo de Venta"*).
+  * Corregir el botón *"Solo Nota de Venta"*, el cual no desplegaba el comprobante / recibo para impresión.
+* **Solución Implementada:**
+  * En [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx):
+    1. **Botón Dinámico de Acción Principal:**
+       * Si `invoiceCustomerType === 'SIN_NOMBRE'`, el botón principal se transforma visual y funcionalmente en:
+         - Etiqueta: **`"Emitir Recibo de Venta"`** con icono de documento formal (`DocumentCheckIcon`).
+         - Acción: Emite un comprobante con prefijo `REC-` (`isInvoice: false`), registra la venta, descuenta inventario y abre de inmediato la ventana de impresión térmica/carta del recibo.
+       * Si `invoiceCustomerType === 'NORMAL'`, el botón principal se mantiene como:
+         - Etiqueta: **`"✓ Emitir Factura Fiscal"`**.
+         - Acción: Emite la factura fiscal computarizada con prefijo `FAC-` (`isInvoice: true`), sincroniza con el SIAT y abre la vista de impresión tributaria.
+    2. **Corrección de "Solo Nota de Venta":**
+       * Anteriormente, `handleCloseInvoiceModal` solo cerraba el modal de cobro sin abrir el modal de recibo (`setShowReceiptModal(true)`), dando la impresión de que el botón no funcionaba.
+       * Se implementó el manejador dedicado `handleIssueReceiptOnly()`, que genera el objeto de venta y recibo con `isInvoice: false`, notifica con toast *"¡Nota de venta / Recibo emitido con éxito!"* y abre automáticamente el visor de impresión del recibo (`setShowReceiptModal(true)`).
+    3. **Botones de Salida Claros según el Modo:**
+       * Para `SIN_NOMBRE`: *"Cerrar sin Recibo"* (cancela sin emitir) y *"Emitir Recibo de Venta"*.
+       * Para `NORMAL`: *"Solo Nota de Venta"* (genera el recibo sin factura) y *"✓ Emitir Factura Fiscal"*.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 6.49s con 0 errores de sintaxis o empaquetado.
+
+### 160. Corrección Integral de Alineación Superior y Supresión de Botones en Impresión de Recibos y Facturas (POS y Pedidos Online)
+* **Solicitud del Usuario:**
+  * Al hacer clic en *"Imprimir Recibo"*, la vista previa mostraba los botones *"Recibo PDF"*, *"Imprimir Recibo"* y *"Cerrar"* al pie de la hoja.
+  * Al intentar aislar los botones, el contenido del recibo quedó anclado en la mitad vertical de la página debido al contenedor flex y animaciones de pantalla del modal.
+* **Causa Raíz:**
+  1. En `@media print`, `#printable-receipt *` tenía mayor especificidad que `.no-print`, forzando la visualización de los botones.
+  2. Al anidar un contenedor dentro del modal, la propiedad `transform` de la animación `animate-modal-in` y el centrado `flex items-center justify-center` del backdrop atraparon la posición absoluta en el centro geométrico de la pantalla y provocaron el truncamiento del contenido por `overflow-y-auto`.
+* **Solución Implementada:**
+  * En [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx) y [`OnlineOrdersView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/OnlineOrdersView.jsx):
+    1. **Restablecimiento del Contenedor de Impresión:**
+       * El backdrop del modal ahora incluye clases de reseteo para impresión: `print:static print:block print:p-0 print:m-0 print:bg-white print:overflow-visible`.
+       * La tarjeta principal posee `print:animate-none print:max-h-none print:overflow-visible print:shadow-none print:rounded-none print:p-0 print:m-0 print:w-full print:max-w-none print:border-none`.
+    2. **Alineación Absoluta Superior en Hoja Física:**
+       * Se configuró `#printable-receipt` con `position: absolute !important; left: 0 !important; top: 0 !important; transform: none !important; animation: none !important; max-height: none !important; overflow: visible !important;`, garantizando que el comprobante inicie exactamente en la cabecera superior de la hoja.
+    3. **Eliminación Definitiva de Botones:**
+       * La regla `#printable-receipt .no-print, #printable-receipt .no-print *, .no-print, .no-print *` aplica `display: none !important; visibility: hidden !important; width: 0 !important; height: 0 !important; border: none !important;` superando cualquier especificidad de hijos.
+       * Se definió `@page { margin: 6mm 10mm; size: auto; }`.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.71s con 0 errores.
+
+### 161. Integración de Impresión Directa en Alta Fidelidad (PDF Vectorial Oficial)
+* **Solicitud y Diagnóstico del Usuario:**
+  * El usuario observó que al pulsar *"Descargar PDF"* el comprobante se genera de forma impecable y profesional (con membrete, QR oficial SIAT, código de autorización CUF y texto literal en bolivianos), pero al presionar *"Imprimir Recibo / Factura"* el visor de impresión nativo del navegador (`window.print()`) dependía del DOM HTML, sufriendo inconsistencias de formato y márgenes.
+* **Solución Implementada:**
+  * En [`invoicePdfGenerator.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/utils/invoicePdfGenerator.js):
+    * Se incorporó soporte nativo para la opción `{ print: true }` tanto en el formato Carta (`generateInvoicePdf`) como en el formato Térmico 80mm (`generateInvoiceTicketPdf`).
+    * Utiliza `doc.autoPrint()` cargando el blob en un marco invisible aislado que dispara de forma directa el cuadro de diálogo de impresión sobre el documento vectorial oficial (con fallback automático a apertura en pestaña dedicada).
+  * En [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx) y [`OnlineOrdersView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/OnlineOrdersView.jsx):
+    * Se sustituyó la llamada genérica `window.print()` por `handlePrintReceipt` / `handlePrintReceiptPdf`.
+    * Ahora, tanto al descargar como al imprimir, se procesa exactamente el mismo documento PDF oficial en alta resolución, sin distorsiones, sin cabeceras URL del navegador y con el diseño tributario formal al 100%.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 5.10s con 0 errores.
+
+### 162. Optimización del Historial de Ventas en el POS (Flujo de Facturación y Reimpresión Oficial)
+* **Solicitud del Usuario:**
+  1. Renombrar el botón de la barra inferior del POS de *"Historial Turno"* a simplemente **"Historial"**.
+  2. En el modal de transacciones recientes, al darle a *"Imprimir"*, asegurarse de que utilice el motor oficial de alta fidelidad que se arregló anteriormente.
+  3. Eliminar el botón redundante *"Facturar"* de las filas del historial: dado que una venta cerrada puede ya estar registrada, o bien el cliente puede solicitar facturarla después, el flujo correcto y seguro es que el usuario pulse **"Cargar / Editar"**, lo que lleva los ítems al ticket del mostrador y desde allí, al presionar **"Cobrar"**, se ingresan los datos del cliente nominal para facturar con total control.
+* **Solución Implementada:**
+  * En [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx):
+    1. **Botón Inferior:** Se actualizó la etiqueta de la barra de acciones a `<span>Historial</span>`.
+    2. **Reimpresión en Alta Resolución:** Se actualizaron `handlePrintRecentSale` y el botón de impresión de cotizaciones para llamar a `generateInvoicePdf(receiptData, { print: true })`, generando la misma vista previa oficial vectorial (con QR del SIN y leyendas).
+    3. **Depuración de Botones en Filas:** Se eliminó el botón *"Facturar"* de cada fila del listado. Ahora el cajero solo dispone de:
+       * **`Cargar / Editar`**: Carga los productos y cliente al mostrador activo para modificar cantidades, aplicar descuentos y facturar formalmente mediante el botón principal *"Cobrar"*.
+       * **`Imprimir`**: Reimprime el comprobante oficial en alta resolución.
+       * **`✕`**: Anula o elimina la transacción.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.65s con 0 errores.
+
+### 163. Discriminación Precisa entre Recibo de Venta y Factura Fiscal en Reimpresión del Historial
+* **Solicitud del Usuario:**
+  * Al pulsar *"Imprimir"* en una venta registrada en el historial que se cobró sin factura (o como nota de venta), el sistema imprimía erróneamente un formato de *"Factura Fiscal"*, cuando debía imprimir un *"Recibo de Venta Oficial"*.
+* **Causa Raíz:**
+  * En `handlePrintRecentSale`, la propiedad `isInvoice` se evaluaba como `const isNamed = s.client && s.client !== 'SIN NOMBRE'; isInvoice: isNamed;`.
+  * Como el valor por defecto de un cliente en mostrador era `"CLIENTE GENERAL"`, la expresión `s.client !== 'SIN NOMBRE'` resultaba siempre `true`, forzando que el 100% de las ventas en el historial fueran tratadas como facturas fiscales.
+* **Solución Implementada:**
+  * En [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx):
+    * Se corrigió la determinación de `isRealInvoice`: ahora valida estrictamente las banderas reales de la transacción (`s.isInvoice === true`, `s.esFactura === true`, prefijo `FAC-` o `s.TipoDocumento === 'Factura'`).
+    * Si la venta fue sin factura (o emitida como nota de venta / recibo), se genera con `isInvoice: false`, título **"RECIBO DE VENTA"**, subtítulo *"Documento No Válido para Crédito Fiscal"*, numeración `REC-...` y base imponible `0`.
+    * Si la venta fue una factura fiscal computarizada, se genera con `isInvoice: true`, título **"FACTURA"**, código CUF, QR del SIAT y crédito fiscal correspondiente.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 5.24s con 0 errores.
+
+### 164. Retiro del Botón Redundante "Último Recibo" en la Barra Inferior del POS
+* **Solicitud del Usuario:**
+  * Eliminar el botón *"Último Recibo"* situado al lado de *"Historial"* en la barra de acciones inferior del mostrador de ventas POS.
+* **Justificación:**
+  * El botón *"Último Recibo"* era redundante ya que el botón *"Historial"* permite consultar, editar y reimprimir tanto la última venta como todas las ventas del turno con detalle completo, dejando la barra inferior más limpia y despejada.
+* **Solución Implementada:**
+  * En [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx):
+    * Se removió el botón `<button>Último Recibo</button>` de la barra inferior.
+    * Las acciones secundarias ahora se componen de manera ejecutiva por: **`Historial`** y **`Pedidos Online`**.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.89s con 0 errores.
+
+### 165. Retiro del Acceso a "Calculadora de Mostrador" en la Cabecera Superior del POS
+* **Solicitud del Usuario:**
+  * En la esquina superior derecha del Punto de Venta (POS), retirar el botón de *"Calculadora de Mostrador"*.
+* **Solución Implementada:**
+  * En [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx):
+    * Se removió el botón del icono de calculadora situado en la barra superior.
+    * La cabecera superior derecha ahora mantiene únicamente los accesos esenciales de mostrador: *"Ingreso a caja"* (aumentos de gaveta), *"Pantalla Completa"* y *"Arqueo y Cierre"*.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 5.76s con 0 errores.
+### 166. Desplegable Predictivo de Autocompletado en el Buscador del POS (`POSView.jsx`)
+* **Solicitud del Usuario:**
+  * Al momento de realizar una búsqueda escribiendo el nombre o código de un producto en el buscador del ticket del POS, no se estaba desplegando la lista de posibles opciones coincidentes.
+* **Causa Raíz:**
+  * El campo de texto `barcodeInput` ("Escanee código de barras, ingrese SKU o nombre...") únicamente evaluaba el término al presionar `Enter` o hacer clic en el botón de envío (`handleBarcodeSubmit`). No contaba con un estado de sugerencias reactivas ni con un menú flotante desplegable (`dropdown`) montado en la interfaz.
+* **Solución Implementada:**
+  * En [**`POSView.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx):
+    1. **Estado y Filtrado Reactivo:**
+       * Se implementó el estado `showBarcodeSuggestions` y `selectedBarcodeSuggestionIndex`.
+       * Se incorporó un `useMemo` (`barcodeSuggestions`) que filtra en tiempo real sobre el catálogo de productos evaluando `Nombre`, `Codigo` (SKU) y `CodigoBarras`, limitando a los 10 resultados más relevantes.
+    2. **Desplegable Predictivo (`animate-dropdown-in origin-top`):**
+       * Debajo del campo de búsqueda se desplegó un menú flotante con estética técnica industrial (`#12151c`, borde `zinc-700/90`, elevación suave y z-index controlado sobre la tabla del ticket).
+       * Cada sugerencia muestra: miniatura del producto, nombre completo en mayúsculas, código SKU y categoría, precio unitario en `font-mono tabular-nums text-amber-400` y badge semántico de disponibilidad (`Stock: X` o `Agotado` en rojo).
+    3. **Navegación Táctil y por Teclado:**
+       * Al hacer clic en cualquier opción, se agrega inmediatamente al ticket de venta, se limpia el buscador y se devuelve el foco al input.
+       * Soporte completo para navegación mediante flechas del teclado (`ArrowDown` / `ArrowUp`), selección directa con `Enter` y cierre rápido con `Escape`.
+       * Detección de clic fuera del contenedor (`handleClickOutside`) para cerrar automáticamente el desplegable.
+    4. **Integración con Lector de Barras:**
+       * Se mantuvo la compatibilidad al 100% con escáneres de código de barras USB/Bluetooth para ingreso instantáneo en ticket sin interferencias.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 5.85s con 0 errores.
+### 167. Sistema de Alerta Temprana para Pedidos Online en el POS (`POSView.jsx`)
+* **Solicitud del Usuario:**
+  * Implementar un mecanismo de aviso para cuando un cliente realiza un pedido online mientras el cajero está operando en el mostrador de ventas POS.
+* **Solución Implementada:**
+  * En [**`POSView.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx):
+    1. **Sondeo Periódico Silencioso (Polling cada 20s):**
+       * Se conecta con el endpoint de pedidos (`getOnlineOrders({ estado: 'PENDIENTE' })`) en intervalos de 20 segundos.
+       * Mantiene un registro de pedidos conocidos mediante `knownOrderIdsRef` para evitar falsas alarmas repetidas en cada ciclo.
+    2. **Timbre de Mostrador Sonora (Chime Web Audio API):**
+       * Implementación de la función `playOrderChime`: sintetizador armónico de dos tonos ($E_5 \to A_5$, 659.25 Hz a 880 Hz) generado dinámicamente con `window.AudioContext`.
+       * Suena de forma agradable y clara en el altavoz cuando entra un nuevo pedido sin requerir descargas de archivos mp3.
+    3. **Banner Emergente de Notificación en Tiempo Real:**
+       * Al llegar una orden, se despliega una tarjeta animada en la esquina superior (`animate-modal-in`, fondo `#12151c` y borde ámbar brillante con indicador pulsante).
+       * Muestra: Código de pedido (`#PED-...`), Nombre del cliente, Total en Bs., conteo de productos y teléfono.
+       * Incorpora el botón **"Cargar al Ticket"** que transfiere instantáneamente todos los ítems y datos del cliente al ticket de venta del mostrador, listo para cobrar.
+       * Botón de acceso directo para revisar la cola completa en `/pedidos-online`.
+    4. **Insignia Dinámica en Barra Inferior:**
+       * El botón de acceso **"Pedidos Online"** en la barra inferior ahora muestra una insignia roja animada (`badge`) con el número de pedidos pendientes (`animate-pulse`).
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.68s con 0 errores.

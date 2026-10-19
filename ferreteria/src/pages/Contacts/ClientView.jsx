@@ -454,6 +454,18 @@ function ClientView() {
       return;
     }
 
+    const rawDiscount = parseFloat(formData.DescuentoPorcentaje);
+    if (!isNaN(rawDiscount) && (rawDiscount < 0 || rawDiscount > 100)) {
+      setFormError('El porcentaje de descuento debe estar entre 0% y 100%.');
+      return;
+    }
+    const validDiscount = Math.min(100, Math.max(0, isNaN(rawDiscount) ? 0 : rawDiscount));
+
+    if (formData.Movil && formData.Movil.trim() !== '0' && !/^[0-9+ -]{7,15}$/.test(formData.Movil.trim())) {
+      setFormError('El número de teléfono o celular debe tener al menos 7 dígitos válidos.');
+      return;
+    }
+
     const displayName = buildDisplayName(formData);
     const resolvedRazonSocial = formData.RazonSocial.trim() || displayName.toUpperCase();
     const resolvedNIT = formData.NIT.trim() || '0';
@@ -469,7 +481,7 @@ function ClientView() {
       NIT: resolvedNIT,
       Movil: resolvedMovil,
       NivelLealtad: formData.NivelLealtad || 'Estandar',
-      DescuentoPorcentaje: parseFloat(formData.DescuentoPorcentaje) || 0,
+      DescuentoPorcentaje: validDiscount,
       TotalComprasAcumulado: parseFloat(formData.TotalComprasAcumulado) || 0,
       createdAt: new Date().toISOString()
     };
@@ -481,6 +493,18 @@ function ClientView() {
 
   const handleUpdateClient = (e) => {
     e.preventDefault();
+
+    const rawDiscount = parseFloat(formData.DescuentoPorcentaje);
+    if (!isNaN(rawDiscount) && (rawDiscount < 0 || rawDiscount > 100)) {
+      setFormError('El porcentaje de descuento debe estar entre 0% y 100%.');
+      return;
+    }
+    const validDiscount = Math.min(100, Math.max(0, isNaN(rawDiscount) ? 0 : rawDiscount));
+
+    if (formData.Movil && formData.Movil.trim() !== '0' && !/^[0-9+ -]{7,15}$/.test(formData.Movil.trim())) {
+      setFormError('El número de teléfono o celular debe tener al menos 7 dígitos válidos.');
+      return;
+    }
 
     const displayName = buildDisplayName(formData);
     const resolvedRazonSocial = formData.RazonSocial.trim() || displayName.toUpperCase();
@@ -497,7 +521,7 @@ function ClientView() {
           NIT: resolvedNIT,
           Movil: resolvedMovil,
           NivelLealtad: formData.NivelLealtad || 'Estandar',
-          DescuentoPorcentaje: parseFloat(formData.DescuentoPorcentaje) || 0,
+          DescuentoPorcentaje: validDiscount,
           TotalComprasAcumulado: parseFloat(formData.TotalComprasAcumulado) || 0
         };
       }
@@ -512,7 +536,7 @@ function ClientView() {
   const handleConfirmDelete = () => {
     if (!selectedClient) return;
     if (selectedClient.ClienteID === 1 && selectedClient.NIT === '0') {
-      alert('No se puede eliminar el Cliente General por defecto de mostrador.');
+      triggerToast('No se puede eliminar el Cliente General por defecto de mostrador.', 'error');
       setIsDeleteModalOpen(false);
       return;
     }
