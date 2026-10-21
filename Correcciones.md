@@ -1875,3 +1875,139 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
        * El botón de acceso **"Pedidos Online"** en la barra inferior ahora muestra una insignia roja animada (`badge`) con el número de pedidos pendientes (`animate-pulse`).
 * **Verificación:**
   * Compilación con Vite (`npm run build`) completada con éxito en 4.68s con 0 errores.
+### 168. Renombrado de Siglas Técnicas "FEFO" a "Vencimientos" en Toda la Aplicación
+* **Solicitud del Usuario:**
+  * Reemplazar las siglas técnicas "FEFO" por un término en español mucho más comprensible e intuitivo ("Vencimientos") en la campana de notificaciones y en los módulos de inventario y productos.
+* **Solución Implementada:**
+  * 1. **Campana de Notificaciones ([`topbar.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/topbar/topbar.jsx)):**
+     * Se renombró la pestaña `FEFO` a **`Vencimientos`** (`activeNotifTab === 'EXPIRING'`).
+  * 2. **Panel Principal ([`Home.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/Home.jsx)):**
+     * Subtítulo general: *"Estado operativo en tiempo real de caja, inventario y vencimiento de lotes."*
+     * Título de tarjeta/tabla: *"Control de Caducidad y Vencimiento de Lotes"*.
+     * Columna de tabla: *"Estado de Vencimiento"*.
+  * 3. **Control de Inventario ([`InventoryControl.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Inventory/InventoryControl.jsx)):**
+     * Pestaña principal: *"Semáforo de Vencimientos"*.
+     * Columna de tabla: *"Estado de Vencimiento"*.
+     * Badges de fila: *"Prioridad de Vencimiento"*.
+     * Tipo de ajuste de almacén: *"Baja por Vencimiento"*.
+  * 4. **Formularios de Producto ([`ProductRegisterForm.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Products/ProductRegisterForm.jsx) y [`ProductEditForm.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Products/ProductEditForm.jsx)):**
+     * Insignia del switch: *"Lotes con Vencimiento"*.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.46s con 0 errores.
+### 169. Eliminación de Exportación CSV y Generación Real de Documentos PDF en el Panel Principal (`Home.jsx`)
+* **Solicitud del Usuario:**
+  * En las tablas de *"Alerta de stock de productos"* y *"Control de caducidad y vencimiento de lotes"* del panel principal, remover los botones redundantes de *"Exportar CSV"* y corregir el botón *"Exportar PDF"*, el cual generaba erróneamente un archivo CSV con extensión cambiada.
+* **Causa Raíz:**
+  * Las funciones `handleExport` y `handleExportExpiring` utilizaban un bloque común `data:text/csv` para cualquier valor de `type` distinto de `impresion`, generando un archivo de texto plano delimitado por comas (`.csv`) incluso al pulsar *"Exportar PDF"*.
+* **Solución Implementada:**
+  * En [**`Home.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/Home.jsx):
+    1. **Eliminación de Botones Redundantes:**
+       * Se removió el botón `<button>Exportar CSV</button>` tanto de la tabla de alertas de stock como de la tabla de control de vencimientos.
+       * La barra de herramientas de ambas tablas conserva de forma limpia: **`Exportar Excel`**, **`Impresión`** y **`Exportar PDF`**.
+    2. **Generador PDF Vectorial Real con `jsPDF` y `autoTable`:**
+       * Se implementó `exportStockPdf` y `exportExpiringPdf` utilizando la librería nativa `jsPDF` con el plugin `jspdf-autotable`.
+       * **Diseño Ejecutivo:** Membrete institucional de *C&C Ferretería — Casa y Construcción* con fondo técnico oscuro, tipografía en ámbar y blanco, fecha/hora exacta de emisión, conteo total de ítems en alerta y pie de página con paginación (`Página X de Y`).
+       * **Semáforo Semántico de Celdas:**
+         * En reporte de stock: resaltado dinámico de texto para estados `AGOTADO` (rojo) y `STOCK BAJO` (ámbar).
+         * En reporte de vencimiento: resaltado dinámico para `VENCIDO` (rojo), `PRÓXIMO A VENCER` (ámbar) y `VIGENTE` (verde esmeralda).
+       * Descarga directa con nombres de archivo formales: `Alerta_Stock_Critico_YYYY-MM-DD.pdf` y `Alerta_Vencimiento_Lotes_YYYY-MM-DD.pdf`.
+    3. **Optimización de Exportación a Excel:**
+       * Se incorporó el byte order mark `\uFEFF` (UTF-8 BOM) para que al abrir los archivos en Microsoft Excel los caracteres especiales, acentos y la `ñ` se rendericen sin corrupción.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.65s con 0 errores.
+
+### 170. Descarga de PDF Vectorial Real y Excel en el Plan de Reabastecimiento Sugerido (`PredictiveReportsTab.jsx`)
+* **Solicitud del Usuario:**
+  * En la sección *"Plan de Reabastecimiento Sugerido"* del módulo de Pronóstico de Demanda y Compras del Inicio, simplificar los botones de exportación retirando *"Exportar CSV"* e *"Imprimir Plan"* para dejar únicamente **"Descargar PDF"** y **"Descargar Excel"**.
+  * Corregir la generación de PDF para que no sea una captura de pantalla del navegador (`window.print()`), sino un documento PDF nativo, vectorial y estructurado con membrete, tal como se implementó en los reportes de stock y vencimientos.
+* **Causa Raíz:**
+  * El botón *"Imprimir Plan"* invocaba `window.print()`, lo que capturaba toda la pestaña de la interfaz con fondos, barras y menús en lugar de generar un reporte impreso limpio.
+  * El botón *"Exportar CSV"* era redundante con *"Exportar Excel"*, y no existía un generador dedicado de PDF vectorial para la tabla de pronóstico de demanda.
+* **Solución Implementada:**
+  * En [**`PredictiveReportsTab.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/PredictiveReportsTab.jsx):
+    1. **Botones Limpios y Directos:**
+       * Se retiraron los botones *"Exportar CSV"* e *"Imprimir Plan"*.
+       * Se añadieron dos botones claros y ejecutivos: **`Descargar Excel`** (con icono esmeralda) y **`Descargar PDF`** (con icono rosa/rojo).
+    2. **Generador PDF Vectorial Real con `jsPDF` y `autoTable` (Formato Horizontal / Landscape):**
+       * Debido al ancho y detalle de la matriz de pronóstico (12 columnas), se configuró orientación horizontal (`landscape`, 297mm x 210mm).
+       * **Membrete Oficial:** Encabezado con franja corporativa `#12151c`, tipografía dorada en ámbar industrial (*C&C Ferretería — Casa y Construcción*), subtítulo con el horizonte de días proyectado, fecha y hora exacta de emisión, e indicadores de resumen (total de productos, unidades sugeridas e inversión total estimada en Bs.).
+       * **Columnas del Reporte:** `#`, `PRODUCTO`, `CÓDIGO / SKU`, `CATEGORÍA`, `CLASE ABC`, `STOCK ACT.`, `MÍN.`, `VTA/DÍA`, `DEMANDA PROY.`, `COBERTURA`, `COMPRA SUGERIDA` e `INVERSIÓN ESTIMADA`.
+       * **Semáforo Semántico Condicional:**
+         * Estados críticos y de agotamiento en rojo (`AGOTADO`, `Crítico <7d`).
+         * Estados de alerta preventiva en ámbar (`Alerta <15d`, `Atención <30d`).
+         * Cobertura segura en verde esmeralda (`Seguro >30d`).
+         * Unidades sugeridas resaltadas en ámbar (`+X un.`) e inversión estimada en verde.
+       * **Pie de Página Oficial:** Paginación automática `Página X de Y` en todas las hojas.
+       * Nombre del archivo: `Plan_Reabastecimiento_Sugerido_{horizonDays}dias_{YYYY-MM-DD}.pdf`.
+    3. **Descarga de Excel Optimizada:**
+       * Exportación estructurada de todas las métricas predictivas con `\uFEFF` (UTF-8 BOM) para compatibilidad total con Microsoft Excel en español (acentos, ñ y caracteres especiales limpios).
+       * Nombre del archivo: `Plan_Reabastecimiento_Sugerido_{horizonDays}dias_{YYYY-MM-DD}.csv`.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 5.62s con 0 errores.
+
+### 171. Corrección del Efecto Hover y Jitter en la Gráfica de Curva Histórica y Proyección de Demanda (`PredictiveReportsTab.jsx`)
+* **Solicitud del Usuario:**
+  * Al pasar el mouse por los puntos de la *"Curva Histórica y Proyección de Demanda"*, los puntos se bugueaban / parpadeaban y vibraban erráticamente.
+* **Causa Raíz:**
+  * Los elementos `<circle>` del SVG utilizaban la clase de Tailwind `hover:scale-125`. En SVG, las transformaciones CSS (`transform: scale()`) toman por defecto el origen en `(0, 0)` (la esquina superior izquierda de todo el canvas SVG) en lugar del centro del propio círculo, a menos que se defina `transform-box: fill-box; transform-origin: center;`.
+  * Debido a esto, al hacer hover sobre un punto (por ejemplo en `x: 450, y: 160`), el navegador escalaba la posición desplazándolo decenas de píxeles fuera del puntero del ratón. Al moverse fuera del puntero, el punto perdía el hover y volvía a su posición original, reactivando el hover de nuevo e iniciando un bucle infinito de parpadeo y jitter a alta frecuencia.
+  * Además, los puntos tenían un radio minúsculo (2.5px a 3.5px) difícil de apuntar y solo disponían de la etiqueta nativa `<title>` del navegador (con retardo de apertura de ~1 segundo). Las etiquetas de picos máximos (`topPeaks`) tampoco tenían `pointer-events-none`, bloqueando el cursor si coincidían con un punto.
+* **Solución Implementada:**
+  * En [**`PredictiveReportsTab.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/PredictiveReportsTab.jsx):
+    1. **Eliminación del `hover:scale-125` Problemático:**
+       * Se retiró cualquier transformación CSS por hover de los círculos SVG, eliminando de raíz la causa del parpadeo.
+    2. **Arquitectura de Doble Círculo (Hit-Target Generoso):**
+       * Círculo visible: renderizado limpio con transiciones suaves en su radio y color (`transition-[r,fill] duration-150`), con `pointer-events-none`.
+       * Círculo invisible de impacto: `<circle r="14" fill="transparent" className="cursor-pointer">` que captura los eventos `onMouseEnter` y `onMouseLeave` sin moverse ni alterar las coordenadas.
+    3. **Tooltip Integrado en SVG con Retícula y Coordenadas Perfectas:**
+       * Se incorporó el estado `hoveredPoint` para sincronizar la interacción.
+       * **Mira / Crosshair Vertical:** Línea guía punteada vertical en la fecha exacta del punto seleccionado (verde esmeralda para ventas reales, ámbar para pronóstico).
+       * **Halo Activo:** Resplandor exterior y nodo resaltado en el punto enfocado.
+       * **Tarjeta Flotante Flotante SVG (`<g pointerEvents="none">`):** Tarjeta técnica con fondo `#12151c` y borde `#27272a` que flota sobre el punto con auto-clamping horizontal y vertical para que nunca se corte fuera de los bordes del gráfico. Muestra la fecha exacta, etiqueta semántica (`VENTA REAL` vs `PROYECCIÓN`) y el valor cuantitativo con fuente monoespaciada tabular (`X un.` o `~X un/d`).
+    4. **Protección de Elementos Superpuestos:**
+       * Se añadió `pointerEvents="none"` a las etiquetas de picos históricos (`topPeaks`), línea divisoria `HOY` y etiquetas del eje X para que no interfieran con la interacción del mouse.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.30s con 0 errores.
+
+### 172. Corrección de Posicionamiento y Viewport en el Modal de Diagnóstico de Demanda (`PredictiveReportsTab.jsx`)
+* **Solicitud del Usuario:**
+  * Al pulsar el botón *"Diagnóstico"* en los productos del *"Plan de Reabastecimiento Sugerido"*, la ventana modal se abría en la mitad o arriba de toda la página en vez de centrarse en la pantalla visible actual. Si el usuario bajaba en la tabla hasta las últimas herramientas y pulsaba diagnóstico, el modal quedaba arriba fuera del campo visual.
+* **Causa Raíz:**
+  * El contenedor raíz de la pestaña poseía la clase `animate-fade-in` (`animation: ... forwards`), la cual retenía `transform: translateY(0) scale(1)`. En la especificación CSS, cualquier propiedad `transform` distinta de `none` en un elemento padre convierte a dicho elemento en el bloque de contención (*containing block*) para todos sus descendientes, anulando el comportamiento de `position: fixed` respecto al viewport de la ventana.
+  * Debido a esto, el modal con `fixed inset-0` se anclaba al contenedor de la tabla (que tiene más de 2500px de altura), centrándose a ~1200px desde el inicio del documento en lugar de centrarse en la pantalla del usuario.
+  * Adicionalmente, el modal no contaba con `max-height` adaptativo con `overflow-y-auto`, lo que provocaba que en pantallas estándar el botón inferior de *"Ir a inventario"* se cortara al final del recuadro.
+* **Solución Implementada:**
+  * En [**`PredictiveReportsTab.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/PredictiveReportsTab.jsx):
+    1. **Montaje con `createPortal` en `document.body`:**
+       * Se envolvió el modal en `createPortal(..., document.body)`, desvinculándolo por completo de cualquier contexto de apilamiento, transformaciones CSS (`transform`) u `overflow` de los componentes padre.
+       * Ahora `fixed inset-0` se ancla de forma garantizada al 100% del viewport visible de la pantalla, sin importar en qué fila o altura de la tabla se encuentre el usuario al hacer clic en *"Diagnóstico"*.
+    2. **Remoción del `animate-fade-in` del Contenedor de la Pestaña:**
+       * Se retiró `animate-fade-in` de la etiqueta raíz para evitar que cree bloques de contención de transformación artificiales.
+    3. **Ajuste Responsivo y Scroll Interno:**
+       * Se asignó `max-h-[90vh] overflow-y-auto my-auto` a la tarjeta del modal con cabecera fija (`sticky top-0 bg-[#12151c] z-10`), asegurando que todos los datos (resumen operativo, tabla de errores MAD/RMSE/MAPE y botón *"Ir a inventario"*) sean 100% visibles y accesibles en cualquier resolución de pantalla.
+    4. **UX & Accesibilidad (Atajo Escape y Bloqueo de Scroll):**
+       * Se implementó un efecto `useEffect` que escucha la tecla `Escape` para cerrar el modal y bloquea temporalmente el scroll del fondo (`document.body.style.overflow = 'hidden'`) mientras el modal está abierto, restaurándolo al cerrarse.
+       * Se añadió cierre inmediato al hacer clic en el backdrop exterior (`onClick={(e) => { if (e.target === e.currentTarget) setSelectedProduct(null); }}`).
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.23s con 0 errores.
+
+### 173. Paginación Inteligente y Selector de Filas en el Plan de Reabastecimiento Sugerido (`PredictiveReportsTab.jsx`)
+* **Solicitud del Usuario:**
+  * Si en el catálogo existen cientos o miles de productos, evitar que la tabla se alargue indefinidamente hacia abajo.
+  * Incorporar un paginador interactivo para navegar entre páginas y permitir que el usuario elija cuántas filas desea visualizar por página.
+* **Solución Implementada:**
+  * En [**`PredictiveReportsTab.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/PredictiveReportsTab.jsx):
+    1. **Estado de Paginación y Selector Dinámico de Filas:**
+       * Se agregaron los estados `currentPage` (por defecto página `1`) e `itemsPerPage` (por defecto `10` filas).
+       * Se incorporó en la barra de filtros un selector estilizado: **10 filas**, **20 filas**, **50 filas**, **100 filas** o **Ver todas**.
+    2. **Algoritmo de Navegación y Elipsis Numérica:**
+       * Cálculos automáticos de `totalItems`, `totalPages`, `startIndex`, `endIndex` y `paginatedProducts = filteredProducts.slice(startIndex, endIndex)`.
+       * Botones de salto rápido: **«** (Primera página) y **»** (Última página), además de **Anterior** y **Siguiente**.
+       * Botones numéricos de página directos con estado activo en ámbar (`bg-amber-500 text-zinc-950 font-bold`) y separador inteligente de elipsis (`...`) para catálogos extensos con muchas páginas.
+    3. **Resumen de Entradas en Tiempo Real:**
+       * Pie de tabla informativo: `Mostrando X a Y de Z productos (filtrados de W en catálogo)` con formato numérico monoespaciado (`font-mono tabular-nums`).
+    4. **Integridad de Exportaciones y Filtros:**
+       * Al cambiar de filtro (búsqueda por texto, estado de urgencia, clase Pareto ABC, sensibilidad o filas por página), la página actual se resetea automáticamente a la `1` para evitar páginas vacías.
+       * Las exportaciones a **Excel** y **PDF vectorial** continúan exportando el conjunto completo de productos filtrados (`filteredProducts`), garantizando reportes integrales independientemente de la página en la que se encuentre el operador.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.62s con 0 errores.

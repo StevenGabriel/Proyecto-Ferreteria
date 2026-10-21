@@ -209,7 +209,7 @@ function InventoryControl() {
                 Control de Inventario y Alertas
               </h1>
               <p className="text-xs text-zinc-400 font-medium mt-1 max-w-[65ch]">
-                Semáforo de existencias críticas, caducidad de lotes FEFO y trazabilidad de movimientos Kardex
+                Semáforo de existencias críticas, vencimiento de lotes y trazabilidad de movimientos Kardex
               </p>
             </div>
 
@@ -332,7 +332,7 @@ function InventoryControl() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span>Semáforo de Caducidad FEFO</span>
+              <span>Semáforo de Vencimientos</span>
               <span className={`font-mono tabular-nums px-1.5 py-0.5 rounded text-[11px] ${
                 activeTab === 'expiration' ? 'bg-zinc-950/20 text-zinc-950' : 'bg-zinc-800 text-zinc-300'
               }`}>
@@ -656,7 +656,7 @@ function InventoryControl() {
                 {loading ? (
                   <div className="py-20 text-center space-y-3">
                     <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p className="text-xs text-zinc-400 font-semibold">Calculando fechas de vencimiento FEFO...</p>
+                    <p className="text-xs text-zinc-400 font-semibold">Calculando fechas de vencimiento...</p>
                   </div>
                 ) : expiringLots.length === 0 ? (
                   <div className="py-16 text-center space-y-2">
@@ -678,7 +678,7 @@ function InventoryControl() {
                           <th className="py-3.5 px-4 text-center">Stock del Lote</th>
                           <th className="py-3.5 px-4 text-center">Fecha de Caducidad</th>
                           <th className="py-3.5 px-4 text-center">Días Restantes</th>
-                          <th className="py-3.5 px-4 text-center">Estado FEFO</th>
+                          <th className="py-3.5 px-4 text-center">Estado de Vencimiento</th>
                           <th className="py-3.5 px-4 text-right">Acción</th>
                         </tr>
                       </thead>
@@ -749,7 +749,7 @@ function InventoryControl() {
                                       LoteID: lote.LoteID,
                                       tipoAjuste: 'BAJA_VENCIMIENTO',
                                       cantidad: lote.Stock,
-                                      motivo: `Baja por caducidad FEFO (Venció el ${lote.FechaVencimiento})`,
+                                      motivo: `Baja por vencimiento de lote (Venció el ${lote.FechaVencimiento})`,
                                       documentoReferencia: `BAJA-LOTE-${lote.LoteID}`,
                                       usuarioResponsable: userName
                                     });
@@ -761,7 +761,7 @@ function InventoryControl() {
                                 </button>
                               ) : (
                                 <span className="text-[11px] text-amber-400/90 font-mono tabular-nums font-semibold">
-                                  Prioridad FEFO
+                                  Prioridad de Vencimiento
                                 </span>
                               )}
                             </td>
@@ -971,7 +971,7 @@ function InventoryControl() {
                     <option value="AJUSTE_INGRESO">Entrada / Ingreso de Stock</option>
                     <option value="ENTRADA_COMPRA">Compra a Proveedor</option>
                     <option value="AJUSTE_MERMA">Merma / Daño de Producto</option>
-                    <option value="BAJA_VENCIMIENTO">Baja por Caducidad FEFO</option>
+                    <option value="BAJA_VENCIMIENTO">Baja por Vencimiento</option>
                     <option value="SALIDA_VENTA">Salida Manual</option>
                   </select>
                 </div>

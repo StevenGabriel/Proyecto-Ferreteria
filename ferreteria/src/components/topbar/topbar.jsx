@@ -267,7 +267,7 @@ function Topbar() {
                       : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <span>FEFO</span>
+                  <span>Vencimientos</span>
                   <span className="font-mono tabular-nums text-[10px] px-1.5 rounded bg-zinc-900">{activeExpiringLots.length}</span>
                 </button>
                 <button

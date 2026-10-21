@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { getDemandForecastReport, getSalesPerformanceReport, getProductForecastDetail } from '../../services/api';
 import { Link } from 'react-router-dom';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 function PredictiveReportsTab() {
   // Configuración del Modelo en lenguaje comercial
@@ -17,16 +20,36 @@ function PredictiveReportsTab() {
   const [performanceData, setPerformanceData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Filtros de Tabla
+  // Filtros de Tabla y Paginación
   const [searchTerm, setSearchTerm] = useState('');
   const [urgencyFilter, setUrgencyFilter] = useState('ALL');
   const [abcFilter, setAbcFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Modal de Detalle de Producto / Calibración
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productDetailData, setProductDetailData] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [modalShowFormulas, setModalShowFormulas] = useState(false);
+
+  // Tooltip interactivo de la gráfica histórica y proyecciones
+  const [hoveredPoint, setHoveredPoint] = useState(null);
+
+  // Cerrar modal con tecla Escape y bloquear scroll del body mientras el modal esté abierto
+  useEffect(() => {
+    if (!selectedProduct) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setSelectedProduct(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [selectedProduct]);
 
   // Sincronizar preset de sensibilidad
   const handleSensitivityChange = (preset) => {
@@ -113,37 +136,236 @@ function PredictiveReportsTab() {
     });
   }, [forecastData, performanceData, searchTerm, urgencyFilter, abcFilter]);
 
-  // Exportar Tabla de Pronóstico
-  const handleExportForecast = (type) => {
-    if (type === 'impresion') {
-      window.print();
-    } else {
-      const rows = [
-        ['Producto', 'Código', 'Categoría', 'Importancia (Pareto)', 'Stock Actual', 'Stock Mínimo', 'Venta Diaria Aprox.', `Demanda (${horizonDays}d)`, 'Días para Agotarse', 'Estado Stock', '¿Cuánto Comprar? (Unid)', 'Inversión Sugerida (Bs.)', 'Fiabilidad del Cálculo'],
-        ...filteredProducts.map((p) => [
-          p.Nombre,
-          p.CodigoBarras || `PRD-${p.ProductoID}`,
-          p.Categoria || 'General',
-          p.abcClass === 'A' ? 'Clase A (Alta Rotación - 80%)' : p.abcClass === 'B' ? 'Clase B (Rotación Regular - 15%)' : 'Clase C (Baja Rotación - 5%)',
-          p.StockActual ?? 0,
-          p.StockMinimo ?? 5,
-          p.dailyDemandRate ?? 0,
-          p.projectedDemand ?? 0,
-          p.daysUntilStockout >= 999 ? 'Stock suficiente (> 90d)' : `${p.daysUntilStockout} días`,
-          p.urgencyLabel || p.urgencyLevel,
-          p.suggestedPurchaseUnits ?? 0,
-          p.estimatedPurchaseCost ?? 0,
-          `Alta precisión (${p.modelAccuracy?.bestModel || 'SES'})`
-        ])
+  // Cálculos de Paginación para la tabla maestra
+  const totalItems = filteredProducts.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const validCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (validCurrentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const paginatedProducts = useMemo(() => {
+    return filteredProducts.slice(startIndex, endIndex);
+  }, [filteredProducts, startIndex, endIndex]);
+
+  // Resetear página actual si cambian los filtros principales
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, urgencyFilter, abcFilter, itemsPerPage, horizonDays, model]);
+
+  // Generación de PDF Vectorial Real para Plan de Reabastecimiento Sugerido
+  const exportForecastPdf = () => {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const todayStr = new Date().toLocaleDateString('es-BO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    const timeStr = new Date().toLocaleTimeString('es-BO', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const totalInvestment = filteredProducts.reduce((acc, p) => acc + (parseFloat(p.estimatedPurchaseCost) || 0), 0);
+    const totalUnits = filteredProducts.reduce((acc, p) => acc + (parseInt(p.suggestedPurchaseUnits) || 0), 0);
+
+    // Encabezado Corporativo C&C Ferretería (Landscape: 297mm ancho)
+    doc.setFillColor(18, 21, 28); // #12151c
+    doc.rect(0, 0, 297, 24, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(245, 158, 11); // Amber-500
+    doc.text('C&C FERRETERÍA — CASA Y CONSTRUCCIÓN', 14, 10);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(212, 212, 216); // zinc-300
+    doc.text(`PLAN DE REABASTECIMIENTO Y COMPRAS SUGERIDAS • HORIZONTE: ${horizonDays} DÍAS`, 14, 17);
+
+    doc.setFontSize(8);
+    doc.setTextColor(161, 161, 170); // zinc-400
+    doc.text(`Fecha de emisión: ${todayStr} ${timeStr}`, 283, 10, { align: 'right' });
+    doc.text(`Total en lista: ${filteredProducts.length} productos | Sugerido: +${totalUnits} unid. (Bs. ${totalInvestment.toFixed(2)})`, 283, 17, { align: 'right' });
+
+    const tableBody = filteredProducts.map((p, idx) => {
+      const stock = p.StockActual ?? 0;
+      const minStock = p.StockMinimo ?? 5;
+      const unit = p.Unidad || 'UNID';
+      const daily = parseFloat(p.dailyDemandRate ?? 0).toFixed(1);
+      const proj = parseFloat(p.projectedDemand ?? 0).toFixed(1);
+
+      let coberturaText = 'Seguro (>30d)';
+      if (p.urgencyLevel === 'OUT_OF_STOCK') coberturaText = 'AGOTADO (0d)';
+      else if (p.daysUntilStockout <= 7) coberturaText = `Crítico (${p.daysUntilStockout}d)`;
+      else if (p.daysUntilStockout <= 15) coberturaText = `Alerta (${p.daysUntilStockout}d)`;
+      else if (p.daysUntilStockout <= 30) coberturaText = `Atención (${p.daysUntilStockout}d)`;
+      else if (p.daysUntilStockout < 999) coberturaText = `${p.daysUntilStockout} días`;
+
+      const sugerido = p.suggestedPurchaseUnits > 0 ? `+${p.suggestedPurchaseUnits} ${unit}` : 'Cubierto';
+      const inversion = p.estimatedPurchaseCost > 0 ? `Bs. ${p.estimatedPurchaseCost.toFixed(2)}` : 'Bs. 0.00';
+
+      return [
+        (idx + 1).toString(),
+        (p.Nombre || '').toUpperCase(),
+        p.CodigoBarras || `PRD-${p.ProductoID}`,
+        p.Categoria || 'General',
+        `Clase ${p.abcClass || 'C'}`,
+        `${stock} ${unit}`,
+        `${minStock} ${unit}`,
+        `${daily} ${unit}/d`,
+        `${proj} ${unit}`,
+        coberturaText,
+        sugerido,
+        inversion
       ];
-      const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(';')).join('\n');
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `Plan_Compras_Sugeridas_${horizonDays}dias.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    });
+
+    autoTable(doc, {
+      startY: 28,
+      margin: { left: 14, right: 14, bottom: 15 },
+      head: [['#', 'PRODUCTO', 'CÓDIGO / SKU', 'CATEGORÍA', 'CLASE', 'STOCK ACT.', 'MÍN.', 'VTA/DÍA', `DEMANDA (${horizonDays}d)`, 'COBERTURA', 'COMPRA SUG.', 'INVERSIÓN']],
+      body: tableBody,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [24, 28, 38],
+        textColor: [245, 158, 11],
+        fontStyle: 'bold',
+        fontSize: 7.5,
+        halign: 'left'
+      },
+      bodyStyles: {
+        textColor: [30, 30, 30],
+        fontSize: 7,
+        rowPageBreak: 'avoid'
+      },
+      alternateRowStyles: {
+        fillColor: [248, 249, 250]
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 8 },
+        1: { halign: 'left', cellWidth: 54 },
+        2: { halign: 'center', cellWidth: 24 },
+        3: { halign: 'left', cellWidth: 24 },
+        4: { halign: 'center', cellWidth: 18 },
+        5: { halign: 'right', cellWidth: 18 },
+        6: { halign: 'right', cellWidth: 16 },
+        7: { halign: 'right', cellWidth: 18 },
+        8: { halign: 'right', cellWidth: 22 },
+        9: { halign: 'center', cellWidth: 25 },
+        10: { halign: 'center', fontStyle: 'bold', cellWidth: 22 },
+        11: { halign: 'right', fontStyle: 'bold', cellWidth: 20 }
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body') {
+          // Columna Cobertura (index 9)
+          if (data.column.index === 9) {
+            const raw = (data.cell.raw || '').toString().toLowerCase();
+            if (raw.includes('agotado') || raw.includes('crítico')) {
+              data.cell.styles.textColor = [220, 38, 38]; // Rojo
+              data.cell.styles.fontStyle = 'bold';
+            } else if (raw.includes('alerta') || raw.includes('atención')) {
+              data.cell.styles.textColor = [217, 119, 6]; // Ámbar
+              data.cell.styles.fontStyle = 'bold';
+            } else {
+              data.cell.styles.textColor = [16, 185, 129]; // Verde
+            }
+          }
+          // Columna Compra Sugerida (index 10)
+          if (data.column.index === 10) {
+            const raw = (data.cell.raw || '').toString();
+            if (raw.startsWith('+')) {
+              data.cell.styles.textColor = [180, 83, 9]; // Ámbar oscuro
+              data.cell.styles.fontStyle = 'bold';
+            }
+          }
+          // Columna Inversión (index 11)
+          if (data.column.index === 11) {
+            const raw = (data.cell.raw || '').toString();
+            if (!raw.includes('0.00')) {
+              data.cell.styles.textColor = [5, 150, 105]; // Esmeralda
+              data.cell.styles.fontStyle = 'bold';
+            }
+          }
+        }
+      },
+      didDrawPage: (data) => {
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(7.5);
+        doc.setTextColor(120, 120, 120);
+        doc.text(
+          `C&C Ferretería — Sistema de Planificación de Demanda y Reabastecimiento • Horizonte: ${horizonDays} días • Página ${data.pageNumber} de ${pageCount}`,
+          14,
+          203
+        );
+      }
+    });
+
+    const fileDate = new Date().toISOString().slice(0, 10);
+    doc.save(`Plan_Reabastecimiento_Sugerido_${horizonDays}dias_${fileDate}.pdf`);
+  };
+
+  // Exportar Tabla de Pronóstico en formato Excel (CSV con UTF-8 BOM)
+  const exportForecastExcel = () => {
+    const rows = [
+      [
+        '#',
+        'Producto',
+        'Código / SKU',
+        'Categoría',
+        'Marca',
+        'Clasificación Pareto (ABC)',
+        'Stock Actual',
+        'Stock Mínimo',
+        'Unidad',
+        'Venta Diaria Aprox.',
+        `Demanda Proyectada (${horizonDays} días)`,
+        'Días de Cobertura',
+        'Nivel de Urgencia',
+        'Unidades Sugeridas a Comprar',
+        'Inversión Estimada (Bs.)'
+      ],
+      ...filteredProducts.map((p, idx) => [
+        idx + 1,
+        p.Nombre || '',
+        p.CodigoBarras || `PRD-${p.ProductoID}`,
+        p.Categoria || 'General',
+        p.Marca || 'Genérico',
+        p.abcClass === 'A' ? 'Clase A (Alta Rotación - 80%)' : p.abcClass === 'B' ? 'Clase B (Rotación Regular - 15%)' : 'Clase C (Baja Rotación - 5%)',
+        p.StockActual ?? 0,
+        p.StockMinimo ?? 5,
+        p.Unidad || 'UNID',
+        p.dailyDemandRate ?? 0,
+        p.projectedDemand ?? 0,
+        p.daysUntilStockout >= 999 ? 'Stock suficiente (> 90d)' : `${p.daysUntilStockout} días`,
+        p.urgencyLabel || p.urgencyLevel || 'Normal',
+        p.suggestedPurchaseUnits ?? 0,
+        (p.estimatedPurchaseCost ?? 0).toFixed(2)
+      ])
+    ];
+
+    const csvContent = '\uFEFF' + rows.map((e) => e.map((val) => `"${val}"`).join(';')).join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    const fileDate = new Date().toISOString().slice(0, 10);
+    link.setAttribute('download', `Plan_Reabastecimiento_Sugerido_${horizonDays}dias_${fileDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Handler unificado de exportación
+  const handleExportForecast = (type) => {
+    if (type === 'pdf') {
+      exportForecastPdf();
+    } else {
+      exportForecastExcel();
     }
   };
 
@@ -231,7 +453,11 @@ function PredictiveReportsTab() {
 
     return (
       <div className="w-full overflow-x-auto relative">
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-80 text-zinc-400 select-none">
+        <svg
+          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+          className="w-full h-80 text-zinc-400 select-none"
+          onMouseLeave={() => setHoveredPoint(null)}
+        >
           <defs>
             <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#10b981" stopOpacity="0.22" />
@@ -298,43 +524,69 @@ function PredictiveReportsTab() {
           )}
 
           {/* Puntos de datos históricos */}
-          {historicPoints.map((p, i) => (
-            <circle
-              key={`hp-${i}`}
-              cx={p.x}
-              cy={p.y}
-              r={p.actual > 0 ? "3.5" : "2.5"}
-              fill={p.actual > 0 ? "#10b981" : "#52525b"}
-              stroke="#0c0e12"
-              strokeWidth="2"
-              className="transition-transform duration-150 ease-out-expo hover:scale-125 cursor-pointer"
-            >
-              <title>{`Fecha: ${p.date}\nVentas reales: ${p.actual || 0} unidades`}</title>
-            </circle>
-          ))}
+          {historicPoints.map((p, i) => {
+            const isHovered = hoveredPoint?.date === p.date && hoveredPoint?.pointType === 'historic';
+            return (
+              <g key={`hp-${i}`}>
+                {/* Círculo visible */}
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={isHovered ? 5.5 : (p.actual > 0 ? "3.5" : "2.5")}
+                  fill={isHovered ? "#34d399" : (p.actual > 0 ? "#10b981" : "#52525b")}
+                  stroke="#0c0e12"
+                  strokeWidth="2"
+                  className="pointer-events-none transition-[r,fill] duration-150"
+                />
+                {/* Zona de impacto invisible para hover sin parpadeos */}
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r="14"
+                  fill="transparent"
+                  className="cursor-pointer"
+                  onMouseEnter={() => setHoveredPoint({ ...p, pointType: 'historic' })}
+                  onMouseLeave={() => setHoveredPoint(null)}
+                />
+              </g>
+            );
+          })}
 
           {/* Puntos de proyección */}
-          {forecastPoints.map((p, i) => (
-            <circle
-              key={`fp-${i}`}
-              cx={p.x}
-              cy={p.y}
-              r="3.5"
-              fill="#f59e0b"
-              stroke="#0c0e12"
-              strokeWidth="2"
-              className="transition-transform duration-150 ease-out-expo hover:scale-125 cursor-pointer"
-            >
-              <title>{`Fecha: ${p.date}\nDemanda estimada: ~${p.forecast || 0} unidades/día`}</title>
-            </circle>
-          ))}
+          {forecastPoints.filter(p => p.date).map((p, i) => {
+            const isHovered = hoveredPoint?.date === p.date && hoveredPoint?.pointType === 'forecast';
+            return (
+              <g key={`fp-${i}`}>
+                {/* Círculo visible */}
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={isHovered ? 5.5 : "3.5"}
+                  fill={isHovered ? "#fbbf24" : "#f59e0b"}
+                  stroke="#0c0e12"
+                  strokeWidth="2"
+                  className="pointer-events-none transition-[r,fill] duration-150"
+                />
+                {/* Zona de impacto invisible para hover sin parpadeos */}
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r="14"
+                  fill="transparent"
+                  className="cursor-pointer"
+                  onMouseEnter={() => setHoveredPoint({ ...p, pointType: 'forecast' })}
+                  onMouseLeave={() => setHoveredPoint(null)}
+                />
+              </g>
+            );
+          })}
 
-          {/* Etiquetas de los picos más altos */}
+          {/* Etiquetas de los picos más altos (sin capturar eventos de mouse) */}
           {topPeaks.map((p, i) => {
             const labelY = p.y - 14;
             const safeY = Math.max(padTop + 14, labelY);
             return (
-              <g key={`peak-${i}`}>
+              <g key={`peak-${i}`} pointerEvents="none">
                 <rect
                   x={p.x - 20}
                   y={safeY - 12}
@@ -363,7 +615,7 @@ function PredictiveReportsTab() {
 
           {/* Línea vertical HOY */}
           {todayX && (
-            <g>
+            <g pointerEvents="none">
               <line
                 x1={todayX} y1={padTop}
                 x2={todayX} y2={padTop + chartH}
@@ -384,11 +636,142 @@ function PredictiveReportsTab() {
             const idx = timeline.indexOf(d);
             const x = getX(idx);
             return (
-              <text key={i} x={x} y={svgHeight - 12} textAnchor="middle" fontSize="11" fill="#a1a1aa" className="font-mono tabular-nums font-medium">
+              <text key={i} x={x} y={svgHeight - 12} textAnchor="middle" fontSize="11" fill="#a1a1aa" className="font-mono tabular-nums font-medium pointer-events-none">
                 {d.date ? d.date.slice(5) : ''}
               </text>
             );
           })}
+
+          {/* Tooltip dinámico en SVG (en perfecta sincronía de coordenadas sin jitter) */}
+          {hoveredPoint && (() => {
+            const isHistoric = hoveredPoint.pointType === 'historic';
+            const tipW = 164;
+            const tipH = 54;
+
+            // Clamping horizontal dentro del gráfico
+            let tipX = hoveredPoint.x - tipW / 2;
+            if (tipX < padLeft + 4) tipX = padLeft + 4;
+            if (tipX + tipW > svgWidth - padRight - 4) tipX = svgWidth - padRight - 4 - tipW;
+
+            // Posición vertical: arriba por defecto, abajo si está muy cerca del borde superior
+            let tipY = hoveredPoint.y - tipH - 12;
+            if (tipY < padTop + 4) {
+              tipY = hoveredPoint.y + 14;
+            }
+
+            const dateStr = hoveredPoint.date || 'Fecha N/A';
+            const valStr = isHistoric
+              ? `${hoveredPoint.actual || 0} un.`
+              : `~${hoveredPoint.forecast || 0} un/día`;
+
+            return (
+              <g pointerEvents="none" className="transition-opacity duration-150">
+                {/* Guía vertical de mira telescópica */}
+                <line
+                  x1={hoveredPoint.x}
+                  y1={padTop}
+                  x2={hoveredPoint.x}
+                  y2={padTop + chartH}
+                  stroke={isHistoric ? '#10b981' : '#f59e0b'}
+                  strokeDasharray="3 3"
+                  strokeWidth="1.5"
+                  strokeOpacity="0.6"
+                />
+
+                {/* Halo y nodo activo */}
+                <circle
+                  cx={hoveredPoint.x}
+                  cy={hoveredPoint.y}
+                  r="10"
+                  fill={isHistoric ? '#10b981' : '#f59e0b'}
+                  fillOpacity="0.22"
+                />
+                <circle
+                  cx={hoveredPoint.x}
+                  cy={hoveredPoint.y}
+                  r="5.5"
+                  fill={isHistoric ? '#34d399' : '#fbbf24'}
+                  stroke="#0c0e12"
+                  strokeWidth="2"
+                />
+
+                {/* Tarjeta emergente */}
+                <rect
+                  x={tipX}
+                  y={tipY}
+                  width={tipW}
+                  height={tipH}
+                  rx="6"
+                  fill="#12151c"
+                  stroke="#27272a"
+                  strokeWidth="1.2"
+                />
+
+                {/* Fila 1: Indicador de tipo y Fecha */}
+                <circle
+                  cx={tipX + 12}
+                  cy={tipY + 16}
+                  r="3.5"
+                  fill={isHistoric ? '#10b981' : '#f59e0b'}
+                />
+                <text
+                  x={tipX + 22}
+                  y={tipY + 16}
+                  fontSize="11"
+                  fill="#d4d4d8"
+                  dominantBaseline="middle"
+                  className="font-medium"
+                >
+                  {dateStr}
+                </text>
+                <text
+                  x={tipX + tipW - 10}
+                  y={tipY + 16}
+                  textAnchor="end"
+                  fontSize="9"
+                  fill={isHistoric ? '#34d399' : '#fbbf24'}
+                  dominantBaseline="middle"
+                  className="font-mono font-bold tracking-wider"
+                >
+                  {isHistoric ? 'VENTA REAL' : 'PROYECCIÓN'}
+                </text>
+
+                {/* Separador sutil */}
+                <line
+                  x1={tipX + 8}
+                  y1={tipY + 28}
+                  x2={tipX + tipW - 8}
+                  y2={tipY + 28}
+                  stroke="#27272a"
+                  strokeWidth="0.8"
+                />
+
+                {/* Fila 2: Valor numérico y subtítulo */}
+                <text
+                  x={tipX + 10}
+                  y={tipY + 42}
+                  fontSize="13"
+                  fill="#f4f4f5"
+                  fontWeight="bold"
+                  dominantBaseline="middle"
+                  className="font-mono tabular-nums"
+                >
+                  {valStr}
+                </text>
+                <text
+                  x={tipX + tipW - 10}
+                  y={tipY + 42}
+                  textAnchor="end"
+                  fontSize="10"
+                  fill="#71717a"
+                  dominantBaseline="middle"
+                  className="font-medium"
+                >
+                  {isHistoric ? 'Registrado' : 'Estimación'}
+                </text>
+              </g>
+            );
+          })()}
         </svg>
       </div>
     );
@@ -398,7 +781,7 @@ function PredictiveReportsTab() {
   const forecastSummary = forecastData?.summary || {};
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
 
       {/* 0. Panel de Ayuda / Guía de Uso */}
       <div className="bg-[#12151c] border border-zinc-800/90 rounded-2xl overflow-hidden">
@@ -768,25 +1151,27 @@ function PredictiveReportsTab() {
             </p>
           </div>
 
-          {/* Botones de Exportación */}
+          {/* Botones de Exportación (Descargar Excel y Descargar PDF) */}
           <div className="flex items-center gap-1.5 self-start lg:self-auto">
             <button
-              onClick={() => handleExportForecast('csv')}
-              className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 rounded-lg text-xs font-medium border border-zinc-800 transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
+              onClick={exportForecastExcel}
+              className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
+              title="Descargar Plan en formato Excel (.csv compatible)"
             >
-              <span>Exportar CSV</span>
+              <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Descargar Excel</span>
             </button>
             <button
-              onClick={() => handleExportForecast('excel')}
-              className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-emerald-400 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
+              onClick={exportForecastPdf}
+              className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
+              title="Descargar Reporte Oficial en formato PDF vectorial"
             >
-              <span>Exportar Excel</span>
-            </button>
-            <button
-              onClick={() => handleExportForecast('impresion')}
-              className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 rounded-lg text-xs font-medium border border-zinc-800 transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
-            >
-              <span>Imprimir Plan</span>
+              <svg className="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <span>Descargar PDF</span>
             </button>
           </div>
         </div>
@@ -821,6 +1206,25 @@ function PredictiveReportsTab() {
                 <option value="A">Clase A — Alta rotación</option>
                 <option value="B">Clase B — Rotación regular</option>
                 <option value="C">Clase C — Baja rotación</option>
+              </select>
+            </div>
+
+            {/* Selector de Filas por Página */}
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-zinc-400">Mostrar:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-[#0c0e12] border border-zinc-800 rounded-xl px-2.5 py-1.5 text-zinc-200 text-xs font-semibold font-mono tabular-nums outline-none focus:border-amber-500/70 cursor-pointer"
+              >
+                <option value={10}>10 filas</option>
+                <option value={20}>20 filas</option>
+                <option value={50}>50 filas</option>
+                <option value={100}>100 filas</option>
+                <option value={999999}>Ver todas</option>
               </select>
             </div>
           </div>
@@ -859,14 +1263,14 @@ function PredictiveReportsTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/70">
-              {filteredProducts.length === 0 ? (
+              {paginatedProducts.length === 0 ? (
                 <tr>
                   <td colSpan="10" className="py-8 text-center text-zinc-500 text-xs">
                     No se encontraron productos con los filtros seleccionados.
                   </td>
                 </tr>
               ) : (
-                filteredProducts.map((prod) => {
+                paginatedProducts.map((prod) => {
                   const isStockout = prod.urgencyLevel === 'OUT_OF_STOCK';
                   const isCritical = prod.urgencyLevel === 'CRITICAL';
                   const isHigh = prod.urgencyLevel === 'HIGH';
@@ -976,13 +1380,113 @@ function PredictiveReportsTab() {
             </tbody>
           </table>
         </div>
+
+        {/* Paginador y Resumen de Entradas */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-zinc-400 font-medium">
+          <div className="font-mono tabular-nums text-[11px] text-zinc-400">
+            Mostrando{' '}
+            <span className="text-amber-400 font-bold">{totalItems > 0 ? startIndex + 1 : 0}</span> a{' '}
+            <span className="text-amber-400 font-bold">{endIndex}</span> de{' '}
+            <span className="text-zinc-200 font-bold">{totalItems}</span> productos
+            {totalItems !== (forecastData?.forecastedProducts?.length || 0) && (
+              <span className="text-zinc-500 ml-1">
+                (filtrados de {forecastData?.forecastedProducts?.length || 0} en catálogo)
+              </span>
+            )}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              {/* Botón Primera Página */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage(1)}
+                disabled={validCurrentPage === 1}
+                className="px-2.5 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press cursor-pointer font-bold text-xs"
+                title="Primera página"
+              >
+                «
+              </button>
+
+              {/* Botón Anterior */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={validCurrentPage === 1}
+                className="px-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press cursor-pointer text-xs font-semibold"
+              >
+                Anterior
+              </button>
+
+              {/* Botones numéricos de página */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                const shouldShow =
+                  page === 1 ||
+                  page === totalPages ||
+                  (page >= validCurrentPage - 1 && page <= validCurrentPage + 1);
+
+                if (!shouldShow) {
+                  if (page === 2 || page === totalPages - 1) {
+                    return (
+                      <span key={page} className="text-zinc-600 font-mono tabular-nums text-xs px-1 select-none">
+                        ...
+                      </span>
+                    );
+                  }
+                  return null;
+                }
+
+                return (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1.5 rounded-lg font-mono tabular-nums text-xs font-bold transition-colors duration-160 ease-out-expo btn-press cursor-pointer ${
+                      validCurrentPage === page
+                        ? 'bg-amber-500 text-zinc-950 font-bold shadow-sm'
+                        : 'bg-[#0c0e12] border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:border-zinc-700'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+
+              {/* Botón Siguiente */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={validCurrentPage === totalPages}
+                className="px-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press cursor-pointer text-xs font-semibold"
+              >
+                Siguiente
+              </button>
+
+              {/* Botón Última Página */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={validCurrentPage === totalPages}
+                className="px-2.5 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press cursor-pointer font-bold text-xs"
+                title="Última página"
+              >
+                »
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* 5. Modal de Diagnóstico de Producto */}
-      {selectedProduct && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-[#12151c] border border-zinc-800 rounded-2xl max-w-3xl w-full p-6 space-y-5 shadow-2xl shadow-black/70 animate-modal-in">
-            <div className="flex justify-between items-start border-b border-zinc-800 pb-3.5">
+      {/* 5. Modal de Diagnóstico de Producto (Montado directamente en document.body para centrado de viewport perfecto) */}
+      {selectedProduct && createPortal(
+        <div
+          className="fixed inset-0 bg-black/80 z-[9999] flex items-center justify-center p-4 overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedProduct(null);
+          }}
+        >
+          <div className="bg-[#12151c] border border-zinc-800 rounded-2xl max-w-3xl w-full p-6 space-y-5 shadow-2xl shadow-black/80 animate-modal-in max-h-[90vh] overflow-y-auto my-auto">
+            <div className="flex justify-between items-start border-b border-zinc-800 pb-3.5 sticky top-0 bg-[#12151c] z-10">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/25 rounded font-mono text-[10px] font-semibold uppercase">
@@ -996,7 +1500,8 @@ function PredictiveReportsTab() {
               </div>
               <button
                 onClick={() => setSelectedProduct(null)}
-                className="text-zinc-400 hover:text-zinc-100 font-bold text-base cursor-pointer p-1 rounded-lg hover:bg-zinc-800 transition-colors duration-160 ease-out-expo"
+                className="text-zinc-400 hover:text-zinc-100 font-bold text-base cursor-pointer p-1.5 rounded-lg hover:bg-zinc-800 transition-colors duration-160 ease-out-expo btn-press"
+                title="Cerrar (Esc)"
               >
                 ✕
               </button>
@@ -1122,7 +1627,8 @@ function PredictiveReportsTab() {
               </div>
             ) : null}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

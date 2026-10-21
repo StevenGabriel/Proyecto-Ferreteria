@@ -5,6 +5,8 @@ import Topbar from '../../components/topbar/topbar';
 import { useSidebar } from '../../context/SidebarContext';
 import { getProducts, getCriticalStock, getExpiringLots, getSalesPerformanceReport } from '../../services/api';
 import PredictiveReportsTab from './PredictiveReportsTab';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 function Home() {
   const { isCollapsed } = useSidebar();
@@ -184,10 +186,232 @@ function Home() {
     });
   }, [expiringLots, expiringSearch, expiringFilter, dismissedExpiredLots]);
 
+  // Generación de PDF Real para Alertas de Stock
+  const exportStockPdf = () => {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const todayStr = new Date().toLocaleDateString('es-BO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    const timeStr = new Date().toLocaleTimeString('es-BO', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // Encabezado Corporativo C&C Ferretería
+    doc.setFillColor(18, 21, 28);
+    doc.rect(0, 0, 210, 24, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(245, 158, 11);
+    doc.text('C&C FERRETERÍA — CASA Y CONSTRUCCIÓN', 14, 10);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(212, 212, 216);
+    doc.text('REPORTE OFICIAL DE ALERTAS DE STOCK CRÍTICO Y EXISTENCIAS MÍNIMAS', 14, 17);
+
+    doc.setFontSize(8);
+    doc.setTextColor(161, 161, 170);
+    doc.text(`Fecha: ${todayStr} ${timeStr}`, 196, 10, { align: 'right' });
+    doc.text(`Total en alerta: ${filteredProducts.length} productos`, 196, 17, { align: 'right' });
+
+    const tableBody = filteredProducts.map((p, idx) => {
+      const stock = p.Stock ?? 0;
+      const minStock = p.LoteMinimo ?? 5;
+      const isOut = stock <= 0;
+      const statusText = isOut ? 'AGOTADO' : 'STOCK BAJO';
+      const ubi = p.Ubicacion
+        ? `${p.Ubicacion.Almacen ? `[${p.Ubicacion.Almacen.Nombre}] ` : ''}${p.Ubicacion.Descripcion || p.Ubicacion.Nombre || ''}`
+        : 'Sin asignar';
+
+      return [
+        (idx + 1).toString(),
+        (p.Nombre || '').toUpperCase(),
+        p.Codigo || p.CodigoBarras || `PRD-${p.ProductoID}`,
+        ubi,
+        stock.toString(),
+        minStock.toString(),
+        statusText
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 28,
+      margin: { left: 14, right: 14, bottom: 15 },
+      head: [['#', 'PRODUCTO', 'CÓDIGO / SKU', 'UBICACIÓN ALMACÉN', 'STOCK', 'MÍN.', 'ESTADO']],
+      body: tableBody,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [24, 28, 38],
+        textColor: [245, 158, 11],
+        fontStyle: 'bold',
+        fontSize: 7.5,
+        halign: 'left'
+      },
+      bodyStyles: {
+        textColor: [30, 30, 30],
+        fontSize: 7,
+        rowPageBreak: 'avoid'
+      },
+      alternateRowStyles: {
+        fillColor: [248, 249, 250]
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 8 },
+        1: { halign: 'left' },
+        2: { halign: 'center', cellWidth: 26 },
+        3: { halign: 'left', cellWidth: 36 },
+        4: { halign: 'right', fontStyle: 'bold', cellWidth: 14 },
+        5: { halign: 'right', cellWidth: 14 },
+        6: { halign: 'center', fontStyle: 'bold', cellWidth: 24 }
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 6) {
+          if (data.cell.raw === 'AGOTADO') {
+            data.cell.styles.textColor = [220, 38, 38];
+          } else {
+            data.cell.styles.textColor = [217, 119, 6];
+          }
+        }
+      },
+      didDrawPage: (data) => {
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(7.5);
+        doc.setTextColor(120, 120, 120);
+        doc.text(
+          `C&C Ferretería — Sistema de Control de Inventario • Página ${data.pageNumber} de ${pageCount}`,
+          14,
+          290
+        );
+      }
+    });
+
+    const fileDate = new Date().toISOString().slice(0, 10);
+    doc.save(`Alerta_Stock_Critico_${fileDate}.pdf`);
+  };
+
+  // Generación de PDF Real para Alertas de Vencimiento de Lotes
+  const exportExpiringPdf = () => {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const todayStr = new Date().toLocaleDateString('es-BO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    const timeStr = new Date().toLocaleTimeString('es-BO', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // Encabezado Corporativo C&C Ferretería
+    doc.setFillColor(18, 21, 28);
+    doc.rect(0, 0, 210, 24, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(245, 158, 11);
+    doc.text('C&C FERRETERÍA — CASA Y CONSTRUCCIÓN', 14, 10);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(212, 212, 216);
+    doc.text('REPORTE OFICIAL DE CONTROL DE VENCIMIENTOS Y LOTES CADUCADOS', 14, 17);
+
+    doc.setFontSize(8);
+    doc.setTextColor(161, 161, 170);
+    doc.text(`Fecha: ${todayStr} ${timeStr}`, 196, 10, { align: 'right' });
+    doc.text(`Total en alerta: ${filteredExpiringLots.length} lotes`, 196, 17, { align: 'right' });
+
+    const tableBody = filteredExpiringLots.map((l, idx) => {
+      return [
+        (idx + 1).toString(),
+        (l.ProductoNombre || '').toUpperCase(),
+        l.NotaLote || `LOTE-${l.LoteID}`,
+        l.FechaVencimiento || '—',
+        l.daysRemaining !== undefined ? `${l.daysRemaining} d` : '—',
+        (l.statusLabel || '—').toUpperCase(),
+        `${l.Stock} ${l.Unidad || 'UNID'}`
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 28,
+      margin: { left: 14, right: 14, bottom: 15 },
+      head: [['#', 'PRODUCTO', 'LOTE #', 'FECHA VENC.', 'DÍAS REST.', 'ESTADO VENCIMIENTO', 'STOCK']],
+      body: tableBody,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [24, 28, 38],
+        textColor: [245, 158, 11],
+        fontStyle: 'bold',
+        fontSize: 7.5,
+        halign: 'left'
+      },
+      bodyStyles: {
+        textColor: [30, 30, 30],
+        fontSize: 7,
+        rowPageBreak: 'avoid'
+      },
+      alternateRowStyles: {
+        fillColor: [248, 249, 250]
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 8 },
+        1: { halign: 'left' },
+        2: { halign: 'center', cellWidth: 26 },
+        3: { halign: 'center', cellWidth: 24 },
+        4: { halign: 'center', cellWidth: 20 },
+        5: { halign: 'center', fontStyle: 'bold', cellWidth: 32 },
+        6: { halign: 'right', fontStyle: 'bold', cellWidth: 20 }
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 5) {
+          const raw = (data.cell.raw || '').toString().toLowerCase();
+          if (raw.includes('vencido') || raw.includes('caducado')) {
+            data.cell.styles.textColor = [220, 38, 38];
+          } else if (raw.includes('próximo') || raw.includes('atención')) {
+            data.cell.styles.textColor = [217, 119, 6];
+          } else {
+            data.cell.styles.textColor = [16, 185, 129];
+          }
+        }
+      },
+      didDrawPage: (data) => {
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(7.5);
+        doc.setTextColor(120, 120, 120);
+        doc.text(
+          `C&C Ferretería — Sistema de Control de Vencimientos • Página ${data.pageNumber} de ${pageCount}`,
+          14,
+          290
+        );
+      }
+    });
+
+    const fileDate = new Date().toISOString().slice(0, 10);
+    doc.save(`Alerta_Vencimiento_Lotes_${fileDate}.pdf`);
+  };
+
   const handleExport = (type) => {
     if (type === 'impresion') {
       window.print();
+    } else if (type === 'pdf') {
+      exportStockPdf();
     } else {
+      // Exportación Excel / CSV con UTF-8 BOM
       const rows = [
         ['Producto', 'Código', 'Ubicación', 'Stock Actual', 'Stock Mínimo', 'Estado'],
         ...filteredProducts.map((p) => [
@@ -199,21 +423,26 @@ function Home() {
           (p.Stock || 0) <= 0 ? 'Agotado' : 'Stock Bajo'
         ])
       ];
-      const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(';')).join('\n');
-      const encodedUri = encodeURI(csvContent);
+      const csvContent = '\uFEFF' + rows.map((e) => e.map(val => `"${val}"`).join(';')).join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `Alerta_Stock_Ferreteria_${type}.csv`);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Alerta_Stock_Ferreteria_${new Date().toISOString().slice(0, 10)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
   };
 
   const handleExportExpiring = (type) => {
     if (type === 'impresion') {
       window.print();
+    } else if (type === 'pdf') {
+      exportExpiringPdf();
     } else {
+      // Exportación Excel / CSV con UTF-8 BOM
       const rows = [
         ['Producto', 'Código', 'Lote', 'Fecha Caducidad', 'Días Restantes', 'Estado', 'Stock Lote'],
         ...filteredExpiringLots.map((l) => [
@@ -226,14 +455,16 @@ function Home() {
           `${l.Stock} ${l.Unidad || 'UNID'}`
         ])
       ];
-      const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(';')).join('\n');
-      const encodedUri = encodeURI(csvContent);
+      const csvContent = '\uFEFF' + rows.map((e) => e.map(val => `"${val}"`).join(';')).join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `Alerta_Caducidad_Lotes_FEFO_${type}.csv`);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Alerta_Vencimiento_Lotes_${new Date().toISOString().slice(0, 10)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -256,7 +487,7 @@ function Home() {
                 Panel de control {userName ? `— ${userName}` : ''}
               </h2>
               <p className="text-zinc-400 text-xs sm:text-sm mt-1">
-                Estado operativo en tiempo real de caja, inventario y vencimiento de lotes FEFO.
+                Estado operativo en tiempo real de caja, inventario y vencimiento de lotes.
               </p>
             </div>
             <button className="flex items-center gap-2 px-3.5 py-2 bg-[#12151c] border border-zinc-800/90 rounded-xl hover:border-amber-500/50 hover:text-amber-400 transition-colors duration-160 ease-out-expo btn-press font-semibold text-xs text-zinc-300 cursor-pointer">
@@ -569,15 +800,6 @@ function Home() {
               {/* Botones de Exportación / Herramientas */}
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
-                  onClick={() => handleExport('csv')}
-                  className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Exportar CSV
-                </button>
-                <button
                   onClick={() => handleExport('excel')}
                   className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
                 >
@@ -750,7 +972,7 @@ function Home() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
-                    <span>Control de Caducidad y Lotes (Motor FEFO)</span>
+                    <span>Control de Caducidad y Vencimiento de Lotes</span>
                     <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/25 rounded-md text-[10px] font-mono tabular-nums font-semibold">
                       {filteredExpiringLots.length} lotes
                     </span>
@@ -790,15 +1012,6 @@ function Home() {
 
               {/* Botones de Exportación */}
               <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  onClick={() => handleExportExpiring('csv')}
-                  className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Exportar CSV
-                </button>
                 <button
                   onClick={() => handleExportExpiring('excel')}
                   className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
@@ -853,7 +1066,7 @@ function Home() {
                     <th className="py-3 px-4">Producto</th>
                     <th className="py-3 px-4">Lote #</th>
                     <th className="py-3 px-4">Fecha caducidad</th>
-                    <th className="py-3 px-4">Estado FEFO</th>
+                    <th className="py-3 px-4">Estado de Vencimiento</th>
                     <th className="py-3 px-4">Stock lote</th>
                     <th className="py-3 px-4 text-right">Acción</th>
                   </tr>
