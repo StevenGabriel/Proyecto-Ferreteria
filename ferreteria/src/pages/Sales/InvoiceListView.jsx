@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from '../../components/sidebar/sidebar';
 import Topbar from '../../components/topbar/topbar';
 import { useSidebar } from '../../context/SidebarContext';
-import { getInvoices, voidInvoice } from '../../services/api';
+import { getInvoices, voidInvoice, reactivateInvoice } from '../../services/api';
 import { generateInvoicePdf, generateInvoiceTicketPdf } from '../../utils/invoicePdfGenerator';
 
 function InvoiceListView() {
@@ -28,6 +28,11 @@ function InvoiceListView() {
   const [showVoidModal, setShowVoidModal] = useState(false);
   const [voidReason, setVoidReason] = useState('Error en emisión de datos');
   const [voidingLoading, setVoidingLoading] = useState(false);
+
+  // Modal Reactivación
+  const [showReactivateModal, setShowReactivateModal] = useState(false);
+  const [reactivateReason, setReactivateReason] = useState('Reactivación administrativa autorizada');
+  const [reactivatingLoading, setReactivatingLoading] = useState(false);
 
   // Toast
   const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
@@ -146,6 +151,30 @@ function InvoiceListView() {
       showToast('No se pudo anular la factura', 'error');
     } finally {
       setVoidingLoading(false);
+    }
+  };
+
+  // Acciones: Abrir modal para reactivar factura
+  const handleOpenReactivateModal = (inv) => {
+    setSelectedInvoice(inv);
+    setReactivateReason('Reactivación administrativa autorizada');
+    setShowReactivateModal(true);
+  };
+
+  // Confirmar Reactivación
+  const handleConfirmReactivate = async () => {
+    if (!selectedInvoice) return;
+    setReactivatingLoading(true);
+    try {
+      await reactivateInvoice(selectedInvoice.ventaID, { motivo: reactivateReason });
+      showToast(`Factura No. ${selectedInvoice.numeroFactura} reactivada exitosamente`, 'success');
+      setShowReactivateModal(false);
+      fetchInvoices();
+    } catch (err) {
+      console.error('Error al reactivar factura:', err);
+      showToast(err.response?.data?.message || 'No se pudo reactivar la factura', 'error');
+    } finally {
+      setReactivatingLoading(false);
     }
   };
 
@@ -498,11 +527,19 @@ function InvoiceListView() {
                         <span>Imprimir Ticket</span>
                       </button>
 
-                      {/* 3. Anular */}
+                      {/* 3. Anular o Volver a Activar */}
                       {isVoided ? (
-                        <div className="flex-1 lg:w-full py-2 px-3 bg-zinc-900 text-red-400/80 font-bold rounded-xl text-xs flex items-center justify-center gap-1 border border-red-500/20 cursor-not-allowed">
-                          <span>✕ Anulada</span>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenReactivateModal(inv)}
+                          className="flex-1 lg:w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 btn-press cursor-pointer shadow-sm shadow-emerald-600/20"
+                          title="Volver a activar esta factura y descontar inventario"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          <span>Volver a Activar</span>
+                        </button>
                       ) : (
                         <button
                           type="button"
@@ -670,25 +707,56 @@ function InvoiceListView() {
             </div>
 
             {/* Botones del Modal */}
-            <div className="flex gap-2 pt-2 border-t border-zinc-800/80">
+            <div className="flex gap-2 pt-2 border-t border-zinc-800/80 flex-wrap">
               <button
                 type="button"
                 onClick={() => setShowDetailModal(false)}
-                className="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 font-bold rounded-xl text-xs transition-colors duration-150 btn-press cursor-pointer"
+                className="flex-1 min-w-[90px] py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 font-bold rounded-xl text-xs transition-colors duration-150 btn-press cursor-pointer"
               >
                 Cerrar
               </button>
+
+              {selectedInvoice.estado === 'Anulada' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    handleOpenReactivateModal(selectedInvoice);
+                  }}
+                  className="flex-1 min-w-[130px] py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 btn-press cursor-pointer shadow-sm shadow-emerald-600/20"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>Volver a Activar</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    handleOpenVoidModal(selectedInvoice);
+                  }}
+                  className="flex-1 min-w-[100px] py-2.5 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 border border-red-500/30 transition-colors duration-150 btn-press cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span>Anular</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => handlePrintLetter(selectedInvoice)}
-                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 btn-press cursor-pointer"
+                className="flex-1 min-w-[120px] py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 btn-press cursor-pointer"
               >
                 <span>Imprimir Carta</span>
               </button>
               <button
                 type="button"
                 onClick={() => handlePrintTicket(selectedInvoice)}
-                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 btn-press cursor-pointer"
+                className="flex-1 min-w-[120px] py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 btn-press cursor-pointer"
               >
                 <span>Imprimir Ticket</span>
               </button>
@@ -761,6 +829,77 @@ function InvoiceListView() {
                   </>
                 ) : (
                   <span>Confirmar Anulación</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: REACTIVACIÓN DE FACTURA                                            */}
+      {/* ========================================================================= */}
+      {showReactivateModal && selectedInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm">
+          <div className="bg-[#12151c] border border-emerald-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-modal-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-zinc-100">
+                  ¿Volver a activar Factura No. <span className="font-mono tabular-nums">{selectedInvoice.numeroFactura}</span>?
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  Total: <strong className="text-zinc-100 font-mono tabular-nums">Bs. {selectedInvoice.total.toFixed(2)}</strong> • Cliente: {selectedInvoice.cliente}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-zinc-300 leading-relaxed bg-[#0c0e12] p-3 rounded-xl border border-zinc-800/80">
+              Al volver a activar esta factura, el comprobante cambiará nuevamente a estado <strong className="text-emerald-400 font-bold">Emitida</strong> y las cantidades de los productos se descontarán nuevamente del inventario (Lotes / Kardex).
+            </p>
+
+            <div>
+              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                Motivo de reactivación:
+              </label>
+              <select
+                value={reactivateReason}
+                onChange={(e) => setReactivateReason(e.target.value)}
+                className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-emerald-500/60 font-medium cursor-pointer transition-colors"
+              >
+                <option value="Reactivación administrativa autorizada">1. Reactivación administrativa autorizada</option>
+                <option value="Corrección de anulación involuntaria">2. Corrección de anulación involuntaria</option>
+                <option value="Cliente ratifica y confirma la compra">3. Cliente ratifica y confirma la compra</option>
+                <option value="Regularización de pago y comprobante">4. Regularización de pago y comprobante</option>
+              </select>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-zinc-800/80">
+              <button
+                type="button"
+                disabled={reactivatingLoading}
+                onClick={() => setShowReactivateModal(false)}
+                className="w-1/2 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 font-bold rounded-xl text-xs transition-colors duration-150 btn-press cursor-pointer disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={reactivatingLoading}
+                onClick={handleConfirmReactivate}
+                className="w-1/2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 btn-press cursor-pointer disabled:opacity-50 shadow-sm shadow-emerald-600/20"
+              >
+                {reactivatingLoading ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Reactivando...</span>
+                  </>
+                ) : (
+                  <span>Confirmar Reactivación</span>
                 )}
               </button>
             </div>

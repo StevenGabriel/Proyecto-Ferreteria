@@ -285,6 +285,11 @@ export const voidInvoice = async (id, data = {}) => {
   return response.data;
 };
 
+export const reactivateInvoice = async (id, data = {}) => {
+  const response = await api.patch(`/sales/${id}/activar`, data);
+  return response.data;
+};
+
 // API de Caja Registradora (Apertura, Cierre y Estado)
 export const getCashRegisterStatus = async () => {
   const response = await api.get('/sales/cash-register/status');

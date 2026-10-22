@@ -41,12 +41,16 @@ function Home() {
   const [criticalProducts, setCriticalProducts] = useState([]);
   const [loadingAlerts, setLoadingAlerts] = useState(true);
   const [tableSearch, setTableSearch] = useState('');
+  const [stockCurrentPage, setStockCurrentPage] = useState(1);
+  const [stockItemsPerPage, setStockItemsPerPage] = useState(10);
 
   // 2. Alertas de caducidad de lotes (FEFO)
   const [expiringLots, setExpiringLots] = useState([]);
   const [loadingExpiring, setLoadingExpiring] = useState(true);
   const [expiringSearch, setExpiringSearch] = useState('');
   const [expiringFilter, setExpiringFilter] = useState('ALL');
+  const [expiringCurrentPage, setExpiringCurrentPage] = useState(1);
+  const [expiringItemsPerPage, setExpiringItemsPerPage] = useState(10);
 
   // Lotes vencidos descartados manualmente por el usuario
   const [dismissedExpiredLots, setDismissedExpiredLots] = useState(() => {
@@ -185,6 +189,42 @@ function Home() {
       return true;
     });
   }, [expiringLots, expiringSearch, expiringFilter, dismissedExpiredLots]);
+
+  // Paginación para Alertas de Stock
+  const stockTotalItems = filteredProducts.length;
+  const stockTotalPages = Math.max(1, Math.ceil(stockTotalItems / stockItemsPerPage));
+  const stockValidPage = Math.min(Math.max(1, stockCurrentPage), stockTotalPages);
+  const stockStartIndex = (stockValidPage - 1) * stockItemsPerPage;
+  const stockEndIndex = Math.min(stockStartIndex + stockItemsPerPage, stockTotalItems);
+  const paginatedStockProducts = useMemo(() => {
+    return filteredProducts.slice(stockStartIndex, stockEndIndex);
+  }, [filteredProducts, stockStartIndex, stockEndIndex]);
+
+  useEffect(() => {
+    setStockCurrentPage(1);
+  }, [tableSearch, stockItemsPerPage]);
+
+  // Paginación para Control de Caducidad y Vencimiento de Lotes (FEFO)
+  const expiringTotalItems = filteredExpiringLots.length;
+  const expiringTotalPages = Math.max(1, Math.ceil(expiringTotalItems / expiringItemsPerPage));
+  const expiringValidPage = Math.min(Math.max(1, expiringCurrentPage), expiringTotalPages);
+  const expiringStartIndex = (expiringValidPage - 1) * expiringItemsPerPage;
+  const expiringEndIndex = Math.min(expiringStartIndex + expiringItemsPerPage, expiringTotalItems);
+  const paginatedExpiringLots = useMemo(() => {
+    return filteredExpiringLots.slice(expiringStartIndex, expiringEndIndex);
+  }, [filteredExpiringLots, expiringStartIndex, expiringEndIndex]);
+
+  useEffect(() => {
+    setExpiringCurrentPage(1);
+  }, [expiringSearch, expiringFilter, expiringItemsPerPage]);
+
+  // Generador de números de paginación con elipsis
+  const getPaginationNumbers = (current, total) => {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    if (current <= 3) return [1, 2, 3, 4, '...', total];
+    if (current >= total - 2) return [1, '...', total - 3, total - 2, total - 1, total];
+    return [1, '...', current - 1, current, current + 1, '...', total];
+  };
 
   // Generación de PDF Real para Alertas de Stock
   const exportStockPdf = () => {
@@ -798,7 +838,40 @@ function Home() {
               </div>
 
               {/* Botones de Exportación / Herramientas */}
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Selector de Filas por Página */}
+                <div className="flex items-center gap-1.5 text-xs">
+                  <span className="text-zinc-400 font-medium">Mostrar:</span>
+                  <select
+                    value={stockItemsPerPage}
+                    onChange={(e) => {
+                      setStockItemsPerPage(Number(e.target.value));
+                      setStockCurrentPage(1);
+                    }}
+                    className="bg-[#0c0e12] border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 font-semibold font-mono tabular-nums outline-none cursor-pointer focus:border-amber-500/70 transition-colors duration-160"
+                  >
+                    <option value={5}>5 filas</option>
+                    <option value={10}>10 filas</option>
+                    <option value={20}>20 filas</option>
+                    <option value={50}>50 filas</option>
+                    <option value={999999}>Ver todas</option>
+                  </select>
+                </div>
+
+                {/* Buscador de productos en alerta */}
+                <div className="relative min-w-[200px]">
+                  <input
+                    type="text"
+                    placeholder="Buscar producto o código..."
+                    value={tableSearch}
+                    onChange={(e) => setTableSearch(e.target.value)}
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500/70 transition-colors duration-160"
+                  />
+                  <svg className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+
                 <button
                   onClick={() => handleExport('excel')}
                   className="px-3 py-1.5 bg-[#0c0e12] hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo btn-press flex items-center gap-1.5 cursor-pointer"
@@ -861,7 +934,7 @@ function Home() {
                       </td>
                     </tr>
                   ) : (
-                    filteredProducts.map((item, index) => {
+                    paginatedStockProducts.map((item, index) => {
                       const stockVal = item.Stock ?? item.currentStock ?? 0;
                       const isOutOfStock = stockVal === 0;
                       return (
@@ -918,7 +991,9 @@ function Home() {
                                   : `${stockVal} ${item.Unidad?.Abreviacion || item.Unidad?.Nombre || 'UNID'} (BAJO)`}
                               </span>
                               <Link
-                                to="/productsView"
+                                to={`/productsView?openHistory=${item.ProductoID}`}
+                                state={{ openHistoryFor: item.ProductoID }}
+                                title="Ver producto y abrir historial de existencias"
                                 className="text-[11px] text-amber-400 hover:text-amber-300 opacity-0 group-hover:opacity-100 transition-opacity duration-160 ease-out-expo font-semibold"
                               >
                                 Ver en productos →
@@ -936,25 +1011,66 @@ function Home() {
             {/* Pie de Tabla con Contador y Paginación Dinámica */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1 text-xs text-zinc-400 font-medium">
               <div className="font-mono tabular-nums text-[11px]">
-                Mostrando {filteredProducts.length > 0 ? 1 : 0} a {filteredProducts.length} de {criticalProducts.length} registro{criticalProducts.length === 1 ? '' : 's'}
+                Mostrando {stockTotalItems === 0 ? 0 : stockStartIndex + 1} a {stockEndIndex} de {stockTotalItems} producto{stockTotalItems === 1 ? '' : 's'} en alerta
+                {criticalProducts.length !== stockTotalItems && (
+                  <span className="text-zinc-500 ml-1">({criticalProducts.length} total)</span>
+                )}
               </div>
-              <div className="flex items-center gap-1">
-                <button
-                  disabled
-                  className="px-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg opacity-40 cursor-not-allowed text-xs"
-                >
-                  Anterior
-                </button>
-                <button className="px-3 py-1.5 bg-amber-500/15 border border-amber-500/35 text-amber-400 font-mono tabular-nums font-bold rounded-lg text-xs">
-                  1
-                </button>
-                <button
-                  disabled
-                  className="px-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg opacity-40 cursor-not-allowed text-xs"
-                >
-                  Siguiente
-                </button>
-              </div>
+              {stockTotalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setStockCurrentPage(1)}
+                    disabled={stockValidPage === 1}
+                    title="Primera página"
+                    className="px-2 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press font-mono text-xs"
+                  >
+                    «
+                  </button>
+                  <button
+                    onClick={() => setStockCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={stockValidPage === 1}
+                    className="px-2.5 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press text-xs font-medium"
+                  >
+                    Anterior
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {getPaginationNumbers(stockValidPage, stockTotalPages).map((pageNum, idx) => {
+                      if (pageNum === '...') {
+                        return <span key={`stock-ellipsis-${idx}`} className="px-1 text-zinc-600 font-mono">…</span>;
+                      }
+                      const isActive = pageNum === stockValidPage;
+                      return (
+                        <button
+                          key={`stock-page-${pageNum}`}
+                          onClick={() => setStockCurrentPage(pageNum)}
+                          className={`w-7 h-7 flex items-center justify-center font-mono tabular-nums text-xs rounded-lg transition-colors duration-160 ease-out-expo btn-press font-bold ${
+                            isActive
+                              ? 'bg-amber-500 text-zinc-950 shadow-sm shadow-amber-500/20'
+                              : 'bg-[#0c0e12] border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:border-zinc-700'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setStockCurrentPage(p => Math.min(stockTotalPages, p + 1))}
+                    disabled={stockValidPage === stockTotalPages}
+                    className="px-2.5 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press text-xs font-medium"
+                  >
+                    Siguiente
+                  </button>
+                  <button
+                    onClick={() => setStockCurrentPage(stockTotalPages)}
+                    disabled={stockValidPage === stockTotalPages}
+                    title="Última página"
+                    className="px-2 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press font-mono text-xs"
+                  >
+                    »
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -991,23 +1107,41 @@ function Home() {
               </Link>
             </div>
 
-            {/* Controles de Búsqueda, Filtro y Exportación */}
+            {/* Controles de Búsqueda, Filtro, Filas por página y Exportación */}
             <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
-              {/* Filtro por Estado de Vencimiento */}
-              <div className="flex items-center gap-2 text-xs">
-                <span className="font-semibold text-zinc-400">Filtrar:</span>
-                <select
-                  value={expiringFilter}
-                  onChange={(e) => setExpiringFilter(e.target.value)}
-                  className="bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-1.5 text-zinc-200 text-xs font-semibold outline-none focus:border-amber-500/70 transition-colors duration-160 ease-out-expo cursor-pointer"
-                >
-                  <option value="ALL">Todos los lotes con caducidad</option>
-                  <option value="EXPIRED">Lotes vencidos</option>
-                  <option value="EXPIRING_SOON">Críticos (menos de 30 días)</option>
-                  <option value="WARNING">Alerta preventiva (menos de 60 días)</option>
-                  <option value="OPTIMAL">Vigentes (más de 60 días)</option>
-                  <option value="CRITICAL_ALL">Vencidos + Críticos</option>
-                </select>
+              {/* Filtro por Estado de Vencimiento y Selector de Filas */}
+              <div className="flex flex-wrap items-center gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-zinc-400">Filtrar:</span>
+                  <select
+                    value={expiringFilter}
+                    onChange={(e) => setExpiringFilter(e.target.value)}
+                    className="bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-1.5 text-zinc-200 text-xs font-semibold outline-none focus:border-amber-500/70 transition-colors duration-160 ease-out-expo cursor-pointer"
+                  >
+                    <option value="ALL">Todos los lotes con caducidad</option>
+                    <option value="EXPIRED">Lotes vencidos</option>
+                    <option value="EXPIRING_SOON">Críticos (menos de 30 días)</option>
+                    <option value="WARNING">Alerta preventiva (menos de 60 días)</option>
+                    <option value="OPTIMAL">Vigentes (más de 60 días)</option>
+                    <option value="CRITICAL_ALL">Vencidos + Críticos</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-zinc-400">Mostrar:</span>
+                  <select
+                    value={expiringItemsPerPage}
+                    onChange={(e) => setExpiringItemsPerPage(Number(e.target.value))}
+                    className="bg-[#0c0e12] border border-zinc-800 rounded-xl px-2.5 py-1.5 text-zinc-200 text-xs font-mono tabular-nums font-semibold outline-none focus:border-amber-500/70 transition-colors duration-160 ease-out-expo cursor-pointer"
+                  >
+                    <option value={5}>5 lotes</option>
+                    <option value={10}>10 lotes</option>
+                    <option value={20}>20 lotes</option>
+                    <option value={50}>50 lotes</option>
+                    <option value={100}>100 lotes</option>
+                    <option value={9999}>Ver todos</option>
+                  </select>
+                </div>
               </div>
 
               {/* Botones de Exportación */}
@@ -1093,7 +1227,7 @@ function Home() {
                       </td>
                     </tr>
                   ) : (
-                    filteredExpiringLots.map((lot, index) => {
+                    paginatedExpiringLots.map((lot, index) => {
                       const isExpired = lot.status === 'EXPIRED';
                       const isSoon = lot.status === 'EXPIRING_SOON';
                       const isWarning = lot.status === 'WARNING';
@@ -1194,10 +1328,12 @@ function Home() {
                                 </button>
                               )}
                               <Link
-                                to="/productsView"
-                                className="text-[11px] text-amber-400 hover:text-amber-300 font-semibold transition-colors duration-160 ease-out-expo"
+                                to={`/productsView?openHistory=${lot.ProductoID}`}
+                                state={{ openHistoryFor: lot.ProductoID }}
+                                title="Ver producto y abrir su historial de existencias de productos"
+                                className="text-[11px] text-amber-400 hover:text-amber-300 font-semibold transition-colors duration-160 ease-out-expo flex items-center gap-1"
                               >
-                                Ver producto →
+                                <span>Ver producto e historial →</span>
                               </Link>
                             </div>
                           </td>
@@ -1209,28 +1345,69 @@ function Home() {
               </table>
             </div>
 
-            {/* Pie de Tabla con Contador */}
+            {/* Pie de Tabla con Contador y Paginación Dinámica */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1 text-xs text-zinc-400 font-medium">
               <div className="font-mono tabular-nums text-[11px]">
-                Mostrando {filteredExpiringLots.length > 0 ? 1 : 0} a {filteredExpiringLots.length} de {expiringLots.length} lote{expiringLots.length === 1 ? '' : 's'} registrado{expiringLots.length === 1 ? '' : 's'}
+                Mostrando {expiringTotalItems === 0 ? 0 : expiringStartIndex + 1} a {expiringEndIndex} de {expiringTotalItems} lote{expiringTotalItems === 1 ? '' : 's'} monitoreado{expiringTotalItems === 1 ? '' : 's'}
+                {expiringLots.length !== expiringTotalItems && (
+                  <span className="text-zinc-500 ml-1">({expiringLots.length} total)</span>
+                )}
               </div>
-              <div className="flex items-center gap-1">
-                <button
-                  disabled
-                  className="px-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg opacity-40 cursor-not-allowed text-xs"
-                >
-                  Anterior
-                </button>
-                <button className="px-3 py-1.5 bg-amber-500/15 border border-amber-500/35 text-amber-400 font-mono tabular-nums font-bold rounded-lg text-xs">
-                  1
-                </button>
-                <button
-                  disabled
-                  className="px-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg opacity-40 cursor-not-allowed text-xs"
-                >
-                  Siguiente
-                </button>
-              </div>
+              {expiringTotalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setExpiringCurrentPage(1)}
+                    disabled={expiringValidPage === 1}
+                    title="Primera página"
+                    className="px-2 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press font-mono text-xs"
+                  >
+                    «
+                  </button>
+                  <button
+                    onClick={() => setExpiringCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={expiringValidPage === 1}
+                    className="px-2.5 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press text-xs font-medium"
+                  >
+                    Anterior
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {getPaginationNumbers(expiringValidPage, expiringTotalPages).map((pageNum, idx) => {
+                      if (pageNum === '...') {
+                        return <span key={`exp-ellipsis-${idx}`} className="px-1 text-zinc-600 font-mono">…</span>;
+                      }
+                      const isActive = pageNum === expiringValidPage;
+                      return (
+                        <button
+                          key={`exp-page-${pageNum}`}
+                          onClick={() => setExpiringCurrentPage(pageNum)}
+                          className={`w-7 h-7 flex items-center justify-center font-mono tabular-nums text-xs rounded-lg transition-colors duration-160 ease-out-expo btn-press font-bold ${
+                            isActive
+                              ? 'bg-amber-500 text-zinc-950 shadow-sm shadow-amber-500/20'
+                              : 'bg-[#0c0e12] border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:border-zinc-700'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setExpiringCurrentPage(p => Math.min(expiringTotalPages, p + 1))}
+                    disabled={expiringValidPage === expiringTotalPages}
+                    className="px-2.5 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press text-xs font-medium"
+                  >
+                    Siguiente
+                  </button>
+                  <button
+                    onClick={() => setExpiringCurrentPage(expiringTotalPages)}
+                    disabled={expiringValidPage === expiringTotalPages}
+                    title="Última página"
+                    className="px-2 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press font-mono text-xs"
+                  >
+                    »
+                  </button>
+                </div>
+              )}
             </div>
           </div>
             </>

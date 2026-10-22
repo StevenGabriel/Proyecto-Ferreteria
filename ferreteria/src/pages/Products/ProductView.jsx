@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getProducts, deleteProduct, getLots, createLots } from "../../services/api";
 import Sidebar from "../../components/sidebar/sidebar";
@@ -27,6 +27,7 @@ function ProductView() {
   // Modal Historial de Existencias
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [historyProduct, setHistoryProduct] = useState(null);
+  const historyOpenedForRef = useRef(null);
 
   // Modal Eliminación
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -117,6 +118,42 @@ function ProductView() {
       .then((data) => setProductLotsHistory(data))
       .catch((err) => console.error("Error al obtener historial de lotes:", err));
   };
+
+  const closeHistoryModal = () => {
+    setIsHistoryModalOpen(false);
+    // Limpiar el parámetro de la URL para que no persista si el usuario navega o refresca
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.has("openHistory") || searchParams.has("historialId")) {
+      searchParams.delete("openHistory");
+      searchParams.delete("historialId");
+      const newSearch = searchParams.toString();
+      navigate(`${location.pathname}${newSearch ? `?${newSearch}` : ""}`, { replace: true, state: {} });
+    }
+  };
+
+  // Abrir automáticamente el Historial de Existencias si se recibe el ID por URL o state
+  useEffect(() => {
+    if (products.length === 0) return;
+    const searchParams = new URLSearchParams(location.search);
+    const historyIdFromUrl = searchParams.get("openHistory") || searchParams.get("historialId");
+    const historyIdFromState = location.state?.openHistoryFor;
+    const rawTargetId = historyIdFromUrl || historyIdFromState;
+
+    if (!rawTargetId) return;
+    const targetId = parseInt(rawTargetId, 10);
+    if (!targetId || isNaN(targetId)) return;
+
+    if (historyOpenedForRef.current !== targetId) {
+      const target = products.find((p) => p.ProductoID === targetId);
+      if (target) {
+        historyOpenedForRef.current = targetId;
+        openHistoryModal(target);
+        if (target.Nombre) {
+          setSearchTerm(target.Nombre);
+        }
+      }
+    }
+  }, [products, location.search, location.state]);
 
   const openDeleteModal = (product) => {
     setProductToDelete(product);
@@ -359,8 +396,20 @@ function ProductView() {
                 placeholder="Buscar por producto, marca o código..."
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                className="w-full pl-10 pr-4 py-2.5 bg-[#0c0e12] border border-zinc-800 rounded-xl focus:border-amber-500/60 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-colors duration-150"
+                className="w-full pl-10 pr-9 py-2.5 bg-[#0c0e12] border border-zinc-800 rounded-xl focus:border-amber-500/60 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-colors duration-150"
               />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => { setSearchTerm(""); setCurrentPage(1); }}
+                  title="Limpiar búsqueda"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 hover:text-zinc-200 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
 
@@ -696,7 +745,7 @@ function ProductView() {
                   ))}
                 </select>
                 <button
-                  onClick={() => setIsHistoryModalOpen(false)}
+                  onClick={closeHistoryModal}
                   className="text-zinc-400 hover:text-zinc-100 font-bold p-1.5 rounded-lg transition-colors duration-150 btn-press active:scale-[0.97]"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -815,9 +864,19 @@ function ProductView() {
                               {l.fecha_creacion ? new Date(l.fecha_creacion).toLocaleString() : "Sin fecha"}
                             </td>
 
-                            {/* Referencia / Nota */}
-                            <td className="px-4 py-3 font-medium text-zinc-300 max-w-xs truncate">
-                              {l.NotaLote || l.NumeroLote || "Stock de apertura"}
+                            {/* Referencia / Nota y Vencimiento */}
+                            <td className="px-4 py-3 font-medium text-zinc-300 max-w-xs">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span>{l.NotaLote || l.NumeroLote || "Stock de apertura"}</span>
+                                {l.FechaVencimiento && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/25 font-mono tabular-nums font-semibold">
+                                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    Vence: {l.FechaVencimiento.toString().slice(0, 10)}
+                                  </span>
+                                )}
+                              </div>
                             </td>
 
                             {/* Cliente / Proveedor */}
@@ -850,7 +909,7 @@ function ProductView() {
                 Mostrando <span className="font-mono tabular-nums text-zinc-200">{productLotsHistory.length}</span> registros de movimiento
               </div>
               <button
-                onClick={() => setIsHistoryModalOpen(false)}
+                onClick={closeHistoryModal}
                 className="px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-bold rounded-xl text-xs transition-colors duration-150 btn-press active:scale-[0.97]"
               >
                 Cerrar Historial

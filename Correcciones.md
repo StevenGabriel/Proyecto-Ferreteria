@@ -2011,3 +2011,181 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
        * Las exportaciones a **Excel** y **PDF vectorial** continúan exportando el conjunto completo de productos filtrados (`filteredProducts`), garantizando reportes integrales independientemente de la página en la que se encuentre el operador.
 * **Verificación:**
   * Compilación con Vite (`npm run build`) completada con éxito en 4.62s con 0 errores.
+
+### 174. Carga Masiva de Productos Reales del Sistema Externo y Sincronización FEFO (`backend/import_products.js`)
+* **Solicitud del Usuario:**
+  * Importar el lote de productos extraído del sistema externo de la ferretería para poblar el catálogo real sin alterar el código ni la estabilidad de la plataforma web.
+  * Asignar fechas de caducidad/vencimiento automáticas y realistas a aquellos insumos y químicos que lo requieran para alimentar el motor FEFO.
+* **Proceso y Adaptación de Datos:**
+  * Se analizó la estructura CSV provista: SKU, Nombre del producto, Precios de compra y venta, Stock inicial, Unidad de medida, Categoría y Marca.
+  * Se ejecutó el pipeline de importación mediante el script seguro [**`backend/import_products.js`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/import_products.js):
+    1. **Auto-resolución de Catálogos Foráneos:**
+       * Creación dinámica de nuevas marcas detectadas en el inventario real: `SCHNEIDER ELECTRIC`, `TRAMONTINA`, `TOLSEN`, `ATLAS`, `POLY`, `ITAP`, `SIKA`, `NORTON`, `TIGRE`, `ULTRA`, `SICA`, `TRAVEX`, `PEGATANKE`, `VERSACHEM`, `DEBOR`, `YANENS`, `CENTERGAS`, `KISAFIX`, `NEOMIX`, `EUROCEL`, `POXIPOL`, `PULPITO`, `GAVAL`, `UYUSTOOLS`, `PARABOND`, `PLAMAT`, `BERA`, `TRABASIL`, `BLEICHNER`, `WD40`, `ASTRA`, `MEIKON`, etc.
+       * Mapeo de unidades de medida existentes y creación de nuevas como `ROLLO`.
+    2. **Identificación Inteligente de Productos Perecederos (Control FEFO):**
+       * Los productos correspondientes a pinturas (látex, sintéticas, esmaltes, anticorrosivos, barnices, selladores), aerosoles, siliconas (Sikasil, Akfix), masillas, pegamentos (Poxipol, Poxilina, Pegatanke, Trabasil, Carpícola) y pastinas fueron etiquetados con `ManejaCaducidad: true` y se les asignaron lotes con fechas de vencimiento escalonadas (entre 25 días y 18 meses hacia adelante), nutriendo el semáforo de caducidad y la campana de notificaciones.
+    3. **Integración con Lotes y Kardex:**
+       * Por cada ítem con stock disponible se generó automáticamente su registro inicial en la tabla `Lotes`, asegurando que el stock sea computado dinámicamente y se refleje en el Punto de Venta (POS), Inventario, kardex y módulo predictivo.
+* **Resultado del Proceso:**
+  * Total de productos cargados con éxito: **740 nuevos productos**.
+  * Total catálogo activo en la base de datos: **775 productos**.
+  * Verificación del motor predictivo con 775 ítems completada con éxito (`totalProductsEvaluated: 775`).
+  * Sin modificaciones disruptivas al código fuente de la interfaz ni del backend.
+
+### 175. Paginación Interactiva y Selector de Productos por Página en la Landing Page / Tienda de Clientes (`ClientCatalog.jsx`)
+* **Solicitud del Usuario:**
+  * Al contar ahora con 775 productos en la base de datos, la Landing Page / catálogo público (`/` o `/catalogo`) cargaba y renderizaba todos los productos simultáneamente en una sola vista infinita.
+  * Implementar un paginador interactivo y permitir al cliente o usuario elegir cuántos productos desea visualizar por página.
+* **Solución Implementada:**
+  * En [**`ClientCatalog.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx):
+    1. **Estados y Cálculos de Paginación:**
+       * Se incorporaron los estados `currentPage` (por defecto `1`) e `itemsPerPage` (por defecto `20` productos, equivalente a 4 filas perfectas en grid de 5 columnas).
+       * Cálculos automáticos de `totalItems`, `totalPages`, `startIndex`, `endIndex` y `paginatedProducts = sortedProducts.slice(startIndex, endIndex)`.
+    2. **Barra de Controles Superior:**
+       * Se añadió el selector **"Mostrar:"** con opciones rápidas: **15**, **20**, **40**, **60** o **Ver todos**.
+       * Resumen visual interactivo: `Mostrando X - Y de Z productos disponibles` con números tabulares monoespaciados.
+       * Ancla de desplazamiento suave (`id="catalog-products-section"` con `scroll-mt-24`).
+    3. **Barra de Paginación Inferior (Diseño Premium Emil Kowalski + Impeccable):**
+       * Panel con fondo `#12151c` y borde `zinc-800` con indicador: `Página X de Y (Z productos en catálogo)`.
+       * Botón primera página (**«**), botón **Anterior**, botones numéricos de página con separadores elípticos inteligentes (**...**), botón **Siguiente** y botón última página (**»**).
+       * Página activa destacada en ámbar industrial (`bg-amber-500 text-zinc-950 font-bold`).
+       * Al pulsar cualquier página o control, la vista realiza un desplazamiento suave (`smooth scroll`) hacia el inicio de la cuadrícula de productos para una experiencia de usuario fluida.
+    4. **Reseteo Automático de Vista:**
+       * Al buscar por texto, seleccionar una categoría o marca, cambiar el orden de precios/alfabético o cambiar la cantidad de filas por página, el catálogo regresa automáticamente a la **Página 1**.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.90s con 0 errores.
+
+### 176. Paginación Interactiva y Selector de Filas en Tablas de Inicio (`Home.jsx`): Alertas de Stock y Lotes FEFO
+* **Solicitud del Usuario:**
+  * Incorporar paginación completa y selector de filas por página ("cuántos quiere ver el usuario") en las dos tablas del Dashboard de Inicio (`Home.jsx`):
+    1. **Alerta de stock de productos** (productos agotados y con stock bajo).
+    2. **Control de Caducidad y Vencimiento de Lotes** (lotes perecederos ordenados por política FEFO).
+* **Solución Implementada:**
+  * En [**`Home.jsx`**](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/Home.jsx):
+    1. **Estados y Control de Navegación por Tabla:**
+       * Para Alerta de Stock: estados `stockCurrentPage` (por defecto `1`) y `stockItemsPerPage` (por defecto `10` filas).
+       * Para Lotes FEFO: estados `expiringCurrentPage` (por defecto `1`) y `expiringItemsPerPage` (por defecto `10` lotes).
+       * Función de elipsis dinámica `getPaginationNumbers(current, total)` que muestra enlaces numéricos limpios (`1, 2, 3... 10`) con ventana flotante.
+    2. **Tabla 1: Alerta de stock de productos:**
+       * **Selector de filas en barra superior:** Opciones para mostrar `5 filas`, `10 filas`, `20 filas`, `50 filas` o `Ver todas`.
+       * **Buscador interactivo local:** Filtra en tiempo real por nombre, código o ubicación, reseteando la página automáticamente a `1`.
+       * **Paginación en pie de tabla:** Rango activo `Mostrando X a Y de Z productos en alerta`, botones `«` (primera página), `Anterior`, botones numéricos con estado activo en ámbar industrial (`bg-amber-500 text-zinc-950 font-bold`), `Siguiente` y `»` (última página).
+    3. **Tabla 2: Control de Caducidad y Vencimiento de Lotes (FEFO):**
+       * **Selector de filas en barra superior:** Integrado junto al filtro semafórico de vencimiento, con opciones para mostrar `5 lotes`, `10 lotes`, `20 lotes`, `50 lotes`, `100 lotes` o `Ver todos`.
+       * **Buscador y filtro sincrónicos:** Al cambiar de filtro de estado (`Vencidos`, `Críticos <30d`, `Preventivo <60d`, etc.) o buscar por texto, la página se resetea a `1`.
+       * **Paginación en pie de tabla:** Rango activo `Mostrando X a Y de Z lotes monitoreados`, botones `«`, `Anterior`, números de página con elipsis y estado activo ámbar, `Siguiente` y `»`.
+    4. **Integridad de Exportaciones:**
+       * Las funciones de exportación (`exportStockPdf`, `exportExpiringPdf`, impresión y Excel) continúan exportando la totalidad de registros filtrados (`filteredProducts` y `filteredExpiringLots`), preservando la integridad del reporte sin truncarlo a la página que está visualizando el usuario en pantalla.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.57s con 0 errores y 0 advertencias de código.
+
+### 177. Redirección con Apertura Automática del Historial de Existencias y Lotes desde el Panel de Inicio (`Home.jsx` → `ProductView.jsx`)
+* **Solicitud del Usuario:**
+  * En la tabla "Control de Caducidad y Vencimiento de Lotes", al hacer clic en "Ver producto", además de redirigir a la vista de productos (`/productsView`), abrir de forma automática el modal "Historial de existencias de productos" correspondiente al producto seleccionado.
+* **Solución Implementada:**
+  * **En [`Home.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/Home.jsx):**
+    * Se actualizó la acción de la fila en la tabla de Lotes FEFO para dirigir a `/productsView?openHistory=${lot.ProductoID}` con estado `state={{ openHistoryFor: lot.ProductoID }}`.
+    * Se renombró el enlace a `Ver producto e historial →` con tooltip descriptivo.
+    * Se extendió el mismo enlace con query param en la tabla de alerta de stock para máxima consistencia operativa.
+  * **En [`ProductView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Products/ProductView.jsx):**
+    * Se implementó un hook reactivo `useEffect` con `historyOpenedForRef` para detectar el parámetro `openHistory` (vía URL o via `location.state`).
+    * Al cargar el listado de productos, localiza el producto por su `ProductoID` y ejecuta inmediatamente `openHistoryModal(target)`, trayendo sus lotes asociados, fechas de creación, notas y stock acumulado.
+    * Se pre-filtra automáticamente el buscador de la tabla con el nombre del producto para que, al cerrar el modal, el operador lo tenga ubicado al instante en la primera fila.
+    * Se programó `closeHistoryModal` para limpiar los parámetros de la URL sin recargar la página, evitando reaperturas involuntarias al actualizar o navegar.
+    * En la tabla de movimientos dentro del modal de historial se incorporó una insignia distintiva de fecha de caducidad (`Vence: AAAA-MM-DD`) en caso de que el lote posea fecha de expiración registrada.
+    * Se añadió un botón de limpieza rápida (`✕`) en el campo de búsqueda de productos.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada exitosamente en 4.50s con 0 errores.
+
+### 178. Simulación Realista de Ventas Históricas para los Nuevos Productos y Nutrición del Módulo Predictivo (`backend/simulate_sales_new_products.js`)
+* **Solicitud del Usuario:**
+  * Simular ventas con los nuevos productos importados recientemente para evaluar y visualizar en todo su esplendor la pestaña de "Pronóstico de demanda y compras", las curvas históricas y el plan de reabastecimiento sugerido.
+* **Solución Implementada:**
+  * **Pipeline de Simulación ([`backend/simulate_sales_new_products.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/simulate_sales_new_products.js)):**
+    * Se desarrolló un script automatizado que segmentó los 740 nuevos productos en tres niveles de rotación de ferretería bajo el modelo Pareto ABC:
+      1. **Clase A (Alta Demanda / Rotación Diaria - 60 productos):** Discos de corte, adhesivos (Poxipol, Poxilina), siliconas (Sikasil), cintas aislantes 3M, grifería FV, soldadura Truper, codos y válvulas ITAP.
+      2. **Clase B (Demanda Media / Semanal - 120 productos):** Alicates Tolsen, candados Hermex/Travex, brocas para concreto Debor, llaves Stilson, placas eléctricas Schneider.
+      3. **Clase C (Ocasional / Mensual - 160 productos):** Herramientas especializadas, topes de puerta, arneses de seguridad, accesorios de plomería pesada.
+    * Se distribuyeron transacciones aleatorias pero coherentes a lo largo de una ventana de **60 días continuos** (con picos en viernes, sábados y lunes, horarios de 08:30 a 18:30 y rotación entre vendedores y clientes registrados / mostrador).
+    * Se insertaron **278 ventas reales** con **521 líneas de detalle** en `Ventas` y `DetalleVentas`, generando una facturación simulada de **Bs. 76,124.53**.
+  * **Resultados en el Módulo de Pronóstico y Compras (`/reports/demand-forecast`):**
+    * **Productos evaluados:** 775 productos en catálogo.
+    * **Productos con demanda diaria activa:** 96 productos (86 del nuevo catálogo importado).
+    * **Proyección de demanda y compras calculada:**
+      - Pronóstico total a 30 días: **600 unidades**.
+      - Presupuesto sugerido de reabastecimiento: **Bs. 98,165.08**.
+      - Alertas de quiebre de stock: **68 productos** clasificados en niveles *Agotado (0d)*, *Crítico (1-7d)* y *Alerta Alta (8-15d)*.
+    * **Modelos matemáticos activos:** Los 3 modelos (Suavizado Exponencial Simple SES, Promedio Móvil Simple SMA y Promedio Móvil Ponderado WMA) ahora cuentan con series temporales para calcular el mejor modelo por menor MAD, RMSE y MAPE.
+    * **Diagnóstico de Producto:** Al pulsar el botón "Diagnóstico" en cualquier herramienta o insumo del plan de reabastecimiento, la ventana emergente ahora proyecta los puntos de venta reales de los últimos 60 días junto a sus curvas de ajuste y horizonte futuro.
+* **Verificación:**
+  * Endpoint `/reports/demand-forecast?model=SES` validado con código HTTP 200 y métricas consistentes.
+  * Compilación con Vite (`npm run build`) completada con éxito en 4.60s con 0 errores.
+
+### 179. Depuración de Opciones de Exportación y Generación de Excel y PDF Vectorial Real en Gestión de Clientes (`ClientView.jsx`)
+* **Solicitud del Usuario:**
+  * En la vista administrativa de clientes ([`ClientView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Contacts/ClientView.jsx)), eliminar la opción redundante *"Exportar a CSV"*.
+  * Corregir la exportación a Excel y la exportación a PDF para que no sean una captura de pantalla del navegador (`window.print()`), sino descargas nativas, formateadas y estructuradas tal como se implementó en los módulos previos.
+* **Solución Implementada:**
+  * **En [`ClientView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Contacts/ClientView.jsx):**
+    1. **Eliminación de "Exportar a CSV":**
+       * Se removió el botón redundante de la barra de herramientas de la tabla para simplificar las acciones del operador.
+    2. **Generación de Excel Real y Formateado (`exportClientsExcel`):**
+       * Se implementó una descarga estructurada con `\uFEFF` (UTF-8 Byte Order Mark) y delimitador `;` para compatibilidad completa e inmediata con Microsoft Excel en español (sin distorsión de caracteres especiales ni tildes).
+       * Encabezados detallados: `ID Contacto`, `Tipo`, `Nivel Lealtad`, `Nombre / Empresa`, `Razón Social Factura`, `Tipo Documento`, `NIT / CI`, `Móvil / Teléfono`, `Email`, `Ciudad`, `Dirección`, `Descuento %`, `Total Compras (Bs.)` y `Fecha Registro`.
+       * Descarga directa con nomenclatura formal: `Clientes_Facturacion_YYYY-MM-DD.csv`.
+    3. **Generación de PDF Vectorial Real con Membrete Corporativo (`exportClientsPdf`):**
+       * Se reemplazó la llamada a `window.print()` por un generador nativo con `jsPDF` y `jspdf-autotable` en orientación horizontal (*Landscape*).
+       * Encabezado institucional C&C Ferretería (`#12151c` y acento ámbar `#f59e0b`), metadatos de emisión en tiempo real, contador de clientes y tabla estructurada con autoTable.
+       * Numeración de páginas en pie de reporte (`Página X de Y`) y descarga directa: `Clientes_Facturacion_YYYY-MM-DD.pdf`.
+    4. **Herramientas de Tabla Limpias:**
+       * Quedan disponibles de forma ejecutiva: **Exportar a Excel**, **Impresión** (impresión física), **Visibilidad de columna** y **Exportar a PDF**.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 5.88s con 0 errores.
+
+### 180. Botón y Flujo de Reactivación de Facturas Anuladas con Actualización de Inventario (`InvoiceListView.jsx` y `backend/api/routes/sales.js`)
+* **Solicitud del Usuario:**
+  * En el módulo de facturación y listado de facturas emitidas, al tener facturas en estado "Anulada", implementar un botón y funcionalidad para **"Volver a Activar"** la factura seleccionada.
+* **Solución Implementada:**
+  * **En el Backend ([`backend/api/routes/sales.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/sales.js)):**
+    * Se creó el endpoint `PATCH /sales/:id/activar`:
+      1. Valida la existencia de la venta y que se encuentre efectivamente en estado inactivo (`!venta.estado`).
+      2. Cambia el estado de la factura a `estado = true` (reintegrándola como *Emitida*).
+      3. Ejecuta la política FIFO/FEFO para descontar nuevamente las unidades correspondientes a cada ítem de la factura en la tabla `Lotes`.
+      4. Registra los movimientos de auditoría en `MovimientosInventario` bajo el tipo `SALIDA_VENTA` con referencia `FAC-ACTIVADA-{id}`.
+      5. Responde con HTTP 200 `{ message, ventaID, estado: 'Emitida' }`.
+  * **En el Servicio API Frontend ([`ferreteria/src/services/api.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/services/api.js)):**
+    * Se expuso la función `reactivateInvoice(id, data)` conectada a `PATCH /sales/${id}/activar`.
+  * **En la Vista de Facturas ([`ferreteria/src/pages/Sales/InvoiceListView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/InvoiceListView.jsx)):**
+    1. **Botón Activo en Tarjeta de Factura:**
+       * Se sustituyó la insignia estática inactiva `✕ Anulada` por un botón verde esmeralda: **`Volver a Activar`** (con icono de reactivación/recuperación y micro-interacción `btn-press`).
+    2. **Acción en Modal de Detalles:**
+       * Al abrir *"Ver Detalle"* de una factura anulada, el pie del modal expone el botón prioritario **`Volver a Activar`** además de los botones de impresión.
+    3. **Modal de Confirmación de Reactivación:**
+       * Diseñado con borde esmeralda (`border-emerald-500/30`), resumen de importe, cliente y aviso explicativo: *"Al volver a activar esta factura, el comprobante cambiará nuevamente a estado Emitida y las cantidades de los productos se descontarán nuevamente del inventario (Lotes / Kardex)"*.
+       * Selector de motivos de reactivación (*Reactivación administrativa autorizada*, *Corrección de anulación involuntaria*, *Cliente ratifica compra*, *Regularización de comprobante*).
+       * Indicador de carga animado (*Reactivando...*) durante la solicitud y recarga reactiva automática de la lista con notificación toast de confirmación.
+* **Verificación:**
+  * Prueba de API ejecutada exitosamente en `PATCH /sales/525/activar` con retorno `200 OK`.
+  * Compilación con Vite (`npm run build`) completada con éxito en 8.17s con 0 errores.
+
+### 181. Paginación Interactiva y Selector de Pedidos por Página en Pedidos Online (`OnlineOrdersView.jsx`)
+* **Solicitud del Usuario:**
+  * En la vista de pedidos online ([`OnlineOrdersView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/OnlineOrdersView.jsx)), especialmente en los listados de pedidos completados, cancelados o todos, controlar la cantidad de pedidos que se renderizan para evitar que la página se vuelva excesivamente larga cuando se acumulen muchos pedidos.
+* **Solución Implementada:**
+  * **En [`OnlineOrdersView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/OnlineOrdersView.jsx):**
+    1. **Estados y Lógica de Paginación:**
+       * Se definieron `currentPage` (por defecto `1`) e `itemsPerPage` (por defecto `10` pedidos por vista).
+       * Cálculos automáticos de `totalItems`, `totalPages`, `validCurrentPage`, `startIndex`, `endIndex` y corte dinámico `paginatedOrders = filteredOrders.slice(startIndex, endIndex)`.
+       * Función de elipsis `getPaginationNumbers(current, total)` para navegación fluida.
+       * Reset automático a la página `1` al cambiar entre pestañas de estado (*Pendientes*, *Completados*, *Cancelados*, *Todos*), al buscar texto o al modificar la cantidad de pedidos por página.
+    2. **Selector de Pedidos por Página en Toolbar:**
+       * Integrado en la barra superior junto al buscador rápido: selector con opciones de **5 pedidos**, **10 pedidos**, **20 pedidos**, **50 pedidos** o **Ver todos**.
+    3. **Barra de Paginación Inferior:**
+       * Panel con diseño `#12151c` y borde `zinc-800`:
+         - Contador de rango dinámico: `Mostrando X a Y de Z pedidos (completados / cancelados / pendientes)`.
+         - Botón primera página (**«**), botón **Anterior**, números de página con separadores elípticos inteligentes (**...**), botón **Siguiente** y botón última página (**»**).
+         - Página activa destacada en ámbar industrial (`bg-amber-500 text-zinc-950 font-bold`).
+    4. **Renderizado Eficiente:**
+       * La lista ahora itera exclusivamente sobre `paginatedOrders`, manteniendo la página liviana, rápida y con una altura controlada y ergonómica.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada exitosamente en 5.05s con 0 errores.

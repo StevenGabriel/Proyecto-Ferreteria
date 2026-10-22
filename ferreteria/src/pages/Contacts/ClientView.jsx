@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import Sidebar from '../../components/sidebar/sidebar';
 import Topbar from '../../components/topbar/topbar';
 import { useSidebar } from '../../context/SidebarContext';
@@ -546,29 +548,170 @@ function ClientView() {
     setIsDeleteModalOpen(false);
   };
 
-  const exportToCSV = () => {
-    if (filteredClients.length === 0) return;
-    const headers = ['ID Contacto', 'Tipo', 'Nombre / Empresa', 'Razon Social Factura', 'Tipo Documento', 'NIT / CI', 'Movil', 'Email', 'Direccion'];
+  const exportClientsExcel = () => {
+    if (filteredClients.length === 0) {
+      triggerToast('No hay clientes para exportar.', 'error');
+      return;
+    }
+    const headers = [
+      'ID Contacto',
+      'Tipo',
+      'Nivel Lealtad',
+      'Nombre / Empresa',
+      'Razón Social Factura',
+      'Tipo Documento',
+      'NIT / CI',
+      'Móvil / Teléfono',
+      'Email',
+      'Ciudad',
+      'Dirección',
+      'Descuento %',
+      'Total Compras (Bs.)',
+      'Fecha Registro'
+    ];
+
     const rows = filteredClients.map(c => [
-      `"${c.CodigoContacto || ''}"`,
-      `"${c.TipoContacto || 'Individual'}"`,
-      `"${c.Nombre || ''}"`,
-      `"${c.RazonSocial || ''}"`,
-      `"${c.TipoDocumentoSIAT || 'NIT'}"`,
-      `"${c.NIT || '0'}"`,
-      `"${c.Movil || '0'}"`,
-      `"${c.Email || ''}"`,
-      `"${(c.Direccion || '').replace(/"/g, '""')}"`
+      c.CodigoContacto || `CLI-${c.ClienteID}`,
+      c.TipoContacto || (c.NombreEmpresa ? 'Empresa' : 'Individual'),
+      c.NivelLealtad || 'Estandar',
+      c.Nombre || c.NombreEmpresa || '',
+      c.RazonSocial || c.Nombre || '',
+      c.TipoDocumentoSIAT || 'NIT',
+      c.NIT || '0',
+      c.Movil || c.Telefono || '0',
+      c.Email || '',
+      c.Ciudad || 'Cochabamba',
+      c.Direccion || '',
+      `${c.DescuentoPorcentaje || 0}%`,
+      parseFloat(c.TotalComprasAcumulado || 0).toFixed(2),
+      c.createdAt ? new Date(c.createdAt).toLocaleDateString('es-BO') : '—'
     ]);
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+
+    const csvContent = '\uFEFF' + [headers, ...rows]
+      .map(row => row.map(val => `"${String(val ?? '').replace(/"/g, '""')}"`).join(';'))
+      .join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', url);
     link.setAttribute('download', `Clientes_Facturacion_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    triggerToast('Listado de clientes exportado a CSV.');
+    URL.revokeObjectURL(url);
+    triggerToast('Listado de clientes exportado a Excel exitosamente.');
+  };
+
+  const exportClientsPdf = () => {
+    if (filteredClients.length === 0) {
+      triggerToast('No hay clientes para exportar.', 'error');
+      return;
+    }
+
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const todayStr = new Date().toLocaleDateString('es-BO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    const timeStr = new Date().toLocaleTimeString('es-BO', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // Encabezado Corporativo C&C Ferretería (Landscape: 297mm ancho)
+    doc.setFillColor(18, 21, 28); // #12151c
+    doc.rect(0, 0, 297, 24, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(245, 158, 11); // Amber-500
+    doc.text('C&C FERRETERÍA — CASA Y CONSTRUCCIÓN', 14, 10);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(212, 212, 216); // zinc-300
+    doc.text('LISTADO OFICIAL DE CLIENTES Y REGISTRO DE FACTURACIÓN', 14, 17);
+
+    doc.setFontSize(8);
+    doc.setTextColor(161, 161, 170); // zinc-400
+    doc.text(`Fecha de emisión: ${todayStr} ${timeStr}`, 283, 10, { align: 'right' });
+    doc.text(`Total clientes: ${filteredClients.length} registros`, 283, 17, { align: 'right' });
+
+    const tableBody = filteredClients.map((c, idx) => {
+      const isCompany = c.TipoContacto === 'Empresa' || !!c.NombreEmpresa;
+      const tierKey = c.NivelLealtad || 'Estandar';
+      const tier = LOYALTY_TIERS[tierKey] || LOYALTY_TIERS.Estandar;
+      const cityDir = [c.Ciudad, c.Direccion].filter(Boolean).join(' - ') || 'Mostrador';
+
+      return [
+        (idx + 1).toString(),
+        c.CodigoContacto || `CLI-${c.ClienteID}`,
+        isCompany ? 'EMPRESA' : 'INDIVIDUAL',
+        tier.name.toUpperCase(),
+        (c.Nombre || c.NombreEmpresa || '').toUpperCase(),
+        (c.RazonSocial || c.Nombre || '').toUpperCase(),
+        c.NIT || '0',
+        c.Movil || c.Telefono || '0',
+        c.Email || '—',
+        cityDir
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 28,
+      margin: { left: 14, right: 14, bottom: 15 },
+      head: [['#', 'ID CONTACTO', 'TIPO', 'NIVEL', 'NOMBRE / EMPRESA', 'RAZÓN SOCIAL FACTURA', 'NIT / CI', 'MÓVIL / TELF.', 'EMAIL', 'UBICACIÓN / CIUDAD']],
+      body: tableBody,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [24, 28, 38],
+        textColor: [245, 158, 11],
+        fontStyle: 'bold',
+        fontSize: 7.5,
+        halign: 'left'
+      },
+      bodyStyles: {
+        textColor: [30, 30, 30],
+        fontSize: 7,
+        rowPageBreak: 'avoid'
+      },
+      alternateRowStyles: {
+        fillColor: [248, 249, 250]
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 8 },
+        1: { halign: 'center', cellWidth: 20 },
+        2: { halign: 'center', cellWidth: 20 },
+        3: { halign: 'center', fontStyle: 'bold', cellWidth: 24 },
+        4: { halign: 'left', cellWidth: 46 },
+        5: { halign: 'left', cellWidth: 46 },
+        6: { halign: 'center', fontStyle: 'bold', cellWidth: 24 },
+        7: { halign: 'center', cellWidth: 22 },
+        8: { halign: 'left', cellWidth: 32 },
+        9: { halign: 'left' }
+      },
+      didDrawPage: (data) => {
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(7.5);
+        doc.setTextColor(120, 120, 120);
+        doc.text(
+          `C&C Ferretería — Sistema de Gestión Comercial • Página ${data.pageNumber} de ${pageCount}`,
+          14,
+          200
+        );
+      }
+    });
+
+    const fileDate = new Date().toISOString().slice(0, 10);
+    doc.save(`Clientes_Facturacion_${fileDate}.pdf`);
+    triggerToast('Reporte PDF de clientes generado exitosamente.');
   };
 
   const formatDate = (dateStr) => {
@@ -1014,17 +1157,8 @@ function ClientView() {
               {/* Botones de Exportación */}
               <div className="flex flex-wrap items-center gap-1.5 text-xs">
                 <button
-                  onClick={exportToCSV}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 rounded-lg text-zinc-300 hover:text-zinc-100 font-medium transition-colors duration-150 btn-press cursor-pointer"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Exportar a CSV
-                </button>
-
-                <button
-                  onClick={exportToCSV}
+                  onClick={exportClientsExcel}
+                  title="Descargar listado de clientes en formato Excel"
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 rounded-lg text-zinc-300 hover:text-zinc-100 font-medium transition-colors duration-150 btn-press cursor-pointer"
                 >
                   <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -1035,6 +1169,7 @@ function ClientView() {
 
                 <button
                   onClick={() => window.print()}
+                  title="Imprimir vista actual"
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 rounded-lg text-zinc-300 hover:text-zinc-100 font-medium transition-colors duration-150 btn-press cursor-pointer"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -1078,10 +1213,11 @@ function ClientView() {
                 </div>
 
                 <button
-                  onClick={() => window.print()}
+                  onClick={exportClientsPdf}
+                  title="Generar y descargar documento PDF vectorial oficial"
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 rounded-lg text-zinc-300 hover:text-zinc-100 font-medium transition-colors duration-150 btn-press cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                   Exportar a PDF

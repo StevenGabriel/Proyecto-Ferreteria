@@ -313,6 +313,32 @@ function OnlineOrdersView() {
     });
   }, [orders, statusFilter, searchTerm]);
 
+  // Paginación interactiva
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const totalItems = filteredOrders.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const validCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (validCurrentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+
+  const paginatedOrders = useMemo(() => {
+    return filteredOrders.slice(startIndex, endIndex);
+  }, [filteredOrders, startIndex, endIndex]);
+
+  // Resetear a la primera página cuando cambia el filtro de estado, búsqueda o cantidad por página
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchTerm, itemsPerPage]);
+
+  const getPaginationNumbers = (current, total) => {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    if (current <= 3) return [1, 2, 3, 4, '...', total];
+    if (current >= total - 2) return [1, '...', total - 3, total - 2, total - 1, total];
+    return [1, '...', current - 1, current, current + 1, '...', total];
+  };
+
   return (
     <div className="flex h-screen bg-[#0c0e12] font-sans text-zinc-100 overflow-hidden selection:bg-amber-500/30 selection:text-amber-200">
       {/* Barra Lateral Navegación */}
@@ -486,18 +512,35 @@ function OnlineOrdersView() {
               </button>
             </div>
 
-            {/* Input de Búsqueda Rápida */}
-            <div className="relative w-full sm:w-72">
-              <input
-                type="text"
-                placeholder="Buscar por código, cliente o NIT..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-500 transition-colors duration-100 font-medium"
-              />
-              <svg className="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+            {/* Input de Búsqueda Rápida y Selector de Cantidad */}
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-semibold text-zinc-400">Mostrar:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                  className="bg-[#0c0e12] border border-zinc-800 rounded-xl px-2.5 py-2 text-zinc-200 text-xs font-mono tabular-nums font-semibold outline-none focus:border-amber-500/70 transition-colors duration-160 ease-out-expo cursor-pointer"
+                >
+                  <option value={5}>5 pedidos</option>
+                  <option value={10}>10 pedidos</option>
+                  <option value={20}>20 pedidos</option>
+                  <option value={50}>50 pedidos</option>
+                  <option value={9999}>Ver todos</option>
+                </select>
+              </div>
+
+              <div className="relative w-full sm:w-72">
+                <input
+                  type="text"
+                  placeholder="Buscar por código, cliente o NIT..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-500 transition-colors duration-100 font-medium"
+                />
+                <svg className="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
             </div>
           </div>
 
@@ -523,7 +566,7 @@ function OnlineOrdersView() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredOrders.map((order) => {
+              {paginatedOrders.map((order) => {
                 const isPending = order.EstadoPedido === 'PENDIENTE';
                 const isCompleted = order.EstadoPedido === 'COMPLETADO';
                 const isCancelled = order.EstadoPedido === 'CANCELADO';
@@ -680,6 +723,76 @@ function OnlineOrdersView() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Pie de Paginación Dinámica */}
+          {!loading && filteredOrders.length > 0 && (
+            <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-400 font-medium">
+              <div className="font-mono tabular-nums text-[11px]">
+                Mostrando {totalItems === 0 ? 0 : startIndex + 1} a {endIndex} de {totalItems} pedido{totalItems === 1 ? '' : 's'}
+                {statusFilter !== 'TODOS' && (
+                  <span className="text-zinc-500 ml-1">
+                    ({statusFilter === 'COMPLETADO' ? 'completados' : statusFilter === 'CANCELADO' ? 'cancelados' : 'pendientes'})
+                  </span>
+                )}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={validCurrentPage === 1}
+                    title="Primera página"
+                    className="px-2 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press font-mono text-xs cursor-pointer"
+                  >
+                    «
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={validCurrentPage === 1}
+                    className="px-2.5 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press text-xs font-medium cursor-pointer"
+                  >
+                    Anterior
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {getPaginationNumbers(validCurrentPage, totalPages).map((pageNum, idx) => {
+                      if (pageNum === '...') {
+                        return <span key={`ellipsis-${idx}`} className="px-1 text-zinc-600 font-mono">…</span>;
+                      }
+                      const isActive = pageNum === validCurrentPage;
+                      return (
+                        <button
+                          key={`page-${pageNum}`}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`w-7 h-7 flex items-center justify-center font-mono tabular-nums text-xs rounded-lg transition-colors duration-160 ease-out-expo btn-press font-bold cursor-pointer ${
+                            isActive
+                              ? 'bg-amber-500 text-zinc-950 shadow-sm shadow-amber-500/20'
+                              : 'bg-[#0c0e12] border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:border-zinc-700'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={validCurrentPage === totalPages}
+                    className="px-2.5 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press text-xs font-medium cursor-pointer"
+                  >
+                    Siguiente
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={validCurrentPage === totalPages}
+                    title="Última página"
+                    className="px-2 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press font-mono text-xs cursor-pointer"
+                  >
+                    »
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </main>

@@ -13,11 +13,13 @@ function ClientCatalog() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filtros y Búsqueda
+  // Filtros, Búsqueda y Paginación
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [selectedBrand, setSelectedBrand] = useState('ALL');
   const [sortOrder, setSortOrder] = useState('default');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // Carrito de compras (con persistencia en LocalStorage)
   const [cart, setCart] = useState(() => {
@@ -505,6 +507,27 @@ function ClientCatalog() {
     return 0; // default
   });
 
+  // Cálculos de Paginación para el Catálogo Público
+  const totalItems = sortedProducts.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const validCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (validCurrentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const paginatedProducts = sortedProducts.slice(startIndex, endIndex);
+
+  // Resetear a la página 1 cuando cambia cualquier filtro, búsqueda o cantidad por página
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, selectedBrand, sortOrder, itemsPerPage]);
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    const catalogElement = document.getElementById('catalog-products-section');
+    if (catalogElement) {
+      catalogElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0c0e12] text-zinc-100 font-sans flex flex-col selection:bg-amber-500/30 selection:text-amber-100">
       
@@ -810,13 +833,32 @@ function ClientCatalog() {
         </div>
 
         {/* Barra de Controles y Ordenamiento */}
-        <div className="bg-[#12151c] border border-zinc-800/90 rounded-xl px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div id="catalog-products-section" className="bg-[#12151c] border border-zinc-800/90 rounded-xl px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4 scroll-mt-24">
           <div className="text-xs text-zinc-400 font-medium">
-            Mostrando <span className="font-mono font-bold text-zinc-100 tabular-nums">{sortedProducts.length}</span> productos disponibles
+            Mostrando <span className="font-mono font-bold text-amber-400 tabular-nums">{totalItems > 0 ? startIndex + 1 : 0} - {endIndex}</span> de <span className="font-mono font-bold text-zinc-100 tabular-nums">{totalItems}</span> productos disponibles
             {selectedCategory !== 'ALL' && ` en ${categories.find(c => c.CategoriaID.toString() === selectedCategory)?.Nombre}`}
           </div>
 
           <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+            {/* Selector de cantidad por página */}
+            <div className="flex items-center gap-2 text-xs">
+              <label className="text-zinc-400 font-medium">Mostrar:</label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-[#0c0e12] border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 font-semibold font-mono tabular-nums outline-none cursor-pointer focus:border-amber-500/70 transition-colors duration-160"
+              >
+                <option value={15}>15 por pág.</option>
+                <option value={20}>20 por pág.</option>
+                <option value={40}>40 por pág.</option>
+                <option value={60}>60 por pág.</option>
+                <option value={999999}>Ver todos</option>
+              </select>
+            </div>
+
             {/* Filtro por Marca */}
             <div className="flex items-center gap-2 text-xs">
               <label className="text-zinc-400 font-medium">Marca:</label>
@@ -896,7 +938,7 @@ function ClientCatalog() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-            {sortedProducts.map((p) => {
+            {paginatedProducts.map((p) => {
               const stock = p.Stock || 0;
               const isAvailable = stock > 0;
               const priceVenta = parseFloat(p.PrecioVenta || 0);
@@ -1037,6 +1079,94 @@ function ClientCatalog() {
                 </article>
               );
             })}
+          </div>
+        )}
+
+        {/* 4.5 PAGINADOR INTERACTIVO DEL CATÁLOGO */}
+        {!loading && totalPages > 1 && (
+          <div className="bg-[#12151c] border border-zinc-800/90 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+            <div className="text-xs text-zinc-400 font-medium font-mono tabular-nums">
+              Página <span className="font-bold text-amber-400">{validCurrentPage}</span> de <span className="font-bold text-zinc-200">{totalPages}</span>
+              <span className="text-zinc-500 font-sans ml-2">({totalItems} productos en catálogo)</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {/* Botón Primera Página */}
+              <button
+                type="button"
+                onClick={() => handlePageChange(1)}
+                disabled={validCurrentPage === 1}
+                className="px-2.5 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-xl text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press cursor-pointer font-bold text-xs"
+                title="Primera página"
+              >
+                «
+              </button>
+
+              {/* Botón Anterior */}
+              <button
+                type="button"
+                onClick={() => handlePageChange(Math.max(validCurrentPage - 1, 1))}
+                disabled={validCurrentPage === 1}
+                className="px-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-xl text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press cursor-pointer text-xs font-semibold"
+              >
+                Anterior
+              </button>
+
+              {/* Botones numéricos de página */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                const shouldShow =
+                  page === 1 ||
+                  page === totalPages ||
+                  (page >= validCurrentPage - 1 && page <= validCurrentPage + 1);
+
+                if (!shouldShow) {
+                  if (page === 2 || page === totalPages - 1) {
+                    return (
+                      <span key={page} className="text-zinc-600 font-mono tabular-nums text-xs px-1 select-none">
+                        ...
+                      </span>
+                    );
+                  }
+                  return null;
+                }
+
+                return (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => handlePageChange(page)}
+                    className={`px-3 py-1.5 rounded-xl font-mono tabular-nums text-xs font-bold transition-colors duration-160 ease-out-expo btn-press cursor-pointer ${
+                      validCurrentPage === page
+                        ? 'bg-amber-500 text-zinc-950 font-bold shadow-sm'
+                        : 'bg-[#0c0e12] border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:border-zinc-700'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+
+              {/* Botón Siguiente */}
+              <button
+                type="button"
+                onClick={() => handlePageChange(Math.min(validCurrentPage + 1, totalPages))}
+                disabled={validCurrentPage === totalPages}
+                className="px-3 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-xl text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press cursor-pointer text-xs font-semibold"
+              >
+                Siguiente
+              </button>
+
+              {/* Botón Última Página */}
+              <button
+                type="button"
+                onClick={() => handlePageChange(totalPages)}
+                disabled={validCurrentPage === totalPages}
+                className="px-2.5 py-1.5 bg-[#0c0e12] border border-zinc-800 rounded-xl text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-160 ease-out-expo btn-press cursor-pointer font-bold text-xs"
+                title="Última página"
+              >
+                »
+              </button>
+            </div>
           </div>
         )}
       </main>
