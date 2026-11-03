@@ -4,6 +4,7 @@ import autoTable from 'jspdf-autotable';
 import Sidebar from '../../components/sidebar/sidebar';
 import Topbar from '../../components/topbar/topbar';
 import { useSidebar } from '../../context/SidebarContext';
+import { getClients } from '../../services/api';
 import { LOYALTY_TIERS } from '../../constants/loyalty';
 export { LOYALTY_TIERS };
 
@@ -170,6 +171,57 @@ function ClientView() {
     }
     return DEFAULT_CLIENTS;
   });
+
+  // Sincronizar clientes registrados online y en SQL Server al abrir la vista
+  useEffect(() => {
+    getClients()
+      .then((dbClients) => {
+        if (Array.isArray(dbClients) && dbClients.length > 0) {
+          setClients((prev) => {
+            const mergedMap = new Map();
+            dbClients.forEach((dbc, idx) => {
+              const key = (dbc.nit && dbc.nit !== '0') ? `NIT_${dbc.nit}` : `NAME_${(dbc.name || '').toUpperCase()}`;
+              mergedMap.set(key, {
+                ClienteID: dbc.ClienteID || dbc.id || idx + 1,
+                TipoContacto: 'Individual',
+                CodigoContacto: `CO${String(460 + (dbc.ClienteID || idx + 1)).padStart(4, '0')}`,
+                NombreEmpresa: '',
+                Prefijo: '',
+                Nombres: dbc.name || dbc.Nombre || 'Cliente',
+                SegundoNombre: '',
+                Apellidos: '',
+                Nombre: dbc.name || dbc.Nombre || 'Cliente',
+                RazonSocial: (dbc.RazonSocial || dbc.name || 'SIN NOMBRE').toUpperCase(),
+                TipoDocumentoSIAT: 'NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA',
+                NIT: dbc.nit || dbc.NIT || '0',
+                Movil: dbc.phone || dbc.Telefono || '0',
+                TelefonoAlternativo: '',
+                LineaFija: '',
+                Email: dbc.email || dbc.Email || '',
+                FechaNacimiento: '',
+                AsignadoA: 'Oscar Edgar Claros',
+                Direccion: 'Cochabamba',
+                Ciudad: 'Cochabamba',
+                NivelLealtad: dbc.NivelLealtad || 'Estandar',
+                DescuentoPorcentaje: parseFloat(dbc.DescuentoPorcentaje || 0),
+                TotalComprasAcumulado: parseFloat(dbc.TotalComprasAcumulado || 0),
+                createdAt: new Date().toISOString()
+              });
+            });
+
+            prev.forEach((loc) => {
+              const key = (loc.NIT && loc.NIT !== '0') ? `NIT_${loc.NIT}` : `NAME_${(loc.Nombre || '').toUpperCase()}`;
+              if (!mergedMap.has(key)) {
+                mergedMap.set(key, loc);
+              }
+            });
+
+            return Array.from(mergedMap.values());
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const persistClients = (newClients) => {
     setClients(newClients);

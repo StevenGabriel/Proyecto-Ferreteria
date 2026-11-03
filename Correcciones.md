@@ -2189,3 +2189,92 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
        * La lista ahora itera exclusivamente sobre `paginatedOrders`, manteniendo la página liviana, rápida y con una altura controlada y ergonómica.
 * **Verificación:**
   * Compilación con Vite (`npm run build`) completada exitosamente en 5.05s con 0 errores.
+
+### 182. Filtro Interactivo por Fecha en Inicio / Dashboard Principal (`Home.jsx`)
+* **Solicitud del Usuario:**
+  * En la página de inicio ([`Home.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/Home.jsx)), el botón superior *"Filtrar por fecha"* no realizaba ninguna acción.
+* **Causa Raíz:**
+  * El elemento era un `<button>` estático sin manejador `onClick`, sin estado de fecha y sin menú desplegable vinculado a la API de reportes de ventas.
+* **Solución Implementada:**
+  * **En [`Home.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/Home.jsx):**
+    1. **Estados y Lógica de Rango:**
+       * Se incorporaron los estados `dateFilterPreset`, `customStartDate`, `customEndDate`, `activeDateLabel` e `isDateFilterOpen`.
+       * Se configuró detección de clic exterior mediante `useRef` + `useEffect` para autocierre del menú desplegable.
+       * Se implementó la función modular `loadSalesData(start, end)` que consulta `getSalesPerformanceReport({ period: 'daily', startDate, endDate })`.
+    2. **Atajos Rápidos (Presets):**
+       * **Hoy**: Fecha actual de apertura y cierre.
+       * **Últimos 7 días**: Última semana de operación.
+       * **Últimos 30 días**: Mes móvil por defecto.
+       * **Este mes**: Desde el 1 del mes en curso hasta hoy.
+       * **Últimos 60 días**: Histórico bimestral.
+       * **Historial completo**: Todas las transacciones registradas.
+    3. **Rango Personalizado:**
+       * Selectores nativos de fecha (`Desde` / `Hasta`) con botón `"Aplicar rango"`.
+       * Botón rápido `"Restablecer"` para volver instantáneamente a los últimos 30 días.
+    4. **Actualización Reactiva de KPIs y Gráfico SVG:**
+       * Al seleccionar cualquier período, se actualizan dinámicamente las 4 tarjetas de métricas (*Ventas totales*, *Margen neto*, *Transacciones*, *Ticket promedio*) y la curva SVG del *Historial de ventas diarias*.
+       * Se agregó una insignia en la cabecera del gráfico que muestra el período activo (`activeDateLabel`).
+    5. **Estética y Micro-interacciones (GEMINI.md / Emil Kowalski):**
+       * Popover estilizado con superficie `#12151c`, borde `zinc-800/90`, animación `animate-dropdown-in origin-top-right`, acentos ámbar industrial y tipografía `font-mono tabular-nums`.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada exitosamente en 5.56s con 0 errores.
+
+### 183. Corrección del Posicionamiento Espacial del Tooltip en Gráfico SVG de Ventas (`Home.jsx`)
+* **Solicitud del Usuario:**
+  * Al pasar el mouse por un punto del gráfico de *Historial de ventas diarias*, el recuadro emergente (tooltip con fecha, importe en Bs. y tickets) se renderizaba desplazado hacia la izquierda en lugar de alinearse directamente con el punto resaltado.
+* **Causa Raíz:**
+  * La posición horizontal del tooltip se calculaba utilizando `points[hoveredIndex].x` como valor en píxeles CSS (`left: ${points[hoveredIndex].x + 10}px`).
+  * Sin embargo, `points[hoveredIndex].x` representa coordenadas internas de la `viewBox` del SVG (escala base de 1100px). En pantallas de mayor resolución o tarjetas responsive (1400px–1800px), el SVG escala y se centra en su contenedor. Como consecuencia, el tooltip en CSS `px` quedaba desfasado hacia la izquierda respecto a la posición visual real del punto en pantalla.
+* **Solución Implementada:**
+  * **En [`Home.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Home/Home.jsx):**
+    1. **Cálculo de Coordenadas Reales de Pantalla:**
+       * Se asoció una referencia `chartContainerRef` al contenedor relativo del gráfico.
+       * Se implementó el manejador `handlePointHover(e, index)` que obtiene las coordenadas precisas mediante `getBoundingClientRect()` del punto (`circleRect`) respecto al contenedor (`containerRect`).
+       * Se calcula el centro geométrico exacto:
+         `x = circleRect.left - containerRect.left + circleRect.width / 2`
+         `y = circleRect.top - containerRect.top + circleRect.height / 2`
+    2. **Alineación y Prevención de Desbordes (Clamping & Smart Placement):**
+       * Se utilizó `transform: translate(-50%, -100%)` para centrar perfectamente el tooltip sobre el punto sin desfasajes.
+       * Se incorporó acotación horizontal (`Math.max(90, Math.min(x, containerWidth - 90))`) para que los puntos situados en los bordes extremos izquierdo o derecho nunca corten el recuadro.
+       * Detección vertical inteligente: si el punto se encuentra en la cima del gráfico (`y < 95px`), el tooltip se despliega automáticamente hacia abajo del punto (`translate(-50%, 0)`), evitando chocar con la cabecera de la tarjeta.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada exitosamente en 5.02s con 0 errores.
+
+### 184. Implementación de Eliminación Permanente de Usuarios / Operadores (`UserManagement.jsx` y `employees.js`)
+* **Solicitud del Usuario:**
+  * En la gestión de usuarios ([`UserManagement.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Users/UserManagement.jsx)), agregar la opción de eliminar operadores para que el administrador no tenga la vista saturada de usuarios suspendidos.
+* **Solución Implementada:**
+  * **En el Backend ([`backend/api/routes/employees.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/employees.js)):**
+    1. Se implementó el endpoint `DELETE /employees/:id`:
+       * **Protección de Seguridad:** Bloquea terminantemente la eliminación del Administrador Principal (`sclaros724@gmail.com`).
+       * **Integridad Referencial en SQL Server:**
+         - Si el operador cuenta con ventas históricas (`Ventas`), dichas ventas se transfieren automáticamente al Administrador General para preservar intacto el registro contable y fiscal sin violar restricciones de clave foránea.
+         - Se elimina el registro en `CuentasUsuario`.
+         - Se elimina la ficha en `Empleados`.
+         - Si la persona no está vinculada a ningún cliente (`Clientes`), se elimina también el registro en `Personas`.
+       * Toda la operación se ejecuta bajo una transacción atómica `sequelize.transaction()`.
+  * **En el Servicio API Frontend ([`ferreteria/src/services/api.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/services/api.js)):**
+    * Se expuso la función `deleteEmployee(id)` conectada a `DELETE /employees/${id}`.
+  * **En la Vista de Gestión de Usuarios ([`ferreteria/src/pages/Users/UserManagement.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Users/UserManagement.jsx)):**
+    1. **Botón Eliminar en la Tabla:**
+       * Se añadió el botón con icono de papelera en color rojo (`bg-red-500/10 text-red-400 hover:bg-red-500/20`) y micro-interacción `btn-press`.
+       * Queda protegido y oculto para la cuenta del Administrador Principal.
+    2. **Modal de Confirmación de Eliminación:**
+       * Diseñado bajo lineamientos `GEMINI.md`: fondo `#12151c`, borde `border-red-500/30`, animación `animate-modal-in`.
+       * Muestra una tarjeta resumen con el nombre del operador, rol, correo, CI/NIT y estado actual.
+       * Aviso explicativo y botones ergonómicos: `Cancelar` y `Eliminar` (con indicador de carga durante la petición).
+    3. **Refresco Reactivo:**
+       * Notificación toast de éxito y recarga automática de la lista (`fetchEmployees()`), removiendo de inmediato al operador de la pantalla.
+* **Verificación:**
+  * Prueba end-to-end completada exitosamente: creación y eliminación verificadas con HTTP 200.
+  * Compilación con Vite (`npm run build`) completada con éxito en 0 errores.
+
+### 185. Ajuste de Etiqueta en Banner de Landing Page (`ClientCatalog.jsx`)
+* **Solicitud del Usuario:**
+  * Cambiar la etiqueta *"Líneas técnicas"* del banner principal de la tienda por **"Categorías"** para mayor claridad y familiaridad de los clientes.
+* **Solución Implementada:**
+  * En [`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx#L773):
+    * Se actualizó el título de la métrica de categorías a `<span>Categorías</span>`.
+    * Mantiene la vinculación dinámica a `{categories.length}` y el diseño técnico anti-slop.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 5.80s con 0 errores.

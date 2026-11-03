@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Sidebar from '../../components/sidebar/sidebar';
 import Topbar from '../../components/topbar/topbar';
@@ -11,7 +11,21 @@ import autoTable from 'jspdf-autotable';
 function Home() {
   const { isCollapsed } = useSidebar();
   const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const chartContainerRef = useRef(null);
   const [mainTab, setMainTab] = useState('DASHBOARD'); // 'DASHBOARD' | 'PREDICTIVE'
+
+  const handlePointHover = (e, index) => {
+    setHoveredIndex(index);
+    if (chartContainerRef.current) {
+      const containerRect = chartContainerRef.current.getBoundingClientRect();
+      const circleRect = e.currentTarget.getBoundingClientRect();
+      setTooltipPos({
+        x: circleRect.left - containerRect.left + circleRect.width / 2,
+        y: circleRect.top - containerRect.top + circleRect.height / 2
+      });
+    }
+  };
 
   // Datos reales de ventas desde la BD
   const [salesKPIs, setSalesKPIs] = useState({
@@ -24,6 +38,107 @@ function Home() {
   });
   const [salesTimeline, setSalesTimeline] = useState([]);
   const [loadingSales, setLoadingSales] = useState(true);
+
+  // Filtro por fecha interactivo para desempeño de ventas
+  const [dateFilterPreset, setDateFilterPreset] = useState('30d');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [activeDateLabel, setActiveDateLabel] = useState('Últimos 30 días');
+  const [isDateFilterOpen, setIsDateFilterOpen] = useState(false);
+  const dateFilterRef = useRef(null);
+
+  const formatDateToISO = (date) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getPresetRange = (preset) => {
+    const now = new Date();
+    const todayStr = formatDateToISO(now);
+    if (preset === 'today') {
+      return { start: todayStr, end: todayStr, label: 'Hoy' };
+    }
+    if (preset === '7d') {
+      const d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return { start: formatDateToISO(d), end: todayStr, label: 'Últimos 7 días' };
+    }
+    if (preset === '30d') {
+      const d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      return { start: formatDateToISO(d), end: todayStr, label: 'Últimos 30 días' };
+    }
+    if (preset === 'month') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { start: formatDateToISO(firstDay), end: todayStr, label: 'Este mes' };
+    }
+    if (preset === '60d') {
+      const d = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+      return { start: formatDateToISO(d), end: todayStr, label: 'Últimos 60 días' };
+    }
+    return { start: '2020-01-01', end: todayStr, label: 'Historial completo' };
+  };
+
+  const loadSalesData = (start, end) => {
+    setLoadingSales(true);
+    const params = { period: 'daily' };
+    if (start) params.startDate = start;
+    if (end) params.endDate = end;
+
+    getSalesPerformanceReport(params)
+      .then((data) => {
+        if (data?.kpis) {
+          setSalesKPIs(data.kpis);
+        }
+        if (Array.isArray(data?.timeline)) {
+          setSalesTimeline(data.timeline);
+        }
+      })
+      .catch((err) => console.warn('Error al consultar desempeño de ventas:', err))
+      .finally(() => setLoadingSales(false));
+  };
+
+  const handleSelectPreset = (presetKey) => {
+    setDateFilterPreset(presetKey);
+    const range = getPresetRange(presetKey);
+    setActiveDateLabel(range.label);
+    loadSalesData(range.start, range.end);
+    setIsDateFilterOpen(false);
+  };
+
+  const handleApplyCustomDate = () => {
+    if (!customStartDate && !customEndDate) return;
+    setDateFilterPreset('custom');
+    const label = `${customStartDate || '...'} al ${customEndDate || 'Hoy'}`;
+    setActiveDateLabel(label);
+    loadSalesData(customStartDate, customEndDate);
+    setIsDateFilterOpen(false);
+  };
+
+  const handleResetFilter = () => {
+    const range = getPresetRange('30d');
+    setDateFilterPreset('30d');
+    setCustomStartDate('');
+    setCustomEndDate('');
+    setActiveDateLabel(range.label);
+    loadSalesData(range.start, range.end);
+    setIsDateFilterOpen(false);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dateFilterRef.current && !dateFilterRef.current.contains(event.target)) {
+        setIsDateFilterOpen(false);
+      }
+    };
+    if (isDateFilterOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDateFilterOpen]);
 
   // Obtener usuario autenticado
   const [currentUser] = useState(() => {
@@ -79,19 +194,9 @@ function Home() {
   useEffect(() => {
     setLoadingAlerts(true);
     setLoadingExpiring(true);
-    setLoadingSales(true);
 
-    getSalesPerformanceReport({ period: 'daily' })
-      .then((data) => {
-        if (data?.kpis) {
-          setSalesKPIs(data.kpis);
-        }
-        if (Array.isArray(data?.timeline)) {
-          setSalesTimeline(data.timeline);
-        }
-      })
-      .catch((err) => console.warn('Error al consultar desempeño de ventas:', err))
-      .finally(() => setLoadingSales(false));
+    const initRange = getPresetRange('30d');
+    loadSalesData(initRange.start, initRange.end);
 
     getProducts()
       .then((data) => {
@@ -530,12 +635,124 @@ function Home() {
                 Estado operativo en tiempo real de caja, inventario y vencimiento de lotes.
               </p>
             </div>
-            <button className="flex items-center gap-2 px-3.5 py-2 bg-[#12151c] border border-zinc-800/90 rounded-xl hover:border-amber-500/50 hover:text-amber-400 transition-colors duration-160 ease-out-expo btn-press font-semibold text-xs text-zinc-300 cursor-pointer">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-              </svg>
-              <span>Filtrar por fecha</span>
-            </button>
+            {/* Selector de Rango de Fechas Interactivo con Dropdown */}
+            <div className="relative" ref={dateFilterRef}>
+              <button
+                type="button"
+                onClick={() => setIsDateFilterOpen(!isDateFilterOpen)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-colors duration-160 ease-out-expo btn-press font-semibold text-xs cursor-pointer ${
+                  dateFilterPreset !== 'all'
+                    ? 'bg-[#12151c] border-amber-500/50 text-amber-400 shadow-sm'
+                    : 'bg-[#12151c] border-zinc-800/90 text-zinc-300 hover:border-zinc-700'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>{activeDateLabel}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                <svg
+                  className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-160 ease-out-expo ${
+                    isDateFilterOpen ? 'rotate-180 text-amber-400' : ''
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Popover Dropdown */}
+              {isDateFilterOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-[#12151c] border border-zinc-800/90 rounded-2xl shadow-2xl shadow-black/80 p-4 z-50 animate-dropdown-in origin-top-right space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-zinc-800/80">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                      <span className="text-xs font-bold text-zinc-100 uppercase tracking-wider">Filtrar por fecha</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleResetFilter}
+                      className="text-[11px] text-zinc-400 hover:text-amber-400 transition-colors duration-150 cursor-pointer font-medium"
+                    >
+                      Restablecer
+                    </button>
+                  </div>
+
+                  {/* Accesos rápidos / Presets */}
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-2 block">
+                      Períodos predefinidos
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        { id: 'today', label: 'Hoy' },
+                        { id: '7d', label: 'Últimos 7 días' },
+                        { id: '30d', label: 'Últimos 30 días' },
+                        { id: 'month', label: 'Este mes' },
+                        { id: '60d', label: 'Últimos 60 días' },
+                        { id: 'all', label: 'Historial completo' }
+                      ].map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => handleSelectPreset(p.id)}
+                          className={`text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 cursor-pointer ${
+                            dateFilterPreset === p.id
+                              ? 'bg-amber-500 text-zinc-950 font-bold shadow-sm'
+                              : 'bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Rango Personalizado */}
+                  <div className="space-y-2.5 pt-2 border-t border-zinc-800/80">
+                    <label className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider block">
+                      Rango personalizado
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="text-[10px] text-zinc-400 block mb-1">Desde</span>
+                        <input
+                          type="date"
+                          value={customStartDate}
+                          onChange={(e) => setCustomStartDate(e.target.value)}
+                          className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 font-mono focus:outline-none focus:border-amber-500/60"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-zinc-400 block mb-1">Hasta</span>
+                        <input
+                          type="date"
+                          value={customEndDate}
+                          onChange={(e) => setCustomEndDate(e.target.value)}
+                          className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 font-mono focus:outline-none focus:border-amber-500/60"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleApplyCustomDate}
+                      disabled={!customStartDate && !customEndDate}
+                      className="w-full mt-2 py-2 px-3 bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed text-zinc-950 font-bold text-xs rounded-xl transition-colors duration-150 btn-press cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Aplicar rango</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Conmutador de Pestañas Principales (Dashboard Operativo vs Reportes Predictivos) */}
@@ -666,7 +883,12 @@ function Home() {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-zinc-100">Historial de ventas diarias</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-bold text-zinc-100">Historial de ventas diarias</h3>
+                        <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/25">
+                          {activeDateLabel}
+                        </span>
+                      </div>
                       <p className="text-xs text-zinc-400">Ingresos reales registrados en caja por día de operación</p>
                     </div>
                   </div>
@@ -677,7 +899,7 @@ function Home() {
                 </div>
 
                 {/* Gráfico SVG Reactivo con datos reales */}
-                <div className="relative">
+                <div className="relative" ref={chartContainerRef}>
                   {loadingSales ? (
                     <div className="h-64 flex items-center justify-center text-zinc-500 text-xs">
                       Cargando histórico de ventas...
@@ -752,7 +974,7 @@ function Home() {
                                   ? 'fill-amber-400 stroke-[#0c0e12] stroke-[2.5px]'
                                   : 'fill-amber-500'
                               } transition-[r,fill] duration-150 ease-out-expo cursor-pointer`}
-                              onMouseEnter={() => setHoveredIndex(index)}
+                              onMouseEnter={(e) => handlePointHover(e, index)}
                               onMouseLeave={() => setHoveredIndex(null)}
                             />
                             <circle
@@ -761,7 +983,7 @@ function Home() {
                               r="16"
                               fill="transparent"
                               className="cursor-pointer"
-                              onMouseEnter={() => setHoveredIndex(index)}
+                              onMouseEnter={(e) => handlePointHover(e, index)}
                               onMouseLeave={() => setHoveredIndex(null)}
                             />
                           </g>
@@ -788,11 +1010,11 @@ function Home() {
                       {/* Tooltip flotante interactivo */}
                       {hoveredIndex !== null && points[hoveredIndex] && (
                         <div
-                          className="absolute bg-[#0c0e12] border border-zinc-700 rounded-xl p-3 shadow-2xl pointer-events-none z-30 flex flex-col gap-1 animate-fade-in"
+                          className="absolute bg-[#0c0e12] border border-zinc-700/90 rounded-xl p-3 shadow-2xl pointer-events-none z-30 flex flex-col gap-1 transition-[left,top] duration-100 ease-out"
                           style={{
-                            left: `${points[hoveredIndex].x + 10}px`,
-                            top: `${points[hoveredIndex].y - 90}px`,
-                            transform: 'translateX(-50%)',
+                            left: `${Math.max(90, Math.min(tooltipPos.x, (chartContainerRef.current?.offsetWidth || 1000) - 90))}px`,
+                            top: tooltipPos.y < 95 ? `${tooltipPos.y + 14}px` : `${tooltipPos.y - 12}px`,
+                            transform: tooltipPos.y < 95 ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
                           }}
                         >
                           <div className="flex items-center gap-1.5">

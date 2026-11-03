@@ -7,7 +7,8 @@ import {
   createEmployee,
   updateEmployee,
   toggleEmployeeStatus,
-  resetEmployeePassword
+  resetEmployeePassword,
+  deleteEmployee
 } from "../../services/api";
 
 function UserManagement() {
@@ -31,6 +32,11 @@ function UserManagement() {
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [targetEmployee, setTargetEmployee] = useState(null);
   const [statusActionLoading, setStatusActionLoading] = useState(false);
+
+  // Modal de Confirmación de Eliminación de Operador
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Estado del formulario de creación
   const [formData, setFormData] = useState({
@@ -220,6 +226,30 @@ function UserManagement() {
       showToast(err.response?.data?.message || "No se pudo cambiar el estado del operador.", "error");
     } finally {
       setStatusActionLoading(false);
+    }
+  };
+
+  // Abrir Modal de Confirmación de Eliminación
+  const handleOpenDeleteModal = (emp) => {
+    setEmployeeToDelete(emp);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Confirmar y Ejecutar Eliminación Permanente
+  const handleConfirmDelete = async () => {
+    if (!employeeToDelete) return;
+    try {
+      setDeleteLoading(true);
+      const res = await deleteEmployee(employeeToDelete.EmpleadoID);
+      showToast(res.message || "Operador eliminado del sistema exitosamente.", "success");
+      setIsDeleteModalOpen(false);
+      setEmployeeToDelete(null);
+      fetchEmployees();
+    } catch (err) {
+      console.error("Error al eliminar operador:", err);
+      showToast(err.response?.data?.message || "No se pudo eliminar el operador.", "error");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -583,7 +613,7 @@ function UserManagement() {
                                 onClick={() => handleOpenStatusModal(emp)}
                                 className={`p-1.5 rounded-lg border transition-colors duration-150 btn-press cursor-pointer ${
                                   emp.estado
-                                    ? "bg-red-500/10 hover:bg-red-500/20 border-red-500/20 text-red-400"
+                                    ? "bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/20 text-amber-400"
                                     : "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-400"
                                 }`}
                                 title={emp.estado ? "Suspender Acceso" : "Activar Acceso"}
@@ -598,6 +628,19 @@ function UserManagement() {
                                   </svg>
                                 )}
                               </button>
+
+                              {/* Botón Eliminar Operador */}
+                              {emp.CuentaUsuario?.Correo !== "sclaros724@gmail.com" && (
+                                <button
+                                  onClick={() => handleOpenDeleteModal(emp)}
+                                  className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-lg transition-colors duration-150 btn-press cursor-pointer"
+                                  title="Eliminar Operador Permanentemente"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -1144,6 +1187,100 @@ function UserManagement() {
                   <span>
                     {targetEmployee.estado ? "Confirmar Suspensión" : "Confirmar Activación"}
                   </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 5: CONFIRMACIÓN DE ELIMINACIÓN DE OPERADOR */}
+      {isDeleteModalOpen && employeeToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-[#12151c] border border-red-500/30 rounded-2xl p-6 shadow-2xl relative animate-modal-in space-y-5">
+            {/* Cabecera */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/25 flex items-center justify-center text-red-400 shrink-0">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-zinc-100">¿Eliminar Operador del Sistema?</h3>
+                <p className="text-xs text-zinc-400">Esta acción no se puede deshacer.</p>
+              </div>
+            </div>
+
+            {/* Ficha Resumen del Operador */}
+            <div className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl p-3.5 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500 font-semibold">Operador:</span>
+                <span className="font-bold text-zinc-200">
+                  {`${employeeToDelete.Persona?.Nombre || ""} ${employeeToDelete.Persona?.PrimerApellido || ""} ${employeeToDelete.Persona?.SegundoApellido || ""}`.trim() || "Sin nombre"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500 font-semibold">Rol:</span>
+                <span>{renderRoleBadge(employeeToDelete.CuentaUsuario?.Rol)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500 font-semibold">Correo:</span>
+                <span className="font-mono text-zinc-300">{employeeToDelete.CuentaUsuario?.Correo || "N/A"}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500 font-semibold">CI / NIT:</span>
+                <span className="font-mono tabular-nums text-zinc-300">{employeeToDelete.Persona?.CI_NIT || "N/A"}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500 font-semibold">Estado actual:</span>
+                <span className={`font-semibold ${employeeToDelete.estado ? "text-emerald-400" : "text-red-400"}`}>
+                  {employeeToDelete.estado ? "Activo" : "Suspendido"}
+                </span>
+              </div>
+            </div>
+
+            {/* Mensaje de Advertencia */}
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-200">
+              <div className="flex items-start gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-red-400 shrink-0 mt-1.5" />
+                <p>
+                  El usuario será retirado permanentemente de la lista de operadores y sus credenciales de acceso quedarán revocadas de inmediato.
+                </p>
+              </div>
+            </div>
+
+            {/* Botones de Acción */}
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-zinc-800/80">
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setEmployeeToDelete(null);
+                }}
+                className="w-1/2 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 font-bold rounded-xl text-xs transition-colors duration-150 btn-press cursor-pointer disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={handleConfirmDelete}
+                className="w-1/2 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-colors duration-150 btn-press cursor-pointer shadow-lg shadow-red-500/20"
+              >
+                {deleteLoading ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Eliminando...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    <span>Eliminar</span>
+                  </>
                 )}
               </button>
             </div>

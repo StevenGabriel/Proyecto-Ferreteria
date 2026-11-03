@@ -1,43 +1,45 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import Sidebar from '../../components/sidebar/sidebar';
 import Topbar from '../../components/topbar/topbar';
 import { useSidebar } from '../../context/SidebarContext';
-import { getOnlineOrders, confirmOnlineOrder, cancelOnlineOrder } from '../../services/api';
+import { getOnlineOrders, confirmOnlineOrder, cancelOnlineOrder, getCashRegisterStatus } from '../../services/api';
 import { generateInvoiceTicketPdf } from '../../utils/invoicePdfGenerator';
 import { LOYALTY_TIERS } from '../../constants/loyalty';
 
-// Función auxiliar para resolver el nivel de lealtad del cliente
+// Función auxiliar para resolver el nivel de lealtad del cliente y su descuento aplicado en el pedido
 const resolveClientLoyalty = (client, order) => {
+  const origSubtotal = parseFloat(order?.Subtotal || 0);
+  const origDesc = parseFloat(order?.Descuento || 0);
+  const orderPct = origSubtotal > 0 && origDesc > 0
+    ? Math.round((origDesc / origSubtotal) * 100)
+    : 0;
+  const clientPct = parseFloat(client?.DescuentoPorcentaje) || 0;
+
   const tierKey = client?.NivelLealtad || '';
-  let tier = LOYALTY_TIERS[tierKey];
-  if (!tier) {
+  let tierFromClient = LOYALTY_TIERS[tierKey];
+  if (!tierFromClient && tierKey) {
     const keyByValue = Object.keys(LOYALTY_TIERS).find(
       k => LOYALTY_TIERS[k].name.toLowerCase() === tierKey.toLowerCase() ||
            LOYALTY_TIERS[k].id.toLowerCase() === tierKey.toLowerCase()
     );
-    if (keyByValue) tier = LOYALTY_TIERS[keyByValue];
+    if (keyByValue) tierFromClient = LOYALTY_TIERS[keyByValue];
   }
 
-  if (!tier) {
-    const origSubtotal = parseFloat(order?.Subtotal || 0);
-    const origDesc = parseFloat(order?.Descuento || 0);
-    const pct = origSubtotal > 0 && origDesc > 0
-      ? Math.round((origDesc / origSubtotal) * 100)
-      : (parseFloat(client?.DescuentoPorcentaje) || 0);
+  const effectivePct = Math.max(orderPct, clientPct, tierFromClient?.discount || 0);
 
-    if (pct >= 10) tier = LOYALTY_TIERS.Mayorista; // Diamante
-    else if (pct >= 6) tier = LOYALTY_TIERS.Constructor; // Oro
-    else if (pct >= 3) tier = LOYALTY_TIERS.Frecuente; // Plata
-    else tier = LOYALTY_TIERS.Estandar; // Bronce
+  let tier = tierFromClient;
+  if (!tier || effectivePct > (tier.discount || 0)) {
+    if (effectivePct >= 10) tier = LOYALTY_TIERS.Mayorista; // Diamante (10%)
+    else if (effectivePct >= 6) tier = LOYALTY_TIERS.Constructor; // Oro (6%)
+    else if (effectivePct >= 3) tier = LOYALTY_TIERS.Frecuente; // Plata (3%)
+    else tier = LOYALTY_TIERS.Estandar; // Bronce (0%)
   }
-
-  const discountPercent = client?.DescuentoPorcentaje !== undefined && parseFloat(client?.DescuentoPorcentaje) > 0
-    ? parseFloat(client.DescuentoPorcentaje)
-    : (tier?.discount || 0);
 
   return {
     ...tier,
-    discountPercent
+    discountPercent: effectivePct,
+    discountAmount: origDesc
   };
 };
 
@@ -52,6 +54,38 @@ function OnlineOrdersView() {
     } catch {}
     return { EmpleadoID: 6, Nombre: 'Oscar Edgar Claros', Rol: 'Administrador' };
   });
+
+  // Estado de Apertura de Caja Registradora (requerida para finalizar pedidos online)
+  const [isCashRegisterOpen, setIsCashRegisterOpen] = useState(() => {
+    try {
+      const active = localStorage.getItem('cyc_cash_register_active');
+      if (active) {
+        const parsed = JSON.parse(active);
+        return !!parsed.isOpen || !!parsed.estado;
+      }
+    } catch {}
+    return false;
+  });
+
+  const checkCashRegister = async () => {
+    try {
+      const localActive = localStorage.getItem('cyc_cash_register_active');
+      let localOpen = false;
+      if (localActive) {
+        const parsed = JSON.parse(localActive);
+        localOpen = !!(parsed && (parsed.isOpen || parsed.estado === 'ABIERTA'));
+      }
+      const res = await getCashRegisterStatus().catch(() => null);
+      if (res && res.isOpen && res.session) {
+        setIsCashRegisterOpen(true);
+        localStorage.setItem('cyc_cash_register_active', JSON.stringify({ ...res.session, isOpen: true }));
+      } else {
+        setIsCashRegisterOpen(localOpen);
+      }
+    } catch {
+      setIsCashRegisterOpen(false);
+    }
+  };
 
   // Estados de datos
   const [orders, setOrders] = useState([]);
@@ -108,8 +142,12 @@ function OnlineOrdersView() {
 
   useEffect(() => {
     fetchOrders();
+    checkCashRegister();
     // Auto-refresco cada 30 segundos para alertar nuevos pedidos entrantes
-    const interval = setInterval(fetchOrders, 30000);
+    const interval = setInterval(() => {
+      fetchOrders();
+      checkCashRegister();
+    }, 30000);
     return () => clearInterval(interval);
   }, [statusFilter, searchTerm]);
 
@@ -161,6 +199,7 @@ function OnlineOrdersView() {
 
   // Abrir modal de revisión y entrega
   const handleOpenReview = (order) => {
+    checkCashRegister();
     setSelectedOrder(order);
     setIssueInvoice(!!order.RequiereFactura);
     setBillingNit(order.NIT_CI && order.NIT_CI !== '0' ? order.NIT_CI : '');
@@ -175,9 +214,14 @@ function OnlineOrdersView() {
     setShowCancelModal(true);
   };
 
-  // Ejecutar Confirmación y Entrega
+  // Ejecutar Confirmación y Entrega (requiere Caja Registradora Abierta)
   const handleConfirmPickup = async () => {
     if (!selectedOrder) return;
+
+    if (!isCashRegisterOpen) {
+      showToast('⚠️ La Caja Registradora está cerrada. Abra turno de caja en Vender (POS) antes de finalizar un pedido.', 'error');
+      return;
+    }
 
     if (issueInvoice) {
       if (!billingNit.trim() || billingNit.trim() === '0') {
@@ -200,6 +244,7 @@ function OnlineOrdersView() {
         total: activeFinalTotal,
         subtotal: activeSubtotalSum,
         descuento: activeLoyaltyDiscount,
+        cashRegisterOpen: true,
         items: dynamicItems.map(it => ({
           ProductoID: it.ProductoID,
           Cantidad: it.cant,
@@ -210,6 +255,31 @@ function OnlineOrdersView() {
 
       const res = await confirmOnlineOrder(selectedOrder.PedidoID, payload);
       showToast(`¡Pedido ${selectedOrder.CodigoPedido} entregado con éxito!`, 'success');
+
+      // Registrar la venta online confirmada dentro del turno de caja activo para el Arqueo de Caja en POS
+      try {
+        const shiftSalesRaw = localStorage.getItem('cyc_current_shift_sales');
+        const shiftSales = shiftSalesRaw ? JSON.parse(shiftSalesRaw) : [];
+        const newShiftEntry = {
+          id: res?.sale?.ticketID || `${issueInvoice ? 'FAC' : 'REC'}-${res?.sale?.VentaID || selectedOrder.CodigoPedido}`,
+          ventaID: res?.sale?.VentaID || selectedOrder.PedidoID,
+          client: payload.razonSocial,
+          nit: payload.nit,
+          total: activeFinalTotal,
+          paymentMethod: 'QR',
+          metodoPago: 'QR',
+          time: new Date().toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' }),
+          timestamp: Date.now(),
+          detalles: dynamicItems.map(dt => ({
+            ProductoID: dt.ProductoID,
+            producto: dt.Producto?.Nombre || `Producto #${dt.ProductoID}`,
+            cantidad: dt.cant,
+            precioUnitario: dt.activeUnitPrice,
+            subtotal: dt.activeSubtotal
+          }))
+        };
+        localStorage.setItem('cyc_current_shift_sales', JSON.stringify([newShiftEntry, ...shiftSales]));
+      } catch {}
 
       // Cerrar modal de revisión
       setShowReviewModal(false);
@@ -375,9 +445,28 @@ function OnlineOrdersView() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {isCashRegisterOpen ? (
+                <span className="px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span>Caja Registradora Abierta</span>
+                </span>
+              ) : (
+                <Link
+                  to="/pos"
+                  className="btn-press px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold flex items-center gap-2 transition-colors"
+                  title="Debe abrir turno de caja registradora en el POS para finalizar entregas"
+                >
+                  <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
+                  <span>Caja Cerrada — Ir a Abrir Turno en POS</span>
+                </Link>
+              )}
+
               <button
-                onClick={fetchOrders}
+                onClick={() => {
+                  fetchOrders();
+                  checkCashRegister();
+                }}
                 disabled={loading}
                 className="btn-press px-4 py-2 bg-[#12151c] hover:bg-zinc-800/90 text-zinc-200 border border-zinc-800 hover:border-zinc-700 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors disabled:opacity-50 cursor-pointer"
               >
@@ -572,6 +661,9 @@ function OnlineOrdersView() {
                 const isCancelled = order.EstadoPedido === 'CANCELADO';
 
                 const totalItemsCount = (order.Detalles || []).reduce((acc, dt) => acc + (dt.Cantidad || 1), 0);
+                const orderLoyalty = resolveClientLoyalty(order.Cliente, order);
+                const orderSubtotal = parseFloat(order.Subtotal || order.Total || 0);
+                const orderDiscount = parseFloat(order.Descuento || 0);
 
                 return (
                   <div
@@ -612,6 +704,14 @@ function OnlineOrdersView() {
                             </span>
                           )}
 
+                          {/* Insignia de Nivel de Lealtad visible en la tarjeta */}
+                          <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md border inline-flex items-center gap-1.5 ${orderLoyalty.textClass || 'text-zinc-400 bg-zinc-900 border-zinc-800'}`}>
+                            <span>Nivel {orderLoyalty.name}</span>
+                            <span className="font-mono tabular-nums">
+                              ({orderLoyalty.discountPercent > 0 ? `-${orderLoyalty.discountPercent}% Dcto.` : '0% Dcto.'})
+                            </span>
+                          </span>
+
                           <span className="text-xs font-mono tabular-nums text-zinc-500">
                             • {new Date(order.FechaPedido).toLocaleString('es-BO')}
                           </span>
@@ -619,7 +719,7 @@ function OnlineOrdersView() {
 
                         {/* Datos del Cliente y Teléfono */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <svg className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
@@ -676,8 +776,18 @@ function OnlineOrdersView() {
                           <p className="text-xl sm:text-2xl font-black text-amber-400 font-mono tabular-nums">
                             Bs. {parseFloat(order.Total || 0).toFixed(2)}
                           </p>
+                          {orderDiscount > 0 && (
+                            <div className="mt-1 space-y-0.5 text-[11px] font-mono tabular-nums">
+                              <p className="text-zinc-400">
+                                Subtotal: <span className="line-through text-zinc-500">Bs. {orderSubtotal.toFixed(2)}</span>
+                              </p>
+                              <p className="text-emerald-400 font-bold">
+                                Dcto. {orderLoyalty.name} (-{orderLoyalty.discountPercent}%): -Bs. {orderDiscount.toFixed(2)}
+                              </p>
+                            </div>
+                          )}
                           {order.RequiereFactura && (
-                            <span className="inline-block mt-0.5 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded font-bold">
+                            <span className="inline-block mt-1 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded font-bold">
                               Factura SIAT Solicitada
                             </span>
                           )}
@@ -1032,6 +1142,29 @@ function OnlineOrdersView() {
               </div>
             )}
 
+            {/* Alerta de bloqueo si la Caja Registradora está cerrada */}
+            {selectedOrder.EstadoPedido === 'PENDIENTE' && !isCashRegisterOpen && (
+              <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-start gap-2.5 text-red-300">
+                  <svg className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div>
+                    <p className="font-bold text-red-300">Caja Registradora Cerrada</p>
+                    <p className="text-[11px] text-zinc-300 mt-0.5">
+                      Para finalizar la entrega y registrar este ingreso en el flujo de caja diario, primero debe tener una apertura de caja activa en el POS.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to="/pos"
+                  className="btn-press px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold rounded-xl text-xs whitespace-nowrap text-center transition-colors"
+                >
+                  Ir a Abrir Caja (/pos)
+                </Link>
+              </div>
+            )}
+
             {/* Botones de Acción */}
             <div className="flex items-center justify-end gap-3 pt-2 border-t border-zinc-800/80">
               <button
@@ -1045,9 +1178,14 @@ function OnlineOrdersView() {
               {selectedOrder.EstadoPedido === 'PENDIENTE' && (
                 <button
                   type="button"
-                  disabled={actionLoading}
+                  disabled={actionLoading || !isCashRegisterOpen}
                   onClick={handleConfirmPickup}
-                  className="btn-press px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 transition-colors disabled:opacity-50 cursor-pointer"
+                  title={!isCashRegisterOpen ? 'Abra primero la Caja Registradora en el módulo Vender (POS)' : 'Confirmar pago y entregar productos'}
+                  className={`btn-press px-5 py-2.5 font-extrabold rounded-xl text-xs flex items-center gap-2 transition-colors ${
+                    !isCashRegisterOpen
+                      ? 'bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-not-allowed opacity-70'
+                      : 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer disabled:opacity-50'
+                  }`}
                 >
                   {actionLoading ? (
                     <>

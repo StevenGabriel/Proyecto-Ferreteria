@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/sidebar/sidebar';
 import Topbar from '../../components/topbar/topbar';
 import { useSidebar } from '../../context/SidebarContext';
-import { getProducts, getCategories, getBrands, createSale, updateSale, updateSaleInvoice, getRecentSales, getCashRegisterStatus, openCashRegister, getLastCashRegister, closeCashRegister, addCashInflow, getOnlineOrders } from '../../services/api';
+import { getProducts, getCategories, getBrands, createSale, updateSale, updateSaleInvoice, getRecentSales, getClients, getCashRegisterStatus, openCashRegister, getLastCashRegister, closeCashRegister, addCashInflow, getOnlineOrders } from '../../services/api';
 import { generateInvoicePdf } from '../../utils/invoicePdfGenerator';
 
 function POSView() {
@@ -152,12 +152,15 @@ function POSView() {
     } catch {}
     return [
       { id: 1, name: 'Cliente General (Sin Factura)', nit: '0', phone: '-', email: '', address: 'Ventas en Mostrador', NivelLealtad: 'Estandar', DescuentoPorcentaje: 0, TotalComprasAcumulado: 0 },
-      { id: 2, name: 'Constructora Los Andes S.R.L.', nit: '4839201018', phone: '76543210', email: 'contacto@losandes.com', address: 'Av. Blanco Galindo Km 4', NivelLealtad: 'Mayorista', DescuentoPorcentaje: 10, TotalComprasAcumulado: 8500 },
-      { id: 3, name: 'Carlos Mendoza Ramos', nit: '5948302', phone: '68920192', email: 'carlos.mendoza@gmail.com', address: 'Zona Norte', NivelLealtad: 'Frecuente', DescuentoPorcentaje: 3, TotalComprasAcumulado: 1850 },
-      { id: 4, name: 'Ingeniería & Proyectos C&C', nit: '1029384019', phone: '71239847', email: 'proyectos@cyc.com', address: 'Calle Heroínas #450', NivelLealtad: 'Constructor', DescuentoPorcentaje: 6, TotalComprasAcumulado: 4920 }
+      { id: 2, name: 'Valeria Montaño Salazar', nit: '280376027', phone: '76411223', email: 'diamante@ferreteria.com', address: 'Cochabamba', NivelLealtad: 'Mayorista', DescuentoPorcentaje: 10, TotalComprasAcumulado: 8500 },
+      { id: 3, name: 'Roberto Guzmán Torrico', nit: '1029384019', phone: '71239847', email: 'oro@ferreteria.com', address: 'Calle Heroínas #450', NivelLealtad: 'Constructor', DescuentoPorcentaje: 6, TotalComprasAcumulado: 4920 },
+      { id: 4, name: 'Carlos Alberto Mendoza Ramos', nit: '5948302', phone: '68920192', email: 'plata@ferreteria.com', address: 'Zona Norte', NivelLealtad: 'Frecuente', DescuentoPorcentaje: 3, TotalComprasAcumulado: 1850 },
+      { id: 5, name: 'Daniel Rodríguez Vargas', nit: '4502616', phone: '70712345', email: 'bronce@ferreteria.com', address: 'Cochabamba', NivelLealtad: 'Estandar', DescuentoPorcentaje: 0, TotalComprasAcumulado: 450 }
     ];
   });
   const [selectedClient, setSelectedClient] = useState(() => clients[0] || { id: 1, name: 'Cliente General (Sin Factura)', nit: '0', NivelLealtad: 'Estandar', DescuentoPorcentaje: 0 });
+  const [clientQuickSearch, setClientQuickSearch] = useState('');
+  const [showClientQuickDropdown, setShowClientQuickDropdown] = useState(false);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [newClientForm, setNewClientForm] = useState({
     TipoContacto: 'Individual',
@@ -484,22 +487,69 @@ function POSView() {
     showToast(`Pedido ${order.CodigoPedido || ''} cargado al ticket (${newCartItems.length} productos)`, 'success');
   };
 
-  // Cargar productos, categorías, marcas y transacciones recientes desde la BD
+  // Cargar productos, categorías, marcas, clientes online y transacciones recientes desde la BD
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [pData, cData, bData, salesData] = await Promise.all([
+        const [pData, cData, bData, salesData, dbClients] = await Promise.all([
           getProducts(),
           getCategories(),
           getBrands(),
-          getRecentSales().catch(() => [])
+          getRecentSales().catch(() => []),
+          getClients().catch(() => [])
         ]);
         setProducts(Array.isArray(pData) ? pData : []);
         setCategories(Array.isArray(cData) ? cData : []);
         setBrands(Array.isArray(bData) ? bData : []);
         if (Array.isArray(salesData) && salesData.length > 0) {
           setRecentSales(salesData);
+        }
+        if (Array.isArray(dbClients) && dbClients.length > 0) {
+          setClients((prev) => {
+            const generalClient = {
+              id: 1,
+              name: 'Cliente General (Sin Factura)',
+              nit: '0',
+              phone: '-',
+              email: '',
+              address: 'Ventas en Mostrador',
+              NivelLealtad: 'Estandar',
+              DescuentoPorcentaje: 0,
+              TotalComprasAcumulado: 0
+            };
+            const mergedMap = new Map();
+            mergedMap.set('0_CLIENTE_GENERAL', generalClient);
+
+            dbClients.forEach((dbc) => {
+              const key = (dbc.nit && dbc.nit !== '0') ? `NIT_${dbc.nit}` : `NAME_${(dbc.name || '').toUpperCase()}`;
+              mergedMap.set(key, {
+                id: dbc.id || dbc.ClienteID,
+                ClienteID: dbc.ClienteID || dbc.id,
+                name: dbc.name || dbc.Nombre,
+                nit: dbc.nit || dbc.NIT || '0',
+                phone: dbc.phone || dbc.Telefono || '-',
+                email: dbc.email || dbc.Email || '',
+                NivelLealtad: dbc.NivelLealtad || 'Estandar',
+                DescuentoPorcentaje: parseFloat(dbc.DescuentoPorcentaje || 0),
+                TotalComprasAcumulado: parseFloat(dbc.TotalComprasAcumulado || 0)
+              });
+            });
+
+            prev.forEach((loc) => {
+              if (loc.id === 1 || (loc.name && loc.name.toLowerCase().includes('cliente general'))) return;
+              const key = (loc.nit && loc.nit !== '0') ? `NIT_${loc.nit}` : `NAME_${(loc.name || '').toUpperCase()}`;
+              if (!mergedMap.has(key)) {
+                mergedMap.set(key, loc);
+              }
+            });
+
+            const finalClients = Array.from(mergedMap.values());
+            try {
+              localStorage.setItem('cyc_pos_clients', JSON.stringify(finalClients));
+            } catch {}
+            return finalClients;
+          });
         }
       } catch (err) {
         console.error('Error cargando catálogo POS:', err);
@@ -2175,31 +2225,183 @@ function POSView() {
                 </svg>
               </div>
 
-              <select
-                value={selectedClient.id}
-                onChange={(e) => {
-                  const target = clients.find((c) => c.id === parseInt(e.target.value));
-                  if (target) {
-                    setSelectedClient(target);
-                    setManualDiscount(null);
-                  }
-                }}
-                className="flex-1 bg-[#0c0e12] border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-zinc-100 font-bold focus:outline-none focus:border-amber-500 transition-colors cursor-pointer"
-              >
-                {clients.map((c) => {
-                  const tierBadge = c.NivelLealtad === 'Mayorista' ? '[MAYORISTA]' : c.NivelLealtad === 'Constructor' ? '[CONSTRUCTOR]' : c.NivelLealtad === 'Frecuente' ? '[FRECUENTE]' : '[MOSTRADOR]';
-                  const pct = c.DescuentoPorcentaje ? ` — ${c.DescuentoPorcentaje}% Dcto.` : '';
+              {/* Combobox Unificado: Clic para desplegar todos los clientes o escribir para buscar por NIT/CI/Nombre */}
+              <div className="relative flex-1 min-w-0">
+                {(() => {
+                  const activeTierLabel = (selectedClient.NivelLealtad === 'Mayorista' || selectedClient.NivelLealtad === 'Diamante')
+                    ? '[DIAMANTE]'
+                    : (selectedClient.NivelLealtad === 'Constructor' || selectedClient.NivelLealtad === 'Oro')
+                    ? '[ORO]'
+                    : (selectedClient.NivelLealtad === 'Frecuente' || selectedClient.NivelLealtad === 'Plata')
+                    ? '[PLATA]'
+                    : selectedClient.id === 1
+                    ? '[MOSTRADOR]'
+                    : '[BRONCE]';
+                  const activePct = selectedClient.DescuentoPorcentaje ? ` — ${selectedClient.DescuentoPorcentaje}% Dcto.` : '';
+                  const selectedDisplayLabel = `${activeTierLabel} ${selectedClient.name}${selectedClient.nit && selectedClient.nit !== '0' ? ` (NIT/CI: ${selectedClient.nit})` : ''}${activePct}`;
+
+                  const q = clientQuickSearch.trim().toLowerCase();
+                  const filteredComboClients = q
+                    ? clients.filter(
+                        (c) =>
+                          (c.nit && c.nit.toLowerCase().includes(q)) ||
+                          (c.name && c.name.toLowerCase().includes(q)) ||
+                          (c.phone && c.phone.toLowerCase().includes(q)) ||
+                          (c.NivelLealtad && c.NivelLealtad.toLowerCase().includes(q))
+                      )
+                    : clients;
+
                   return (
-                    <option key={c.id} value={c.id}>
-                      {tierBadge} {c.name} {c.nit !== '0' ? `(NIT: ${c.nit})` : ''}{pct}
-                    </option>
+                    <>
+                      <div className="relative flex items-center">
+                        <input
+                          type="text"
+                          value={showClientQuickDropdown ? clientQuickSearch : selectedDisplayLabel}
+                          onChange={(e) => {
+                            setClientQuickSearch(e.target.value);
+                            if (!showClientQuickDropdown) setShowClientQuickDropdown(true);
+                          }}
+                          onFocus={() => {
+                            setClientQuickSearch('');
+                            setShowClientQuickDropdown(true);
+                          }}
+                          onBlur={() => setTimeout(() => setShowClientQuickDropdown(false), 180)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (filteredComboClients.length > 0) {
+                                const match = filteredComboClients[0];
+                                setSelectedClient(match);
+                                setManualDiscount(null);
+                                setClientQuickSearch('');
+                                setShowClientQuickDropdown(false);
+                                e.target.blur();
+                                showToast(`Cliente "${match.name}" seleccionado`, 'success');
+                              } else {
+                                showToast(`No se encontró cliente con "${clientQuickSearch}"`, 'error');
+                              }
+                            } else if (e.key === 'Escape') {
+                              setClientQuickSearch('');
+                              setShowClientQuickDropdown(false);
+                              e.target.blur();
+                            }
+                          }}
+                          placeholder="Escriba NIT/CI, nombre o seleccione de la lista..."
+                          className="w-full bg-[#0c0e12] border border-zinc-800 hover:border-zinc-700 focus:border-amber-500 rounded-xl pl-3.5 pr-14 py-2 text-xs text-zinc-100 font-bold placeholder-zinc-500 focus:outline-none transition-colors duration-100 cursor-pointer truncate"
+                        />
+
+                        <div className="absolute right-2 flex items-center gap-1">
+                          {selectedClient.id !== 1 && !showClientQuickDropdown && (
+                            <button
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const defaultGeneral = clients.find(c => c.id === 1) || clients[0];
+                                if (defaultGeneral) {
+                                  setSelectedClient(defaultGeneral);
+                                  setManualDiscount(null);
+                                }
+                              }}
+                              title="Volver a Cliente General (Sin Factura)"
+                              className="w-5 h-5 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 flex items-center justify-center text-[11px] transition-colors cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            tabIndex={-1}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setShowClientQuickDropdown((prev) => !prev);
+                              if (!showClientQuickDropdown) setClientQuickSearch('');
+                            }}
+                            className="w-5 h-5 flex items-center justify-center text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                          >
+                            <svg className={`w-3.5 h-3.5 transition-transform duration-150 ${showClientQuickDropdown ? 'rotate-180 text-amber-400' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      {showClientQuickDropdown && (
+                        <div className="absolute z-50 left-0 right-0 top-full mt-1.5 bg-[#12151c] border border-zinc-700/90 rounded-xl shadow-2xl overflow-hidden animate-dropdown-in origin-top">
+                          <div className="px-3 py-1.5 bg-[#0c0e12] border-b border-zinc-800/80 flex items-center justify-between text-[10px] text-zinc-400">
+                            <span className="font-bold uppercase tracking-wider">
+                              {q ? `Resultados (${filteredComboClients.length})` : `Clientes Registrados (${clients.length})`}
+                            </span>
+                            <span className="font-mono text-zinc-500">Escriba NIT/Nombre o clic para elegir</span>
+                          </div>
+
+                          <div className="max-h-60 overflow-y-auto divide-y divide-zinc-800/60 custom-scrollbar">
+                            {filteredComboClients.length === 0 ? (
+                              <div className="py-5 px-4 text-center text-xs text-zinc-500">
+                                No se encontró ningún cliente con &ldquo;{clientQuickSearch}&rdquo;
+                              </div>
+                            ) : (
+                              filteredComboClients.map((c) => {
+                                const isCurrent = String(c.id) === String(selectedClient.id);
+                                const tierName = (c.NivelLealtad === 'Mayorista' || c.NivelLealtad === 'Diamante')
+                                  ? 'Diamante'
+                                  : (c.NivelLealtad === 'Constructor' || c.NivelLealtad === 'Oro')
+                                  ? 'Oro'
+                                  : (c.NivelLealtad === 'Frecuente' || c.NivelLealtad === 'Plata')
+                                  ? 'Plata'
+                                  : c.id === 1
+                                  ? 'Mostrador'
+                                  : 'Bronce';
+
+                                const tierBadgeStyle = tierName === 'Diamante'
+                                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                  : tierName === 'Oro'
+                                  ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                                  : tierName === 'Plata'
+                                  ? 'bg-zinc-700/60 text-zinc-200 border-zinc-600'
+                                  : 'bg-zinc-900 text-zinc-400 border-zinc-800';
+
+                                return (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    onMouseDown={() => {
+                                      setSelectedClient(c);
+                                      setManualDiscount(null);
+                                      setClientQuickSearch('');
+                                      setShowClientQuickDropdown(false);
+                                      if (c.id !== 1) {
+                                        showToast(`Cuenta de "${c.name}" (${tierName}) seleccionada`, 'success');
+                                      }
+                                    }}
+                                    className={`w-full text-left px-3.5 py-2.5 transition-colors flex items-center justify-between gap-2 text-xs cursor-pointer ${
+                                      isCurrent ? 'bg-amber-500/10 text-zinc-100' : 'hover:bg-zinc-800/60 text-zinc-200'
+                                    }`}
+                                  >
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-bold text-zinc-100 truncate">{c.name}</p>
+                                      <p className="text-[10px] font-mono tabular-nums text-zinc-400">
+                                        {c.id === 1 ? 'Venta rápida en mostrador' : `NIT/CI: ${c.nit || '0'}${c.phone && c.phone !== '-' ? ` • Tel: ${c.phone}` : ''}`}
+                                      </p>
+                                    </div>
+                                    <span className={`text-[10px] font-mono tabular-nums font-bold px-2 py-0.5 rounded border flex-shrink-0 ${tierBadgeStyle}`}>
+                                      {tierName} {c.DescuentoPorcentaje ? `(-${c.DescuentoPorcentaje}%)` : '(0%)'}
+                                    </span>
+                                  </button>
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   );
-                })}
-              </select>
+                })()}
+              </div>
 
               <button
                 onClick={() => setShowNewClientModal(true)}
-                className="btn-press w-9 h-9 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 flex items-center justify-center font-black text-base transition-colors"
+                className="btn-press w-9 h-9 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 flex items-center justify-center font-black text-base transition-colors flex-shrink-0 cursor-pointer"
                 title="Registrar nuevo cliente rápido"
               >
                 +
@@ -2209,11 +2411,23 @@ function POSView() {
             {/* Insignia de Fidelidad / Lealtad del Cliente Seleccionado */}
             {selectedClient && selectedClient.id !== 1 && (
               <div className="flex items-center justify-between px-3 py-1.5 bg-[#0c0e12] rounded-xl border border-amber-500/25 text-[11px]">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                   <span className="font-bold text-amber-400 uppercase tracking-wider">
-                    Nivel: {selectedClient.NivelLealtad || 'Estándar'}
+                    Nivel:{' '}
+                    {(selectedClient.NivelLealtad === 'Mayorista' || selectedClient.NivelLealtad === 'Diamante')
+                      ? 'Diamante (Mayorista)'
+                      : (selectedClient.NivelLealtad === 'Constructor' || selectedClient.NivelLealtad === 'Oro')
+                      ? 'Oro (Constructor)'
+                      : (selectedClient.NivelLealtad === 'Frecuente' || selectedClient.NivelLealtad === 'Plata')
+                      ? 'Plata (Frecuente)'
+                      : 'Bronce (Estándar)'}
                   </span>
+                  {selectedClient.nit && selectedClient.nit !== '0' && (
+                    <span className="text-zinc-400 font-mono tabular-nums">
+                      • NIT/CI: {selectedClient.nit}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   {loyaltyDiscountPercent > 0 ? (
@@ -2221,7 +2435,7 @@ function POSView() {
                       {loyaltyDiscountPercent}% Dcto. (-Bs. {loyaltyDiscountAmount.toFixed(2)})
                     </span>
                   ) : (
-                    <span className="text-zinc-500 font-semibold">Tarifa regular</span>
+                    <span className="text-zinc-500 font-semibold">0% Dcto. (Tarifa regular)</span>
                   )}
                 </div>
               </div>

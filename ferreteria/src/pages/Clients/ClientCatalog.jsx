@@ -770,7 +770,7 @@ function ClientCatalog() {
             </div>
 
             <div className="bg-[#0c0e12] border border-zinc-800/90 rounded-xl p-4 flex flex-col justify-between">
-              <span className="text-[11px] text-zinc-400 font-medium">Líneas técnicas</span>
+              <span className="text-[11px] text-zinc-400 font-medium">Categorías</span>
               <span className="text-2xl font-mono font-bold text-amber-400 tabular-nums mt-2">
                 {categories.length}
               </span>

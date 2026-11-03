@@ -202,6 +202,11 @@ export const resetEmployeePassword = async (id, nuevaContrasena) => {
   return response.data;
 };
 
+export const deleteEmployee = async (id) => {
+  const response = await api.delete(`/employees/${id}`);
+  return response.data;
+};
+
 // API de Control de Inventario, Semáforo de Stock y Caducidad de Lotes (Objetivo 2)
 export const getInventorySummary = async () => {
   const response = await api.get('/inventory/summary');
@@ -246,6 +251,11 @@ export const updateSaleInvoice = async (id, invoiceData) => {
 
 export const getRecentSales = async () => {
   const response = await api.get('/sales/recent');
+  return response.data;
+};
+
+export const getClients = async () => {
+  const response = await api.get('/sales/clients');
   return response.data;
 };
 
