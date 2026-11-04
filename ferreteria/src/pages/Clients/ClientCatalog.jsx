@@ -1479,9 +1479,9 @@ function ClientCatalog() {
         </div>
       )}
 
-      {/* 7. TOAST FLOTANTE DE CONFIRMACIÓN (Emil Kowalski Spatial Consistency) */}
+      {/* 7. TOAST FLOTANTE DE CONFIRMACIÓN (Emil Kowalski Spatial Consistency — ubicado sobre el botón Asesor Técnico) */}
       {showToast && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-[#14171f] border border-zinc-700/90 rounded-xl shadow-2xl p-3.5 flex items-center gap-3 animate-fade-in">
+        <div className="fixed bottom-20 right-6 z-[60] max-w-sm w-[calc(100vw-3rem)] sm:w-full bg-[#14171f] border border-zinc-700/90 rounded-xl shadow-2xl p-3.5 flex items-center gap-3 origin-bottom-right animate-popover-in">
           <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />

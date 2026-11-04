@@ -66,12 +66,19 @@ function RegisterClie() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(correo.trim())) {
-      setErrorMessage("Por favor ingresa un correo electrónico válido (ej. usuario@dominio.com).");
+      setErrorMessage("Formato de correo electrónico no válido (ej. usuario@dominio.com).");
       return;
     }
 
-    if (telefono.trim() && !/^[0-9+ -]{7,15}$/.test(telefono.trim())) {
-      setErrorMessage("El número de teléfono o celular debe tener al menos 7 dígitos válidos.");
+    const ciNitRegex = /^[0-9]{5,10}(-[0-9A-Z]{1,2})?$/;
+    if (ciNit.trim() && !ciNitRegex.test(ciNit.trim().toUpperCase())) {
+      setErrorMessage("Formato de CI / NIT no válido (debe tener entre 5 y 10 dígitos, ej. 7894561014).");
+      return;
+    }
+
+    const celularBoliviaRegex = /^[67][0-9]{7}$/;
+    if (telefono.trim() && !celularBoliviaRegex.test(telefono.trim().replace(/\s+/g, ""))) {
+      setErrorMessage("El teléfono celular debe cumplir el formato boliviano de 8 dígitos iniciando con 6 o 7.");
       return;
     }
 

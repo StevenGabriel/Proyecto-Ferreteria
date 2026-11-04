@@ -63,7 +63,7 @@ function ChatbotWidget({ hidden = false }) {
         ...prev,
         {
           sender: 'bot',
-          text: 'No se pudo establecer conexión con el asistente en este momento. Intenta nuevamente en unos segundos o contáctanos por WhatsApp.',
+          text: 'No se pudo establecer conexión con el asistente en este momento. Intenta nuevamente en unos segundos o consulta directamente el buscador del catálogo.',
           time: botTime
         }
       ]);

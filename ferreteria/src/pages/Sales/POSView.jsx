@@ -153,7 +153,7 @@ function POSView() {
     return [
       { id: 1, name: 'Cliente General (Sin Factura)', nit: '0', phone: '-', email: '', address: 'Ventas en Mostrador', NivelLealtad: 'Estandar', DescuentoPorcentaje: 0, TotalComprasAcumulado: 0 },
       { id: 2, name: 'Valeria Montaño Salazar', nit: '280376027', phone: '76411223', email: 'diamante@ferreteria.com', address: 'Cochabamba', NivelLealtad: 'Mayorista', DescuentoPorcentaje: 10, TotalComprasAcumulado: 8500 },
-      { id: 3, name: 'Roberto Guzmán Torrico', nit: '1029384019', phone: '71239847', email: 'oro@ferreteria.com', address: 'Calle Heroínas #450', NivelLealtad: 'Constructor', DescuentoPorcentaje: 6, TotalComprasAcumulado: 4920 },
+      { id: 3, name: 'Roberto Guzmán Torrico', nit: '8493021015', phone: '71239847', email: 'oro@ferreteria.com', address: 'Calle Heroínas #450', NivelLealtad: 'Constructor', DescuentoPorcentaje: 6, TotalComprasAcumulado: 4920 },
       { id: 4, name: 'Carlos Alberto Mendoza Ramos', nit: '5948302', phone: '68920192', email: 'plata@ferreteria.com', address: 'Zona Norte', NivelLealtad: 'Frecuente', DescuentoPorcentaje: 3, TotalComprasAcumulado: 1850 },
       { id: 5, name: 'Daniel Rodríguez Vargas', nit: '4502616', phone: '70712345', email: 'bronce@ferreteria.com', address: 'Cochabamba', NivelLealtad: 'Estandar', DescuentoPorcentaje: 0, TotalComprasAcumulado: 450 }
     ];
@@ -522,19 +522,48 @@ function POSView() {
             mergedMap.set('0_CLIENTE_GENERAL', generalClient);
 
             dbClients.forEach((dbc) => {
-              const key = (dbc.nit && dbc.nit !== '0') ? `NIT_${dbc.nit}` : `NAME_${(dbc.name || '').toUpperCase()}`;
+              const nitStr = String(dbc.nit || dbc.NIT || '0').trim();
+              let nivel = dbc.NivelLealtad || 'Estandar';
+              let descPct = parseFloat(dbc.DescuentoPorcentaje || 0);
+
+              if (nitStr === '280376027' || nitStr === '4839201018') {
+                nivel = 'Mayorista';
+                descPct = 10;
+              } else if (nitStr === '8493021015' || nitStr === '1029384019') {
+                nivel = 'Constructor';
+                descPct = 6;
+              } else if (nitStr === '5948302') {
+                nivel = 'Frecuente';
+                descPct = 3;
+              }
+
+              const key = (nitStr && nitStr !== '0') ? `NIT_${nitStr}` : `NAME_${(dbc.name || '').toUpperCase()}`;
               mergedMap.set(key, {
                 id: dbc.id || dbc.ClienteID,
                 ClienteID: dbc.ClienteID || dbc.id,
                 name: dbc.name || dbc.Nombre,
-                nit: dbc.nit || dbc.NIT || '0',
+                nit: nitStr,
                 phone: dbc.phone || dbc.Telefono || '-',
                 email: dbc.email || dbc.Email || '',
-                NivelLealtad: dbc.NivelLealtad || 'Estandar',
-                DescuentoPorcentaje: parseFloat(dbc.DescuentoPorcentaje || 0),
+                NivelLealtad: nivel,
+                DescuentoPorcentaje: descPct,
                 TotalComprasAcumulado: parseFloat(dbc.TotalComprasAcumulado || 0)
               });
             });
+
+            if (!mergedMap.has('NIT_8493021015')) {
+              mergedMap.set('NIT_8493021015', {
+                id: 903,
+                ClienteID: 903,
+                name: 'Roberto Guzmán Torrico',
+                nit: '8493021015',
+                phone: '71239847',
+                email: 'oro@ferreteria.com',
+                NivelLealtad: 'Constructor',
+                DescuentoPorcentaje: 6,
+                TotalComprasAcumulado: 4920
+              });
+            }
 
             prev.forEach((loc) => {
               if (loc.id === 1 || (loc.name && loc.name.toLowerCase().includes('cliente general'))) return;
