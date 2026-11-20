@@ -42,14 +42,19 @@ function InvoiceListView() {
   };
 
   // Cargar facturas desde backend
-  const fetchInvoices = async () => {
+  const fetchInvoices = async (overrideParams = null) => {
     setLoading(true);
     try {
       const params = {};
-      if (fechaInicio) params.fechaInicio = fechaInicio;
-      if (fechaFin) params.fechaFin = fechaFin;
-      if (searchTerm.trim()) params.search = searchTerm.trim();
-      if (filterEstado !== 'ALL') params.estado = filterEstado;
+      const fIni = overrideParams?.fechaInicio !== undefined ? overrideParams.fechaInicio : fechaInicio;
+      const fFin = overrideParams?.fechaFin !== undefined ? overrideParams.fechaFin : fechaFin;
+      const sTerm = overrideParams?.search !== undefined ? overrideParams.search : searchTerm;
+      const est = overrideParams?.estado !== undefined ? overrideParams.estado : filterEstado;
+
+      if (fIni) params.fechaInicio = fIni;
+      if (fFin) params.fechaFin = fFin;
+      if (sTerm.trim()) params.search = sTerm.trim();
+      if (est !== 'ALL') params.estado = est;
 
       const data = await getInvoices(params);
       if (data && Array.isArray(data.facturas)) {
@@ -71,12 +76,18 @@ function InvoiceListView() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (fechaInicio && fechaFin && new Date(fechaInicio) > new Date(fechaFin)) {
+    if (fechaInicio && fechaFin && fechaInicio > fechaFin) {
       showToast('La fecha de inicio no puede ser posterior a la fecha final.', 'error');
       return;
     }
     setCurrentPage(1);
     fetchInvoices();
+  };
+
+  const handleEstadoChange = (val) => {
+    setFilterEstado(val);
+    setCurrentPage(1);
+    fetchInvoices({ estado: val });
   };
 
   const handleResetFilters = () => {
@@ -85,11 +96,7 @@ function InvoiceListView() {
     setSearchTerm('');
     setFilterEstado('ALL');
     setCurrentPage(1);
-    setTimeout(() => {
-      getInvoices().then((data) => {
-        if (data && Array.isArray(data.facturas)) setInvoices(data.facturas);
-      });
-    }, 50);
+    fetchInvoices({ fechaInicio: '', fechaFin: '', search: '', estado: 'ALL' });
   };
 
   // Acciones: Imprimir Hoja Carta (PDF Oficial)
@@ -261,7 +268,7 @@ function InvoiceListView() {
                 </div>
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-100" style={{ textWrap: 'balance' }}>
-                    Listado de Facturas
+                    Historial de Comprobantes de Venta
                   </h1>
                   <p className="text-xs text-zinc-400 font-medium">
                     Consulta, reimpresión en hoja carta u 80mm térmico y anulación de comprobantes
@@ -273,15 +280,15 @@ function InvoiceListView() {
             {/* Estadísticas Rápidas */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <div className="px-3.5 py-2 rounded-xl bg-[#12151c] border border-zinc-800/80 text-xs">
-                <span className="text-zinc-400 block text-[10px] uppercase font-bold tracking-wider">Emitidas</span>
+                <span className="text-zinc-400 block text-[10px] uppercase font-bold tracking-wider">Emitidos</span>
                 <span className="text-emerald-400 font-extrabold font-mono tabular-nums text-sm">{countEmitidas}</span>
               </div>
               <div className="px-3.5 py-2 rounded-xl bg-[#12151c] border border-zinc-800/80 text-xs">
-                <span className="text-zinc-400 block text-[10px] uppercase font-bold tracking-wider">Anuladas</span>
+                <span className="text-zinc-400 block text-[10px] uppercase font-bold tracking-wider">Anulados</span>
                 <span className="text-red-400 font-extrabold font-mono tabular-nums text-sm">{countAnuladas}</span>
               </div>
               <div className="px-3.5 py-2 rounded-xl bg-[#12151c] border border-amber-500/30 text-xs">
-                <span className="text-amber-400 block text-[10px] uppercase font-bold tracking-wider">Total Facturado</span>
+                <span className="text-amber-400 block text-[10px] uppercase font-bold tracking-wider">Total Ventas</span>
                 <span className="text-zinc-100 font-extrabold font-mono tabular-nums text-sm">Bs. {totalFacturado.toFixed(2)}</span>
               </div>
             </div>
@@ -318,7 +325,7 @@ function InvoiceListView() {
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Número de factura, Cliente, NIT/CI, CUF..."
+                    placeholder="Número de comprobante, Cliente, NIT/CI..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500/60 transition-colors font-medium"
@@ -334,7 +341,7 @@ function InvoiceListView() {
                 <label className="block text-[11px] font-bold text-zinc-300 mb-1">Estado:</label>
                 <select
                   value={filterEstado}
-                  onChange={(e) => setFilterEstado(e.target.value)}
+                  onChange={(e) => handleEstadoChange(e.target.value)}
                   className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors font-semibold cursor-pointer"
                 >
                   <option value="ALL">Todos los estados</option>
@@ -347,7 +354,7 @@ function InvoiceListView() {
             {/* Botones de Filtro */}
             <div className="flex justify-between items-center pt-2 border-t border-zinc-800/80">
               <span className="text-xs text-zinc-400 font-medium">
-                Mostrando <strong className="text-zinc-100 font-mono tabular-nums">{invoices.length}</strong> facturas encontradas
+                Mostrando <strong className="text-zinc-100 font-mono tabular-nums">{invoices.length}</strong> comprobantes encontrados
               </span>
 
               <div className="flex gap-2">
@@ -427,7 +434,7 @@ function InvoiceListView() {
                         </span>
 
                         <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/25 text-xs font-extrabold font-mono tabular-nums tracking-wide">
-                          Factura Nro: {inv.numeroFactura}
+                          Comprobante Nro: {inv.numeroFactura}
                         </span>
 
                         {/* Badge de Estado */}
@@ -466,32 +473,19 @@ function InvoiceListView() {
                         )}
                       </div>
 
-                      {/* Fila 4: CUF (Código de Autorización) */}
+                      {/* Fila 4: Modalidad de Emisión */}
                       <div className="text-[10px] text-zinc-400 flex items-center gap-1.5 flex-wrap">
-                        <span className="font-bold text-zinc-500">CUF:</span>
-                        <span className="font-mono tabular-nums text-zinc-300 truncate max-w-xs sm:max-w-md md:max-w-lg select-all bg-[#0c0e12] px-1.5 py-0.5 rounded border border-zinc-800">
-                          {inv.cuf}
+                        <span className="font-bold text-zinc-500">Documento:</span>
+                        <span className="font-mono tabular-nums text-zinc-300 bg-[#0c0e12] px-1.5 py-0.5 rounded border border-zinc-800">
+                          Comprobante de Venta PDF (Control Comercial Interno)
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => handleCopyCUF(inv.cuf)}
-                          className="text-zinc-500 hover:text-amber-400 p-1 rounded hover:bg-zinc-800/60 transition-colors cursor-pointer"
-                          title="Copiar CUF"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        </button>
                       </div>
                     </div>
 
-                    {/* Bloque Central: Sector, Impuesto (13%) y Total */}
+                    {/* Bloque Central: Sector y Total */}
                     <div className="lg:w-48 text-left lg:text-right border-t lg:border-t-0 lg:border-l border-zinc-800/80 pt-3 lg:pt-0 lg:pl-4 space-y-0.5 flex-shrink-0">
                       <div className="text-[11px] text-zinc-400 font-medium font-mono tabular-nums">
                         Sector: <strong className="text-zinc-300">{inv.sector || 1}</strong>
-                      </div>
-                      <div className="text-[11px] text-zinc-400 font-mono tabular-nums">
-                        Impuesto (13%): <strong className="text-zinc-300">Bs. {inv.impuesto.toFixed(2)}</strong>
                       </div>
                       <div className="text-base font-black text-zinc-100 font-mono tabular-nums pt-0.5">
                         <span className="text-xs text-zinc-400 mr-1 font-normal font-sans">Total:</span>
@@ -698,7 +692,7 @@ function InvoiceListView() {
             <div className="flex justify-between items-center p-3.5 bg-[#0c0e12] rounded-xl border border-zinc-800/80 text-xs font-mono tabular-nums">
               <div className="space-y-0.5 text-zinc-400">
                 <div>Base Crédito Fiscal: <strong className="text-zinc-100">Bs. {selectedInvoice.total.toFixed(2)}</strong></div>
-                <div>Impuesto IVA (13%): <strong className="text-amber-400">Bs. {selectedInvoice.impuesto.toFixed(2)}</strong></div>
+                <div>IVA (13%): <strong className="text-amber-400">Bs. {selectedInvoice.impuesto.toFixed(2)}</strong></div>
               </div>
               <div className="text-right">
                 <span className="text-[10px] text-zinc-400 block uppercase font-sans font-bold tracking-wider">Total Facturado</span>

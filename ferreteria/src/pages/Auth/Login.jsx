@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { loginUser } from "../../services/api";
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -27,17 +28,22 @@ function Login() {
       if (res && res.user) {
         localStorage.setItem("cyc_user_session", JSON.stringify(res.user));
 
-        // Enrutamiento inteligente según el rol del usuario
+        // Enrutamiento inteligente según el rol del usuario y ruta previa intentada
         const role = (res.user.Rol || "").toLowerCase();
+        const fromPath = location.state?.from?.pathname;
+
         if (role === "cliente") {
           // Clientes van al catálogo de compras
-          navigate("/");
+          navigate("/catalogo");
+        } else if (fromPath && fromPath !== "/login") {
+          // Si el empleado intentaba acceder a una ruta protegida específica
+          navigate(fromPath, { replace: true });
         } else {
           // Administradores, Vendedores, Cajeros y Operadores van a la página de inicio
-          navigate("/home");
+          navigate("/home", { replace: true });
         }
       } else {
-        navigate("/home");
+        navigate("/home", { replace: true });
       }
     } catch (err) {
       console.error("Error al iniciar sesión:", err);
@@ -96,6 +102,16 @@ function Login() {
             </p>
           </div>
         </div>
+
+        {/* Aviso de Redirección Protegida */}
+        {location.state?.from && !errorMessage && (
+          <div className="p-3 bg-amber-500/10 border border-amber-500/25 rounded-xl text-xs text-amber-300 font-medium flex items-center gap-2.5 animate-fade-in">
+            <svg className="w-4 h-4 shrink-0 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+            <span>Sesión requerida: ingresa tus credenciales para acceder a ese módulo.</span>
+          </div>
+        )}
 
         {/* Mensaje de Error */}
         {errorMessage && (
@@ -212,7 +228,7 @@ function Login() {
             </Link>
           </div>
           <Link
-            to="/"
+            to="/catalogo"
             className="text-zinc-500 hover:text-zinc-300 font-medium transition-colors duration-160 ease-out-expo"
           >
             ← Catálogo

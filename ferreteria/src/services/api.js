@@ -2,12 +2,65 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: 'http://localhost:3000', // Apunta al puerto del backend y no incluye /api redundante
+  timeout: 25000,                   // Margen seguro para arranque inicial sin colgar la UI
 });
+
+// Interceptor de reintento automático solo ante cortes transitorios de red (no ante timeouts)
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    const isTimeout = error.code === 'ECONNABORTED';
+    const isNetworkDrop = !error.response && !isTimeout;
+    if (
+      config &&
+      isNetworkDrop &&
+      (!config.method || config.method.toLowerCase() === 'get') &&
+      config.url !== '/health'
+    ) {
+      config.__retryCount = config.__retryCount || 0;
+      if (config.__retryCount < 1) {
+        config.__retryCount += 1;
+        await new Promise((resolve) => setTimeout(resolve, 350));
+        return api(config);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Pulso Keep-Alive suave cada 60 segundos solo cuando la pestaña está visible
+let lastPingTs = 0;
+const pingBackendKeepAlive = () => {
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+  const now = Date.now();
+  if (now - lastPingTs < 30000) return;
+  lastPingTs = now;
+  api.get('/health').catch(() => {});
+};
+
+if (typeof window !== 'undefined') {
+  setInterval(pingBackendKeepAlive, 60000);
+  window.addEventListener('focus', pingBackendKeepAlive);
+}
+
+let cachedProductsList = null;
 
 // API de Productos
 export const getProducts = async () => {
-  const response = await api.get('/products');
-  return response.data;
+  try {
+    const response = await api.get('/products');
+    if (Array.isArray(response.data)) {
+      cachedProductsList = response.data;
+    }
+    return response.data;
+  } catch (error) {
+    if (cachedProductsList) {
+      console.warn('Usando respaldo en memoria de productos tras reconexión:', error.message);
+      return cachedProductsList;
+    }
+    throw error;
+  }
 };
 
 export const getProduct = async (id) => {

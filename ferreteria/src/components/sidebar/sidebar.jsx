@@ -158,14 +158,14 @@ function Sidebar({ activeItem }) {
             {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Clientes</span>}
           </Link>
 
-          {/* Opción: Facturación */}
+          {/* Opción: Comprobantes de Venta */}
           <Link
-            to="/facturacion"
-            title="Facturación"
+            to="/comprobantes"
+            title="Comprobantes"
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors duration-160 ease-out-expo ${
               isCollapsed ? 'justify-center px-0' : ''
             } ${
-              activeItem === 'facturacion' || activeItem === 'facturas' || location.pathname.includes('factura')
+              activeItem === 'facturacion' || activeItem === 'facturas' || activeItem === 'comprobantes' || location.pathname.includes('factura') || location.pathname.includes('comprobante')
                 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
                 : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50 border border-transparent'
             }`}
@@ -173,7 +173,7 @@ function Sidebar({ activeItem }) {
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
-            {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Facturación</span>}
+            {!isCollapsed && <span className="animate-fade-in whitespace-nowrap">Comprobantes</span>}
           </Link>
 
           {/* Opción: Productos (Colapsable / Desplegable - Exclusivo Administrador) */}
@@ -257,17 +257,6 @@ function Sidebar({ activeItem }) {
                   </Link>
 
                   <Link
-                    to="/almacenes"
-                    className={`w-full text-left block py-1.5 px-3 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo ${
-                      activeItem === 'productos-almacenes'
-                        ? 'text-amber-400 font-semibold bg-amber-500/10 border border-amber-500/20'
-                        : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/40'
-                    }`}
-                  >
-                    Almacenes
-                  </Link>
-
-                  <Link
                     to="/locations"
                     className={`w-full text-left block py-1.5 px-3 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo ${
                       activeItem === 'productos-ubicaciones'
@@ -276,6 +265,17 @@ function Sidebar({ activeItem }) {
                     }`}
                   >
                     Ubicaciones
+                  </Link>
+
+                  <Link
+                    to="/almacenes"
+                    className={`w-full text-left block py-1.5 px-3 rounded-lg text-xs font-medium transition-colors duration-160 ease-out-expo ${
+                      activeItem === 'productos-almacenes'
+                        ? 'text-amber-400 font-semibold bg-amber-500/10 border border-amber-500/20'
+                        : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/40'
+                    }`}
+                  >
+                    Almacenes
                   </Link>
                 </div>
               )}
@@ -324,7 +324,9 @@ function Sidebar({ activeItem }) {
               </span>
             )}
             {isCollapsed && pendingOrdersCount > 0 && (
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-400"></span>
+              <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-zinc-950 font-mono text-[9px] font-black flex items-center justify-center tabular-nums">
+                {pendingOrdersCount}
+              </span>
             )}
           </Link>
         </nav>

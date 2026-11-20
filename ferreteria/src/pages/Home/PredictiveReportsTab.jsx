@@ -51,12 +51,21 @@ function PredictiveReportsTab() {
     };
   }, [selectedProduct]);
 
-  // Sincronizar preset de sensibilidad
+  // Sincronizar preset de sensibilidad (ajusta α para SES y ventana k para SMA/WMA)
   const handleSensitivityChange = (preset) => {
     setSensitivityPreset(preset);
-    if (preset === 'CONSERVATIVE') setAlpha(0.15);
-    if (preset === 'NORMAL') setAlpha(0.30);
-    if (preset === 'FAST') setAlpha(0.60);
+    if (preset === 'CONSERVATIVE') {
+      setAlpha(0.15);
+      setWindowSize(14);
+    }
+    if (preset === 'NORMAL') {
+      setAlpha(0.30);
+      setWindowSize(7);
+    }
+    if (preset === 'FAST') {
+      setAlpha(0.60);
+      setWindowSize(3);
+    }
   };
 
   // Cargar datos
@@ -883,7 +892,12 @@ function PredictiveReportsTab() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 text-xs">
           {/* 1. Modo de Cálculo */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-zinc-300 block">Método de proyección</label>
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-zinc-300 block">1. Método de proyección</label>
+              <span className="font-mono text-[10px] text-amber-400/90 tabular-nums">
+                {model === 'SES' ? 'Suavizado Exponencial' : model === 'SMA' ? 'Promedio Simple' : 'Promedio Ponderado'}
+              </span>
+            </div>
             <div className="grid grid-cols-3 gap-1 bg-[#0c0e12] p-1 rounded-xl border border-zinc-800">
               <button
                 type="button"
@@ -916,62 +930,98 @@ function PredictiveReportsTab() {
                 <span className="font-mono text-[9px] opacity-80 font-normal">WMA</span>
               </button>
             </div>
+            <p className="text-[11px] text-zinc-400 leading-snug pt-0.5">
+              {model === 'SES' && 'Recomendado: combina las ventas recientes con el historial general para adaptarse a cambios.'}
+              {model === 'SMA' && 'Calcula el promedio simple de los últimos días por igual. Ideal para productos de venta fija.'}
+              {model === 'WMA' && 'Da más importancia a las ventas de ayer y hoy que a las de principios de semana.'}
+            </p>
           </div>
 
           {/* 2. Sensibilidad a Cambios */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-zinc-300 block">Sensibilidad ante variaciones</label>
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-zinc-300 block">2. Sensibilidad ante variaciones</label>
+              <span className="font-mono text-[10px] text-zinc-400 tabular-nums">
+                {model === 'SES' ? `α = ${alpha.toFixed(2)}` : `Ventana k = ${windowSize}d`}
+              </span>
+            </div>
             <div className="grid grid-cols-3 gap-1 bg-[#0c0e12] p-1 rounded-xl border border-zinc-800">
               <button
                 type="button"
                 onClick={() => handleSensitivityChange('CONSERVATIVE')}
-                className={`py-2 px-1 rounded-lg font-semibold text-[11px] transition-colors duration-160 ease-out-expo btn-press flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`py-2 px-1 rounded-lg font-semibold text-[11px] transition-colors duration-160 ease-out-expo btn-press flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                   sensitivityPreset === 'CONSERVATIVE'
                     ? 'bg-zinc-800 text-amber-400 border border-amber-500/30'
                     : 'text-zinc-400 hover:text-zinc-100'
                 }`}
               >
                 <span>Conservadora</span>
+                <span className="font-mono text-[9px] opacity-75 font-normal">{model === 'SES' ? 'α 0.15' : '14 días'}</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleSensitivityChange('NORMAL')}
-                className={`py-2 px-1 rounded-lg font-semibold text-[11px] transition-colors duration-160 ease-out-expo btn-press flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`py-2 px-1 rounded-lg font-semibold text-[11px] transition-colors duration-160 ease-out-expo btn-press flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                   sensitivityPreset === 'NORMAL'
                     ? 'bg-zinc-800 text-amber-400 border border-amber-500/30'
                     : 'text-zinc-400 hover:text-zinc-100'
                 }`}
               >
                 <span>Normal</span>
+                <span className="font-mono text-[9px] opacity-75 font-normal">{model === 'SES' ? 'α 0.30' : '7 días'}</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleSensitivityChange('FAST')}
-                className={`py-2 px-1 rounded-lg font-semibold text-[11px] transition-colors duration-160 ease-out-expo btn-press flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`py-2 px-1 rounded-lg font-semibold text-[11px] transition-colors duration-160 ease-out-expo btn-press flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                   sensitivityPreset === 'FAST'
                     ? 'bg-zinc-800 text-amber-400 border border-amber-500/30'
                     : 'text-zinc-400 hover:text-zinc-100'
                 }`}
               >
                 <span>Reactiva</span>
+                <span className="font-mono text-[9px] opacity-75 font-normal">{model === 'SES' ? 'α 0.60' : '3 días'}</span>
               </button>
             </div>
+            <p className="text-[11px] text-zinc-400 leading-snug pt-0.5">
+              {sensitivityPreset === 'CONSERVATIVE' && 'Ignora picos de venta de un solo día para evitar comprar mercadería de más.'}
+              {sensitivityPreset === 'NORMAL' && 'Equilibrio estándar entre las ventas de esta semana y el promedio del mes.'}
+              {sensitivityPreset === 'FAST' && 'Reacciona rápido si un producto empieza a venderse mucho en los últimos días.'}
+            </p>
           </div>
 
           {/* 3. Horizonte de Tiempo */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-zinc-300 block">Horizonte de planificación</label>
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-zinc-300 block">3. Horizonte de planificación</label>
+              <span className="font-mono text-[10px] text-zinc-400 tabular-nums">
+                Cobertura: {horizonDays} días
+              </span>
+            </div>
             <select
               value={horizonDays}
               onChange={(e) => setHorizonDays(parseInt(e.target.value))}
-              className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-zinc-200 font-semibold outline-none focus:border-amber-500/70 transition-colors duration-160 ease-out-expo cursor-pointer"
+              className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-3 text-zinc-200 font-semibold outline-none focus:border-amber-500/70 transition-colors duration-160 ease-out-expo cursor-pointer"
             >
               <option value="7">Próximos 7 días (Reposición semanal)</option>
               <option value="15">Próximos 15 días (Reposición quincenal)</option>
               <option value="30">Próximos 30 días (Mes completo — Recomendado)</option>
               <option value="60">Próximos 60 días (Plan bimestral)</option>
             </select>
+            <p className="text-[11px] text-zinc-400 leading-snug pt-0.5">
+              Calcula cuántas unidades comprar hoy y cuánto dinero invertir para cubrir los próximos <span className="text-zinc-200 font-mono tabular-nums font-semibold">{horizonDays} días</span>.
+            </p>
           </div>
+        </div>
+
+        {/* Nota de alcance de los controles */}
+        <div className="pt-2 border-t border-zinc-800/70 flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-400">
+          <span>
+            Al cambiar cualquier opción arriba se recalculan automáticamente: <strong className="text-zinc-200 font-semibold">las 4 tarjetas de resumen</strong>, <strong className="text-zinc-200 font-semibold">la curva de la gráfica</strong> y <strong className="text-zinc-200 font-semibold">las compras sugeridas de la tabla</strong>.
+          </span>
+          <span className="font-mono text-[10px] text-zinc-500 tabular-nums">
+            Base histórica analizada: últimos 60 días
+          </span>
         </div>
       </div>
 

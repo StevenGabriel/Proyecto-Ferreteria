@@ -4,6 +4,7 @@ import { getBrands, createBrand, updateBrand, deleteBrand } from "../../services
 import Sidebar from "../../components/sidebar/sidebar";
 import Topbar from "../../components/topbar/topbar";
 import { useSidebar } from "../../context/SidebarContext";
+import { validateTextField } from "../../utils/validators";
 
 function BrandView() {
     const { isCollapsed } = useSidebar();
@@ -128,14 +129,31 @@ function BrandView() {
 
     const handleUpsertSubmit = (e) => {
         e.preventDefault();
-        if (!nombre.trim()) {
-            setFormError("El nombre de la marca es obligatorio.");
+        const nombreError = validateTextField(nombre, {
+            label: "El nombre de la marca",
+            required: true,
+            minLength: 3,
+            minLetters: 2
+        });
+        if (nombreError) {
+            setFormError(nombreError);
+            return;
+        }
+
+        const descError = validateTextField(descripcion, {
+            label: "La descripción",
+            required: false,
+            minLength: 3,
+            minLetters: 2
+        });
+        if (descError) {
+            setFormError(descError);
             return;
         }
 
         const brandData = {
-            Nombre: nombre,
-            Descripcion: descripcion
+            Nombre: nombre.trim(),
+            Descripcion: descripcion.trim()
         };
 
         if (upsertMode === "create") {
@@ -463,6 +481,7 @@ function BrandView() {
                                 </label>
                                 <input
                                     type="text"
+                                    minLength={3}
                                     placeholder="Escribe el nombre de la marca"
                                     value={nombre}
                                     onChange={(e) => setNombre(e.target.value)}

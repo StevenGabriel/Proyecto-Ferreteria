@@ -4,6 +4,12 @@ import { createProduct, getBrands, getLocations, getCategories, getUnits, upload
 import Sidebar from "../../components/sidebar/sidebar";
 import Topbar from "../../components/topbar/topbar";
 import { useSidebar } from "../../context/SidebarContext";
+import {
+  blockNegativeNumberKeyDown,
+  sanitizeDigitsOnly,
+  sanitizePositiveNumberInput,
+  validateTextField
+} from "../../utils/validators";
 
 function ProductRegisterForm() {
   const navigate = useNavigate();
@@ -169,8 +175,9 @@ function ProductRegisterForm() {
 
   // Lógica de cálculo inteligente de precios (ERP)
   const handlePrecioCompraChange = (val) => {
-    setPrecioCompra(val);
-    const cost = parseFloat(val);
+    const clean = sanitizePositiveNumberInput(val);
+    setPrecioCompra(clean);
+    const cost = parseFloat(clean);
     const pct = parseFloat(Margen);
     if (!isNaN(cost) && !isNaN(pct)) {
       const pConFactura = cost * (1 + pct / 100);
@@ -180,9 +187,10 @@ function ProductRegisterForm() {
   };
 
   const handleMargenChange = (val) => {
-    setMargen(val);
+    const clean = sanitizePositiveNumberInput(val);
+    setMargen(clean);
     const cost = parseFloat(PrecioCompra);
-    const pct = parseFloat(val);
+    const pct = parseFloat(clean);
     if (!isNaN(cost) && !isNaN(pct)) {
       const pConFactura = cost * (1 + pct / 100);
       setPrecio(pConFactura.toFixed(2));
@@ -191,11 +199,12 @@ function ProductRegisterForm() {
   };
 
   const handlePrecioVentaChange = (val) => {
-    setPrecio(val);
+    const clean = sanitizePositiveNumberInput(val);
+    setPrecio(clean);
     const cost = parseFloat(PrecioCompra);
-    const sell = parseFloat(val);
+    const sell = parseFloat(clean);
     if (!isNaN(cost) && !isNaN(sell) && cost > 0) {
-      setMargen((((sell - cost) / cost) * 100).toFixed(2));
+      setMargen(Math.max(0, ((sell - cost) / cost) * 100).toFixed(2));
     }
   };
 
@@ -220,8 +229,28 @@ function ProductRegisterForm() {
     setErrorMessage("");
     setSuccessMessage("");
 
-    if (!Nombre.trim()) {
-      setErrorMessage("El nombre del producto es obligatorio.");
+    const nombreErr = validateTextField(Nombre, {
+      label: "El nombre del producto",
+      required: true,
+      minLength: 3,
+      minLetters: 2
+    });
+    if (nombreErr) {
+      setErrorMessage(nombreErr);
+      return;
+    }
+    if (CodigoBarras.trim() && CodigoBarras.trim().length < 3) {
+      setErrorMessage("El SKU / Código de Barras debe tener al menos 3 caracteres.");
+      return;
+    }
+    const descErr = validateTextField(Descripcion, {
+      label: "La descripción",
+      required: false,
+      minLength: 3,
+      minLetters: 2
+    });
+    if (descErr) {
+      setErrorMessage(descErr);
       return;
     }
     if (!UnidadID) {
@@ -242,6 +271,10 @@ function ProductRegisterForm() {
     }
     if (!Precio || isNaN(parseFloat(Precio)) || parseFloat(Precio) <= 0) {
       setErrorMessage("Debes especificar un Precio Con Factura válido y mayor a 0.");
+      return;
+    }
+    if (PrecioSinFactura !== "" && (isNaN(parseFloat(PrecioSinFactura)) || parseFloat(PrecioSinFactura) < 0)) {
+      setErrorMessage("El precio sin factura no puede ser un valor negativo.");
       return;
     }
     if (PrecioCompra && (isNaN(parseFloat(PrecioCompra)) || parseFloat(PrecioCompra) < 0)) {
@@ -278,13 +311,13 @@ function ProductRegisterForm() {
     }
 
     const productData = {
-      Nombre,
-      Descripcion: Descripcion ? Descripcion : null,
+      Nombre: Nombre.trim(),
+      Descripcion: Descripcion.trim() ? Descripcion.trim() : null,
       Precio: parseFloat(Precio),
       PrecioSinFactura: PrecioSinFactura ? parseFloat(PrecioSinFactura) : null,
       Stock: 0,
       FechaVencimiento: null,
-      CodigoBarras: CodigoBarras ? CodigoBarras : null,
+      CodigoBarras: CodigoBarras.trim() ? CodigoBarras.trim() : null,
       MarcaID: parseInt(MarcaID),
       UbicacionID: parseInt(UbicacionID),
       UnidadID: parseInt(UnidadID),
@@ -411,9 +444,10 @@ function ProductRegisterForm() {
                   </label>
                   <input
                     type="text"
+                    minLength={3}
                     value={Nombre}
                     onChange={(e) => setNombre(e.target.value)}
-                    placeholder="..."
+                    placeholder="Ej. Taladro Percutor 750W"
                     className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl focus:border-amber-500/60 text-zinc-100 placeholder-zinc-600 outline-none w-full p-3 transition-colors duration-150 text-sm font-medium"
                     required
                   />
@@ -425,9 +459,10 @@ function ProductRegisterForm() {
                   </label>
                   <input
                     type="text"
+                    minLength={3}
                     value={CodigoBarras}
                     onChange={(e) => setCodigoBarras(e.target.value)}
-                    placeholder="..."
+                    placeholder="Ej. FER-00124"
                     className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl focus:border-amber-500/60 text-zinc-100 placeholder-zinc-600 outline-none w-full p-3 transition-colors duration-150 text-sm font-mono tabular-nums font-medium"
                   />
                 </div>
@@ -457,7 +492,8 @@ function ProductRegisterForm() {
                     type="number"
                     min="1"
                     value={LoteMinimo}
-                    onChange={(e) => setLoteMinimo(e.target.value)}
+                    onKeyDown={blockNegativeNumberKeyDown}
+                    onChange={(e) => setLoteMinimo(sanitizeDigitsOnly(e.target.value))}
                     placeholder="Ej. 5"
                     className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl focus:border-amber-500/60 text-amber-400 font-mono tabular-nums font-bold placeholder-zinc-600 outline-none w-full p-3 transition-colors duration-150 text-sm"
                   />
@@ -614,7 +650,8 @@ function ProductRegisterForm() {
                           min="1"
                           max="365"
                           value={DiasAlertaCaducidad}
-                          onChange={(e) => setDiasAlertaCaducidad(e.target.value)}
+                          onKeyDown={blockNegativeNumberKeyDown}
+                          onChange={(e) => setDiasAlertaCaducidad(sanitizeDigitsOnly(e.target.value, 3))}
                           className="w-28 px-3 py-2 bg-[#12151c] border border-zinc-800 rounded-xl text-zinc-100 font-mono tabular-nums font-bold text-xs outline-none focus:border-amber-500/60 transition-colors duration-150"
                         />
                         <span className="text-zinc-400 font-semibold">días de anticipación en el semáforo</span>
@@ -633,16 +670,15 @@ function ProductRegisterForm() {
 
               <div className="bg-[#0c0e12] border border-zinc-800/80 rounded-2xl overflow-hidden">
                 {/* Cabecera Técnica estilo ERP */}
-                <div className="bg-[#12151c] border-b border-zinc-800/80 px-6 py-3 text-zinc-300 font-extrabold text-xs uppercase tracking-wider grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="bg-[#12151c] border-b border-zinc-800/80 px-6 py-3 text-zinc-300 font-extrabold text-xs uppercase tracking-wider grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>Precio Compra (Costo)</div>
                   <div>x Margen (%)</div>
-                  <div>Precio Con Factura *</div>
-                  <div>Precio Sin Factura</div>
+                  <div>Precio de Venta (Bs.) *</div>
                   <div>Imagen del producto (JPG/PNG)</div>
                 </div>
 
                 {/* Cuerpo del Calculador ERP */}
-                <div className="p-6 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                <div className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
                   {/* Precio de Compra */}
                   <div>
                     <label className="block mb-1.5 text-[10px] font-extrabold text-zinc-400 uppercase">
@@ -650,9 +686,11 @@ function ProductRegisterForm() {
                     </label>
                     <input
                       type="number"
+                      min="0"
                       step="0.01"
                       placeholder="0.00"
                       value={PrecioCompra}
+                      onKeyDown={blockNegativeNumberKeyDown}
                       onChange={(e) => handlePrecioCompraChange(e.target.value)}
                       className="bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2.5 text-sm text-zinc-100 font-mono tabular-nums font-bold outline-none focus:border-amber-500/60 transition-colors duration-150 w-full"
                     />
@@ -665,42 +703,31 @@ function ProductRegisterForm() {
                     </label>
                     <input
                       type="number"
+                      min="0"
                       step="0.01"
                       placeholder="25.00"
                       value={Margen}
+                      onKeyDown={blockNegativeNumberKeyDown}
                       onChange={(e) => handleMargenChange(e.target.value)}
                       className="bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2.5 text-sm text-emerald-400 font-mono tabular-nums font-bold outline-none focus:border-emerald-500/60 transition-colors duration-150 w-full"
                     />
                   </div>
 
-                  {/* Precio Con Factura */}
+                  {/* Precio de Venta */}
                   <div>
                     <label className="block mb-1.5 text-[10px] font-extrabold text-amber-400 uppercase">
-                      Con Factura (Bs.) *
+                      Precio Venta (Bs.) *
                     </label>
                     <input
                       type="number"
+                      min="0.01"
                       step="0.01"
                       placeholder="0.00"
                       value={Precio}
+                      onKeyDown={blockNegativeNumberKeyDown}
                       onChange={(e) => handlePrecioVentaChange(e.target.value)}
                       className="bg-[#12151c] border border-amber-500/40 rounded-xl px-3 py-2.5 text-base text-amber-400 font-mono tabular-nums font-extrabold outline-none focus:border-amber-500 transition-colors duration-150 w-full"
                       required
-                    />
-                  </div>
-
-                  {/* Precio Sin Factura */}
-                  <div>
-                    <label className="block mb-1.5 text-[10px] font-extrabold text-zinc-300 uppercase">
-                      Sin Factura (Bs.)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={PrecioSinFactura}
-                      onChange={(e) => setPrecioSinFactura(e.target.value)}
-                      className="bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2.5 text-base text-zinc-200 font-mono tabular-nums font-extrabold outline-none focus:border-amber-500/60 transition-colors duration-150 w-full"
                     />
                   </div>
 

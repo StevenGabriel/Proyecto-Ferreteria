@@ -44,6 +44,8 @@ function UserManagement() {
     primerApellido: "",
     segundoApellido: "",
     ciNit: "",
+    tieneComplemento: false,
+    ciComplemento: "",
     telefono: "",
     direccion: "",
     rol: "Vendedor",
@@ -56,6 +58,8 @@ function UserManagement() {
     primerApellido: "",
     segundoApellido: "",
     ciNit: "",
+    tieneComplemento: false,
+    ciComplemento: "",
     telefono: "",
     direccion: "",
     rol: "Vendedor",
@@ -95,35 +99,123 @@ function UserManagement() {
     fetchEmployees();
   }, []);
 
+  // Sanitizadores en tiempo real para bloquear caracteres inválidos al escribir
+  const sanitizeTextOnly = (val) => val.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "");
+  const sanitizeDigitsOnly = (val, maxLen = 10) => val.replace(/\D/g, "").slice(0, maxLen);
+  const sanitizeComplemento = (val) => val.toUpperCase().replace(/[^0-9A-Z]/g, "").slice(0, 2);
+
+  // Armar cadena completa de CI para guardar en BD (ej. "14147585-2B")
+  const buildCiForDb = (data) => {
+    const baseNum = (data.ciNit || "").trim();
+    if (!baseNum) return "";
+    const comp = data.tieneComplemento && (data.ciComplemento || "").trim()
+      ? `-${data.ciComplemento.trim().toUpperCase()}`
+      : "";
+    return `${baseNum}${comp}`.trim();
+  };
+
+  // Separar cadena de CI guardada en BD al abrir modal de edición
+  const parseCiFromDb = (rawCi) => {
+    const raw = (rawCi || "").trim().toUpperCase();
+    if (!raw) {
+      return { ciNit: "", tieneComplemento: false, ciComplemento: "" };
+    }
+    const mainPart = raw.split(/\s+/)[0] || "";
+    const [numPart, compPart] = mainPart.split("-");
+    const cleanNum = (numPart || "").replace(/\D/g, "").slice(0, 10);
+    const cleanComp = (compPart || "").replace(/[^0-9A-Z]/g, "").slice(0, 2);
+
+    return {
+      ciNit: cleanNum,
+      tieneComplemento: Boolean(cleanComp),
+      ciComplemento: cleanComp
+    };
+  };
+
+  // Validador compartido para Crear y Editar Operador
+  const validateEmployeeFields = (data) => {
+    const lettersRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
+    const nombreClean = (data.nombre || "").trim();
+    const primerApClean = (data.primerApellido || "").trim();
+    const segundoApClean = (data.segundoApellido || "").trim();
+    const ciClean = (data.ciNit || "").trim();
+    const compClean = (data.ciComplemento || "").trim().toUpperCase();
+    const telClean = (data.telefono || "").trim();
+    const dirClean = (data.direccion || "").trim();
+    const correoClean = (data.correo || "").trim();
+
+    if (!nombreClean || !primerApClean || !correoClean || !data.rol) {
+      return "Por favor completa todos los campos obligatorios (*).";
+    }
+
+    if (nombreClean.length < 3 || !lettersRegex.test(nombreClean)) {
+      return "El Nombre debe tener al menos 3 letras y no puede contener números ni símbolos.";
+    }
+
+    if (primerApClean.length < 3 || !lettersRegex.test(primerApClean)) {
+      return "El Primer Apellido debe tener al menos 3 letras y no puede contener números ni símbolos.";
+    }
+
+    if (segundoApClean && (segundoApClean.length < 3 || !lettersRegex.test(segundoApClean))) {
+      return "El Segundo Apellido debe tener al menos 3 letras y no puede contener números ni símbolos.";
+    }
+
+    if (ciClean) {
+      if (!/^[1-9][0-9]{4,9}$/.test(ciClean)) {
+        return "El número de CI debe contener únicamente números (entre 5 y 10 dígitos, sin letras ni iniciar en 0).";
+      }
+      if (data.tieneComplemento) {
+        if (!/^[0-9A-Z]{2}$/.test(compClean)) {
+          return "El complemento del CI debe tener exactamente 2 caracteres alfanuméricos (ej. 2B).";
+        }
+      }
+    } else if (data.tieneComplemento) {
+      return "Ingresa primero el número de CI antes de agregar un complemento.";
+    }
+
+    if (telClean) {
+      if (!/^[23467][0-9]{6,7}$/.test(telClean)) {
+        return "El Teléfono debe contener solo números (7 u 8 dígitos válidos en Bolivia, ej. 72271495).";
+      }
+    }
+
+    if (dirClean) {
+      if (dirClean.length < 3 || !/[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]{3,}/.test(dirClean)) {
+        return "La Dirección Domiciliaria debe tener al menos 3 letras válidas (no puede ser solo números).";
+      }
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(correoClean)) {
+      return "Por favor ingresa un correo electrónico válido (ej. usuario@dominio.com).";
+    }
+
+    return null;
+  };
+
   // Manejar Registro de Nuevo Empleado con Invitación Automática
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     setModalError("");
 
-    if (!formData.nombre || !formData.primerApellido || !formData.correo || !formData.rol) {
-      setModalError("Por favor completa los campos obligatorios (*).");
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.correo.trim())) {
-      setModalError("Por favor ingresa un correo electrónico válido (ej. usuario@dominio.com).");
-      return;
-    }
-
-    if (formData.ciNit && formData.ciNit.trim().length < 5) {
-      setModalError("El documento CI/NIT debe tener al menos 5 dígitos.");
-      return;
-    }
-
-    if (formData.telefono && !/^[0-9+ -]{7,15}$/.test(formData.telefono.trim())) {
-      setModalError("El número de teléfono o celular debe tener al menos 7 dígitos válidos.");
+    const validationError = validateEmployeeFields(formData);
+    if (validationError) {
+      setModalError(validationError);
       return;
     }
 
     try {
       setModalLoading(true);
-      const res = await createEmployee(formData);
+      const res = await createEmployee({
+        ...formData,
+        nombre: formData.nombre.trim(),
+        primerApellido: formData.primerApellido.trim(),
+        segundoApellido: formData.segundoApellido.trim(),
+        ciNit: buildCiForDb(formData),
+        telefono: formData.telefono.trim(),
+        direccion: formData.direccion.trim(),
+        correo: formData.correo.trim()
+      });
       showToast(res.message || "Operador registrado. Se envió el correo de activación con sus credenciales.");
       setIsCreateModalOpen(false);
       setFormData({
@@ -131,6 +223,8 @@ function UserManagement() {
         primerApellido: "",
         segundoApellido: "",
         ciNit: "",
+        tieneComplemento: false,
+        ciComplemento: "",
         telefono: "",
         direccion: "",
         rol: "Vendedor",
@@ -148,11 +242,14 @@ function UserManagement() {
   // Abrir Modal de Edición
   const handleOpenEdit = (emp) => {
     setSelectedEmployee(emp);
+    const parsedCi = parseCiFromDb(emp.Persona?.CI_NIT);
     setEditFormData({
       nombre: emp.Persona?.Nombre || "",
       primerApellido: emp.Persona?.PrimerApellido || "",
       segundoApellido: emp.Persona?.SegundoApellido || "",
-      ciNit: emp.Persona?.CI_NIT || "",
+      ciNit: parsedCi.ciNit,
+      tieneComplemento: parsedCi.tieneComplemento,
+      ciComplemento: parsedCi.ciComplemento,
       telefono: emp.Persona?.Telefono || "",
       direccion: emp.Direccion || "",
       rol: emp.CuentaUsuario?.Rol || "Vendedor",
@@ -167,31 +264,25 @@ function UserManagement() {
     e.preventDefault();
     if (!selectedEmployee) return;
 
-    if (!editFormData.nombre.trim() || !editFormData.primerApellido.trim() || !editFormData.rol) {
-      setModalError("Por favor completa los campos obligatorios (*).");
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (editFormData.correo && !emailRegex.test(editFormData.correo.trim())) {
-      setModalError("Por favor ingresa un correo electrónico válido.");
-      return;
-    }
-
-    if (editFormData.ciNit && editFormData.ciNit.trim().length < 5) {
-      setModalError("El documento CI/NIT debe tener al menos 5 dígitos.");
-      return;
-    }
-
-    if (editFormData.telefono && !/^[0-9+ -]{7,15}$/.test(editFormData.telefono.trim())) {
-      setModalError("El número de teléfono o celular debe tener al menos 7 dígitos válidos.");
+    const validationError = validateEmployeeFields(editFormData);
+    if (validationError) {
+      setModalError(validationError);
       return;
     }
 
     try {
       setModalLoading(true);
       setModalError("");
-      await updateEmployee(selectedEmployee.EmpleadoID, editFormData);
+      await updateEmployee(selectedEmployee.EmpleadoID, {
+        ...editFormData,
+        nombre: editFormData.nombre.trim(),
+        primerApellido: editFormData.primerApellido.trim(),
+        segundoApellido: editFormData.segundoApellido.trim(),
+        ciNit: buildCiForDb(editFormData),
+        telefono: editFormData.telefono.trim(),
+        direccion: editFormData.direccion.trim(),
+        correo: editFormData.correo.trim()
+      });
       showToast("Datos de empleado actualizados.");
       setIsEditModalOpen(false);
       fetchEmployees();
@@ -470,7 +561,7 @@ function UserManagement() {
               </span>
               <input
                 type="text"
-                placeholder="Buscar por nombre, correo o CI/NIT..."
+                placeholder="Buscar por nombre, correo o CI..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl pl-10 pr-4 py-2 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500/60 transition-colors"
@@ -685,15 +776,17 @@ function UserManagement() {
             )}
 
             <form onSubmit={handleCreateSubmit} className="space-y-4">
-              {/* Nombres */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Nombres y Apellidos */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs font-bold text-zinc-300 block mb-1">Nombre *</label>
                   <input
                     type="text"
                     required
+                    minLength={3}
+                    maxLength={50}
                     value={formData.nombre}
-                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, nombre: sanitizeTextOnly(e.target.value) })}
                     placeholder="Ej. Oscar"
                     className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                   />
@@ -703,58 +796,106 @@ function UserManagement() {
                   <input
                     type="text"
                     required
+                    minLength={3}
+                    maxLength={50}
                     value={formData.primerApellido}
-                    onChange={(e) => setFormData({ ...formData, primerApellido: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, primerApellido: sanitizeTextOnly(e.target.value) })}
                     placeholder="Ej. Claros"
                     className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
-              </div>
-
-              {/* Segundo Apellido, CI, Teléfono */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs font-bold text-zinc-300 block mb-1">Segundo Apellido</label>
                   <input
                     type="text"
+                    minLength={3}
+                    maxLength={50}
                     value={formData.segundoApellido}
-                    onChange={(e) => setFormData({ ...formData, segundoApellido: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, segundoApellido: sanitizeTextOnly(e.target.value) })}
                     placeholder="Ej. Davalos"
                     className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-zinc-300 block mb-1">CI / NIT</label>
+              </div>
+
+              {/* CI y Complemento (2 caracteres con checkbox) */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                {/* Número de CI */}
+                <div className="sm:col-span-7">
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">CI (Solo números)</label>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    minLength={5}
+                    maxLength={10}
                     value={formData.ciNit}
-                    onChange={(e) => setFormData({ ...formData, ciNit: e.target.value })}
-                    placeholder="Ej. 9895300"
+                    onChange={(e) => setFormData({ ...formData, ciNit: sanitizeDigitsOnly(e.target.value, 10) })}
+                    placeholder="Ej. 14147585"
                     className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-zinc-300 block mb-1">Teléfono</label>
+
+                {/* Checkbox + Casilla de Complemento (2 caracteres) */}
+                <div className="sm:col-span-5">
+                  <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5 mb-1 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={formData.tieneComplemento}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          tieneComplemento: e.target.checked,
+                          ciComplemento: e.target.checked ? formData.ciComplemento : ""
+                        })
+                      }
+                      className="rounded border-zinc-700 bg-[#0c0e12] accent-amber-500 w-3.5 h-3.5 cursor-pointer"
+                    />
+                    <span>Complemento (opcional)</span>
+                  </label>
                   <input
-                    type="tel"
-                    value={formData.telefono}
-                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                    placeholder="Ej. 67524675"
-                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
+                    type="text"
+                    disabled={!formData.tieneComplemento}
+                    maxLength={2}
+                    value={formData.ciComplemento}
+                    onChange={(e) => setFormData({ ...formData, ciComplemento: sanitizeComplemento(e.target.value) })}
+                    placeholder={formData.tieneComplemento ? "Ej. 2B" : "—"}
+                    className={`w-full border rounded-xl px-3 py-2 text-xs font-mono uppercase tabular-nums text-center outline-none transition-colors ${
+                      formData.tieneComplemento
+                        ? "bg-[#0c0e12] border-amber-500/50 text-amber-300 focus:border-amber-400"
+                        : "bg-zinc-900/50 border-zinc-800/60 text-zinc-600 cursor-not-allowed"
+                    }`}
                   />
                 </div>
               </div>
 
-              {/* Dirección */}
-              <div>
-                <label className="text-xs font-bold text-zinc-300 block mb-1">Dirección Domiciliaria</label>
-                <input
-                  type="text"
-                  value={formData.direccion}
-                  onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                  placeholder="Ej. Av. Blanco Galindo Km 5, Cochabamba"
-                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
-                />
+              {/* Teléfono y Dirección Domiciliaria */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                <div className="sm:col-span-4">
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Teléfono</label>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    minLength={7}
+                    maxLength={8}
+                    value={formData.telefono}
+                    onChange={(e) => setFormData({ ...formData, telefono: sanitizeDigitsOnly(e.target.value, 8) })}
+                    placeholder="Ej. 67524675"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
+                  />
+                </div>
+
+                <div className="sm:col-span-8">
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Dirección Domiciliaria</label>
+                  <input
+                    type="text"
+                    minLength={3}
+                    maxLength={120}
+                    value={formData.direccion}
+                    onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                    placeholder="Ej. Av. Blanco Galindo Km 5, Cochabamba"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
+                  />
+                </div>
               </div>
 
               {/* Correo y Rol */}
@@ -852,15 +993,17 @@ function UserManagement() {
             )}
 
             <form onSubmit={handleEditSubmit} className="space-y-4">
-              {/* Nombres */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Nombres y Apellidos */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs font-bold text-zinc-300 block mb-1">Nombre *</label>
                   <input
                     type="text"
                     required
+                    minLength={3}
+                    maxLength={50}
                     value={editFormData.nombre}
-                    onChange={(e) => setEditFormData({ ...editFormData, nombre: e.target.value })}
+                    onChange={(e) => setEditFormData({ ...editFormData, nombre: sanitizeTextOnly(e.target.value) })}
                     className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
@@ -869,54 +1012,104 @@ function UserManagement() {
                   <input
                     type="text"
                     required
+                    minLength={3}
+                    maxLength={50}
                     value={editFormData.primerApellido}
-                    onChange={(e) => setEditFormData({ ...editFormData, primerApellido: e.target.value })}
+                    onChange={(e) => setEditFormData({ ...editFormData, primerApellido: sanitizeTextOnly(e.target.value) })}
                     className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
-              </div>
-
-              {/* Segundo Apellido, CI, Teléfono */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs font-bold text-zinc-300 block mb-1">Segundo Apellido</label>
                   <input
                     type="text"
+                    minLength={3}
+                    maxLength={50}
                     value={editFormData.segundoApellido}
-                    onChange={(e) => setEditFormData({ ...editFormData, segundoApellido: e.target.value })}
+                    onChange={(e) => setEditFormData({ ...editFormData, segundoApellido: sanitizeTextOnly(e.target.value) })}
                     className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-zinc-300 block mb-1">CI / NIT</label>
-                  <input
-                    type="text"
-                    value={editFormData.ciNit}
-                    onChange={(e) => setEditFormData({ ...editFormData, ciNit: e.target.value })}
-                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-zinc-300 block mb-1">Teléfono</label>
-                  <input
-                    type="tel"
-                    value={editFormData.telefono}
-                    onChange={(e) => setEditFormData({ ...editFormData, telefono: e.target.value })}
-                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
               </div>
 
-              {/* Dirección */}
-              <div>
-                <label className="text-xs font-bold text-zinc-300 block mb-1">Dirección Domiciliaria</label>
-                <input
-                  type="text"
-                  value={editFormData.direccion}
-                  onChange={(e) => setEditFormData({ ...editFormData, direccion: e.target.value })}
-                  placeholder="Ej. Av. Blanco Galindo Km 5, Cochabamba"
-                  className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
-                />
+              {/* CI y Complemento (2 caracteres con checkbox) */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                {/* Número de CI */}
+                <div className="sm:col-span-7">
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">CI (Solo números)</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    minLength={5}
+                    maxLength={10}
+                    value={editFormData.ciNit}
+                    onChange={(e) => setEditFormData({ ...editFormData, ciNit: sanitizeDigitsOnly(e.target.value, 10) })}
+                    placeholder="Ej. 14147585"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
+                  />
+                </div>
+
+                {/* Checkbox + Casilla de Complemento (2 caracteres) */}
+                <div className="sm:col-span-5">
+                  <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5 mb-1 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={editFormData.tieneComplemento}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          tieneComplemento: e.target.checked,
+                          ciComplemento: e.target.checked ? editFormData.ciComplemento : ""
+                        })
+                      }
+                      className="rounded border-zinc-700 bg-[#0c0e12] accent-amber-500 w-3.5 h-3.5 cursor-pointer"
+                    />
+                    <span>Complemento (opcional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    disabled={!editFormData.tieneComplemento}
+                    maxLength={2}
+                    value={editFormData.ciComplemento}
+                    onChange={(e) => setEditFormData({ ...editFormData, ciComplemento: sanitizeComplemento(e.target.value) })}
+                    placeholder={editFormData.tieneComplemento ? "Ej. 2B" : "—"}
+                    className={`w-full border rounded-xl px-3 py-2 text-xs font-mono uppercase tabular-nums text-center outline-none transition-colors ${
+                      editFormData.tieneComplemento
+                        ? "bg-[#0c0e12] border-amber-500/50 text-amber-300 focus:border-amber-400"
+                        : "bg-zinc-900/50 border-zinc-800/60 text-zinc-600 cursor-not-allowed"
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Teléfono y Dirección Domiciliaria */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                <div className="sm:col-span-4">
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Teléfono</label>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    minLength={7}
+                    maxLength={8}
+                    value={editFormData.telefono}
+                    onChange={(e) => setEditFormData({ ...editFormData, telefono: sanitizeDigitsOnly(e.target.value, 8) })}
+                    placeholder="Ej. 67524675"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
+                  />
+                </div>
+
+                <div className="sm:col-span-8">
+                  <label className="text-xs font-bold text-zinc-300 block mb-1">Dirección Domiciliaria</label>
+                  <input
+                    type="text"
+                    minLength={3}
+                    maxLength={120}
+                    value={editFormData.direccion}
+                    onChange={(e) => setEditFormData({ ...editFormData, direccion: e.target.value })}
+                    placeholder="Ej. Av. Blanco Galindo Km 5, Cochabamba"
+                    className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500/60 transition-colors"
+                  />
+                </div>
               </div>
 
               {/* Correo y Rol */}
@@ -1228,7 +1421,7 @@ function UserManagement() {
                 <span className="font-mono text-zinc-300">{employeeToDelete.CuentaUsuario?.Correo || "N/A"}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-zinc-500 font-semibold">CI / NIT:</span>
+                <span className="text-zinc-500 font-semibold">CI:</span>
                 <span className="font-mono tabular-nums text-zinc-300">{employeeToDelete.Persona?.CI_NIT || "N/A"}</span>
               </div>
               <div className="flex items-center justify-between">

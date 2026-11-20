@@ -4,6 +4,12 @@ import { getProduct, updateProduct, getBrands, getLocations, getCategories, getU
 import Sidebar from "../../components/sidebar/sidebar";
 import Topbar from "../../components/topbar/topbar";
 import { useSidebar } from "../../context/SidebarContext";
+import {
+  blockNegativeNumberKeyDown,
+  sanitizeDigitsOnly,
+  sanitizePositiveNumberInput,
+  validateTextField
+} from "../../utils/validators";
 
 function ProductEditForm() {
   const { isCollapsed } = useSidebar();
@@ -115,15 +121,24 @@ function ProductEditForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setProducto((prev) => ({ ...prev, [name]: value || "" }));
+    let nextValue = value || "";
+    if (name === "LoteMinimo") {
+      nextValue = sanitizeDigitsOnly(nextValue);
+    } else if (name === "DiasAlertaCaducidad") {
+      nextValue = sanitizeDigitsOnly(nextValue, 3);
+    } else if (name === "PrecioSinFactura") {
+      nextValue = sanitizePositiveNumberInput(nextValue);
+    }
+    setProducto((prev) => ({ ...prev, [name]: nextValue }));
   };
 
   // Cálculo bidireccional de precios ERP
   const handlePrecioCompraChange = (val) => {
-    const cost = parseFloat(val);
+    const clean = sanitizePositiveNumberInput(val);
+    const cost = parseFloat(clean);
     const pct = parseFloat(producto.Margen);
     setProducto((prev) => {
-      const actual = { ...prev, PrecioCompra: val };
+      const actual = { ...prev, PrecioCompra: clean };
       if (!isNaN(cost) && !isNaN(pct)) {
         const sell = (cost * (1 + pct / 100)).toFixed(2);
         actual.Precio = sell;
@@ -134,10 +149,11 @@ function ProductEditForm() {
   };
 
   const handleMargenChange = (val) => {
+    const clean = sanitizePositiveNumberInput(val);
     const cost = parseFloat(producto.PrecioCompra);
-    const pct = parseFloat(val);
+    const pct = parseFloat(clean);
     setProducto((prev) => {
-      const actual = { ...prev, Margen: val };
+      const actual = { ...prev, Margen: clean };
       if (!isNaN(cost) && !isNaN(pct)) {
         const sell = (cost * (1 + pct / 100)).toFixed(2);
         actual.Precio = sell;
@@ -148,14 +164,15 @@ function ProductEditForm() {
   };
 
   const handlePrecioChange = (val) => {
+    const clean = sanitizePositiveNumberInput(val);
     const cost = parseFloat(producto.PrecioCompra);
-    const sell = parseFloat(val);
+    const sell = parseFloat(clean);
     setProducto((prev) => {
-      const actual = { ...prev, Precio: val };
+      const actual = { ...prev, Precio: clean };
       if (!isNaN(sell)) {
         actual.PrecioSinFactura = (sell * 0.87).toFixed(2);
         if (!isNaN(cost) && cost > 0) {
-          actual.Margen = (((sell - cost) / cost) * 100).toFixed(2);
+          actual.Margen = Math.max(0, ((sell - cost) / cost) * 100).toFixed(2);
         }
       }
       return actual;
@@ -233,8 +250,30 @@ function ProductEditForm() {
     event.preventDefault();
     setErrorMessage("");
 
-    if (!producto.Nombre || !producto.Nombre.trim()) {
-      setErrorMessage("El nombre del producto es obligatorio.");
+    const nombreErr = validateTextField(producto.Nombre, {
+      label: "El nombre del producto",
+      required: true,
+      minLength: 3,
+      minLetters: 2
+    });
+    if (nombreErr) {
+      setErrorMessage(nombreErr);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (producto.CodigoBarras && producto.CodigoBarras.trim().length > 0 && producto.CodigoBarras.trim().length < 3) {
+      setErrorMessage("El SKU / Código de Barras debe tener al menos 3 caracteres.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    const descErr = validateTextField(producto.Descripcion, {
+      label: "La descripción",
+      required: false,
+      minLength: 3,
+      minLetters: 2
+    });
+    if (descErr) {
+      setErrorMessage(descErr);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -260,6 +299,11 @@ function ProductEditForm() {
     }
     if (!producto.Precio || isNaN(parseFloat(producto.Precio)) || parseFloat(producto.Precio) <= 0) {
       setErrorMessage("Debes especificar un Precio Con Factura válido y mayor a 0.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (producto.PrecioSinFactura !== "" && producto.PrecioSinFactura !== null && producto.PrecioSinFactura !== undefined && (isNaN(parseFloat(producto.PrecioSinFactura)) || parseFloat(producto.PrecioSinFactura) < 0)) {
+      setErrorMessage("El precio sin factura no puede ser un valor negativo.");
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -395,6 +439,7 @@ function ProductEditForm() {
                   </label>
                   <input
                     type="text"
+                    minLength={3}
                     name="Nombre"
                     value={producto.Nombre}
                     onChange={handleChange}
@@ -410,10 +455,11 @@ function ProductEditForm() {
                   </label>
                   <input
                     type="text"
+                    minLength={3}
                     name="CodigoBarras"
                     value={producto.CodigoBarras}
                     onChange={handleChange}
-                    placeholder="Ej. *54 o 779123456789"
+                    placeholder="Ej. FER-00124 o 779123456789"
                     className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl focus:border-amber-500/60 text-zinc-100 placeholder-zinc-600 outline-none w-full p-3 transition-colors duration-150 text-sm font-mono tabular-nums font-medium"
                   />
                 </div>
@@ -445,6 +491,7 @@ function ProductEditForm() {
                     min="1"
                     name="LoteMinimo"
                     value={producto.LoteMinimo}
+                    onKeyDown={blockNegativeNumberKeyDown}
                     onChange={handleChange}
                     placeholder="Ej. 5"
                     className="bg-[#0c0e12] border border-zinc-800/80 rounded-xl focus:border-amber-500/60 text-amber-400 font-mono tabular-nums font-bold placeholder-zinc-600 outline-none w-full p-3 transition-colors duration-150 text-sm"
@@ -608,6 +655,7 @@ function ProductEditForm() {
                           max="365"
                           name="DiasAlertaCaducidad"
                           value={producto.DiasAlertaCaducidad}
+                          onKeyDown={blockNegativeNumberKeyDown}
                           onChange={handleChange}
                           className="w-28 px-3 py-2 bg-[#12151c] border border-zinc-800 rounded-xl text-zinc-100 font-mono tabular-nums font-bold text-xs outline-none focus:border-amber-500/60 transition-colors duration-150"
                         />
@@ -627,16 +675,15 @@ function ProductEditForm() {
 
               <div className="bg-[#0c0e12] border border-zinc-800/80 rounded-2xl overflow-hidden">
                 {/* Cabecera Técnica estilo ERP */}
-                <div className="bg-[#12151c] border-b border-zinc-800/80 px-6 py-3 text-zinc-300 font-extrabold text-xs uppercase tracking-wider grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="bg-[#12151c] border-b border-zinc-800/80 px-6 py-3 text-zinc-300 font-extrabold text-xs uppercase tracking-wider grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>Precio Compra (Costo)</div>
                   <div>x Margen (%)</div>
-                  <div>Precio Con Factura *</div>
-                  <div>Precio Sin Factura</div>
+                  <div>Precio de Venta (Bs.) *</div>
                   <div>Imagen del producto (JPG/PNG)</div>
                 </div>
 
                 {/* Cuerpo del Calculador ERP */}
-                <div className="p-6 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                <div className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
                   {/* Precio Compra */}
                   <div>
                     <label className="block mb-1.5 text-[10px] font-extrabold text-zinc-400 uppercase">
@@ -644,10 +691,12 @@ function ProductEditForm() {
                     </label>
                     <input
                       type="number"
+                      min="0"
                       step="0.01"
                       placeholder="Ej. 6.49"
                       name="PrecioCompra"
                       value={producto.PrecioCompra}
+                      onKeyDown={blockNegativeNumberKeyDown}
                       onChange={(e) => handlePrecioCompraChange(e.target.value)}
                       className="bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2.5 text-sm text-zinc-100 font-mono tabular-nums font-bold outline-none focus:border-amber-500/60 transition-colors duration-150 w-full"
                     />
@@ -660,45 +709,33 @@ function ProductEditForm() {
                     </label>
                     <input
                       type="number"
+                      min="0"
                       step="0.1"
                       placeholder="25"
                       name="Margen"
                       value={producto.Margen}
+                      onKeyDown={blockNegativeNumberKeyDown}
                       onChange={(e) => handleMargenChange(e.target.value)}
                       className="bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2.5 text-sm text-emerald-400 font-mono tabular-nums font-bold outline-none focus:border-emerald-500/60 transition-colors duration-150 w-full"
                     />
                   </div>
 
-                  {/* Precio Con Factura */}
+                  {/* Precio de Venta */}
                   <div>
                     <label className="block mb-1.5 text-[10px] font-extrabold text-amber-400 uppercase">
-                      Venta Con Factura (Bs) *
+                      Precio de Venta (Bs.) *
                     </label>
                     <input
                       type="number"
+                      min="0.01"
                       step="0.01"
                       placeholder="Ej. 8.11"
                       name="Precio"
                       value={producto.Precio}
+                      onKeyDown={blockNegativeNumberKeyDown}
                       onChange={(e) => handlePrecioChange(e.target.value)}
                       className="bg-[#12151c] border border-amber-500/40 rounded-xl px-3 py-2.5 text-sm text-amber-400 font-mono tabular-nums font-extrabold outline-none focus:border-amber-500 transition-colors duration-150 w-full"
                       required
-                    />
-                  </div>
-
-                  {/* Precio Sin Factura */}
-                  <div>
-                    <label className="block mb-1.5 text-[10px] font-extrabold text-zinc-300 uppercase">
-                      Sin Factura (Bs.)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="Ej. 7.00"
-                      name="PrecioSinFactura"
-                      value={producto.PrecioSinFactura}
-                      onChange={handleChange}
-                      className="bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2.5 text-sm text-zinc-200 font-mono tabular-nums font-extrabold outline-none focus:border-amber-500/60 transition-colors duration-150 w-full"
                     />
                   </div>
 

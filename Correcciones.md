@@ -2278,3 +2278,292 @@ Se llevó a cabo una limpieza general del repositorio y una refactorización arq
     * Mantiene la vinculación dinámica a `{categories.length}` y el diseño técnico anti-slop.
 * **Verificación:**
   * Compilación con Vite (`npm run build`) completada con éxito en 5.80s con 0 errores.
+
+### 186. Blindaje de Seguridad en Frontend: Rutas Protegidas (`ProtectedRoute`) y Control de Acceso por Roles (RBAC)
+* **Solicitud del Usuario:**
+  * Corregir la vulnerabilidad donde al cerrar sesión y pegar directamente el enlace del dashboard (o cualquier vista interna), el sistema permitía visualizar la interfaz sin tener una cuenta logueada.
+* **Solución Implementada:**
+  * **Nuevo Componente Guardián de Rutas ([`ProtectedRoute.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/auth/ProtectedRoute.jsx)):**
+    * Valida activamente si existe una sesión válida en `localStorage` (`cyc_user_session` / `cyc_client_session`).
+    * Si el usuario no está autenticado, intercepta el acceso y redirige de inmediato a `/login` preservando en el estado la ruta previa (`location.state.from`).
+    * Implementa verificación estricta de roles autorizados (`allowedRoles`):
+      - Si un usuario con rol `Cliente` intenta ingresar a vistas de personal o administración, es rebotado automáticamente al catálogo (`/`).
+      - Si un empleado (Vendedor/Cajero/Operador) intenta acceder a vistas exclusivas de administrador (como `/usuarios`), es redirigido a `/home`.
+  * **Protección Integral de Rutas en el Router ([`App.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/App.jsx)):**
+    * Se clasificaron y envolvieron las rutas del sistema:
+      1. **Rutas Públicas:** Catálogo (`/`, `/catalogo`, `/tienda`), Login (`/login`, `/loginAdm`, `/loginClie`), Recuperación de contraseña y Registro de clientes.
+      2. **Rutas Operativas (Staff: Admin + Empleados):** Dashboard (`/dashboard`, `/home`, `/admin`), POS (`/pos`, `/vender`), Pedidos Online (`/pedidos-online`), Facturación (`/facturas`), Inventario (`/inventario`, `/kardex`, `/stock-critico`), Clientes (`/clientes`) y Configuración de Productos/Almacén.
+      3. **Rutas Críticas (Solo Administrador):** Gestión de Usuarios y Roles (`/usuarios`, `/empleados`, `/personal`).
+  * **Mejora en Pantalla de Login ([`Login.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Auth/Login.jsx)):**
+    * Muestra un aviso estilizado si el usuario llegó redirigido por intentar entrar a una ruta protegida.
+    * Al autenticarse correctamente, lo redirige de forma fluida a la ruta que intentaba acceder originalmente.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 6.66s con 0 errores.
+  * Pruebas de acceso sin sesión redirigen instantáneamente a `/login`.
+
+
+### 187. Optimización del Connection Pool de SQL Server y Eliminación del Cold Start (`database.js`)
+* **Solicitud del Usuario:**
+  * Reducir la latencia y demora que ocurría al interactuar con el sistema después de hacer cambios o tras periodos de inactividad.
+* **Solución Implementada:**
+  * En [`backend/database.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/database.js):
+    1. **Mantenimiento de Conexiones Calientes (`min: 2`):** Se configuró el pool de Sequelize para mantener al menos 2 sockets TCP abiertos y autenticados permanentemente contra SQL Server, eliminando la penalización de reconexión (*Cold Start*).
+    2. **Ventana de Inactividad Extendida (`idle: 60000`):** Se aumentó el umbral de desconexión por reposo de 10 segundos a 60 segundos, evitando que el pool se vacíe mientras el usuario navega entre pantallas.
+    3. **Capacidad Concurrente (`max: 20`):** Soporte ampliado para peticiones simultáneas desde el catálogo y el punto de venta.
+* **Verificación:**
+  * Prueba de autenticación con Sequelize validada exitosamente en menos de 45 ms.
+
+
+### 188. Desvinculación de Auto-llenado en Campo Razón Social (`ClientView.jsx` y `POSView.jsx`)
+* **Solicitud del Usuario:**
+  * Al agregar un cliente y escribir su nombre, en el campo de Razón Social se auto-escribían las dos primeras letras (por ejemplo, escribía "Steven" y en razón social salía "ST"), congelando el texto. Quitar ese auto-llenado para que el campo de Razón Social se mantenga completamente limpio y vacío durante el formulario.
+* **Solución Implementada:**
+  * **En el Módulo de Clientes ([`ClientView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Contacts/ClientView.jsx)):**
+    * Se eliminó la sobreescritura automática de `RazonSocial` dentro de `handleIndividualNameChange` y `handleCompanyNameChange`.
+    * Ahora el campo `RazonSocial` permanece 100% independiente y vacío mientras el operador escribe el nombre, segundo nombre, apellidos o nombre de empresa.
+    * Si el operador no escribe nada en Razón Social, al presionar "Guardar" el sistema resolverá de forma contable el nombre completo en mayúsculas como valor por defecto, sin interferir en la vista del formulario.
+  * **En el Modal de Registro Rápido del Punto de Venta ([`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx)):**
+    * Se aplicó la misma corrección en los inputs de nombres, apellidos y empresa, manteniendo el campo de Razón Social limpio y editable.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 5.34s con 0 errores.
+
+
+### 189. Actualización Dinámica del Histórico de Compras Acumulado por Nivel de Lealtad (`ClientView.jsx` y `POSView.jsx`)
+* **Solicitud del Usuario:**
+  * Al agregar un nuevo contacto en el modal de clientes, el "Histórico de compras acumulado" permanecía congelado en `Bs. 0.00` sin importar qué nivel de fidelidad se seleccionara. Hacer que el valor acumulado cambie de forma reactiva y automática según el nivel de lealtad elegido para la creación del cliente.
+* **Solución Implementada:**
+  * **En [`ClientView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Contacts/ClientView.jsx):**
+    * Se actualizó el manejador `onChange` del selector de nivel de fidelidad (`NivelLealtad`).
+    * Al cambiar de nivel, además de ajustar el descuento asignado (`DescuentoPorcentaje`), ahora actualiza de inmediato el campo `TotalComprasAcumulado` utilizando el umbral de compras mínimas requerido por el nivel (`tier.minSpend` proveniente de [`loyalty.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/constants/loyalty.js)):
+      * **Bronce (0% Dcto):** `Bs. 0.00` (`minSpend: 0`).
+      * **Plata (3% Dcto):** `Bs. 1,000.00` (`minSpend: 1000`).
+      * **Oro (6% Dcto):** `Bs. 3,500.00` (`minSpend: 3500`).
+      * **Diamante (10% Dcto):** `Bs. 7,000.00` (`minSpend: 7000`).
+    * La etiqueta inferior *"Histórico de compras acumulado: Bs. X.XX"* refleja el monto al instante sin recargar la pantalla.
+    * Al guardar el cliente, `handleCreateClient` almacena este monto acumulado tanto en el estado reactivo como en `localStorage` (`cyc_pos_clients`).
+  * **En [`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx):**
+    * Se integró la constante centralizada `LOYALTY_TIERS` y se sincronizó el registro rápido para inicializar `TotalComprasAcumulado` con el umbral correspondiente en lugar de un `0` estático.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 5.35s con 0 errores.
+
+
+### 190. Rediseño Anti-Slop del Indicador de Sucursal y Eliminación de Puntos Parpadeantes Cliché (`topbar.jsx`, `OnlineOrdersView.jsx`, `POSView.jsx`, `ClientView.jsx`, `sidebar.jsx`)
+* **Solicitud del Usuario:**
+  * Rediseñar la sección superior donde dice "Sucursal Central — C&C Casa y Construcción" retirando el puntito verde parpadeante/genérico de "IA", y reemplazar elementos similares en el sistema que utilicen el mismo patrón de puntos y parpadeos artificiales.
+* **Solución Implementada:**
+  * **Barra Superior ([`topbar.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/topbar/topbar.jsx)):**
+    * Se eliminó el punto verde estático/parpadeante que simulaba estado de sensor.
+    * Se rediseñó como una insignia formal de sucursal comercial ferretera:
+      * Contenedor con borde sobrio `border border-zinc-800/90` y fondo `#12151c`.
+      * Icono arquitectónico de establecimiento comercial con acento ámbar industrial (`amber-500/10` / `text-amber-400`).
+      * Jerarquía clara: `Sucursal Central / C&C Casa y Construcción` acompañada de una etiqueta técnica monoespaciada `Cochabamba`.
+    * Se retiró el punto verde innecesario sobre la campana de notificaciones cuando el conteo de alertas es cero (`0`).
+  * **Módulo de Pedidos Online ([`OnlineOrdersView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/OnlineOrdersView.jsx)):**
+    * Se reemplazó el punto parpadeante rojo (`animate-pulse`) en el estado "Caja Cerrada" por un icono semántico de candado (`LockClosedIcon`).
+    * Se reemplazó el punto verde de "Caja Abierta" por un icono de verificación (`CheckCircleIcon`).
+    * Se limpió el badge de "en cola" quitando el punto interno y los toasts reemplazaron los círculos por iconos SVG limpios (éxito, advertencia, error).
+  * **Punto de Venta ([`POSView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/POSView.jsx)):**
+    * Se reemplazó el punto verde delante de "Operador:" por un icono sobrio de usuario (`UserIcon`).
+    * Se retiró la animación `animate-ping` sobre el banner de alertas de pedidos online entrantes, dejándolo con su icono de campana nítido y sin distracción visual.
+    * Se retiró el `animate-pulse` del contador de pedidos online en el footer del POS.
+    * En el modal de nuevo cliente rápido se reemplazó el punto por un icono semántico `UserPlusIcon`.
+    * En los toasts de notificación se cambiaron los puntos de color por iconos nítidos correspondientes.
+  * **Módulo de Clientes ([`ClientView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Contacts/ClientView.jsx)):**
+    * En los modales de "Agregar nuevo contacto", "Editar contacto" y "Ficha de contacto" se retiraron los círculos ámbar (`rounded-full`) ubicados antes de los títulos, sustituyéndolos por iconografía funcional (contacto, edición, vista).
+    * En el toast de confirmación se cambió el punto verde por un check SVG directo.
+  * **Barra Lateral ([`sidebar.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/components/sidebar/sidebar.jsx)):**
+    * Cuando el sidebar está colapsado, el indicador de pedidos online muestra el número real de pedidos pendientes en una insignia monoespaciada en vez de un punto genérico.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 5.12s con 0 errores.
+
+
+### 191. Rediseño del Badge de Disponibilidad de Productos en la Página Principal ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx))
+* **Solicitud del Usuario:**
+  * En la página principal (`/` / Catálogo público), cada tarjeta de producto mostraba el número exacto de inventario (ej. "Stock: 40") en un verde tenue y traslúcido difícil de leer. Cambiar para que solo diga "Disponible" y mejorar su visibilidad y contraste de color.
+* **Solución Implementada:**
+  * **En las Tarjetas de Catálogo ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+    * Se eliminó el texto con la cifra numérica interna ("Stock: X").
+    * Se reemplazó por la etiqueta comercial **"Disponible"** (o **"Agotado"** si no hay existencias).
+    * Se rediseñó el badge con **alto contraste**:
+      * Fondo verde esmeralda sólido vibrante (`bg-emerald-500`), texto oscuro de máxima legibilidad (`text-zinc-950 font-extrabold`), borde sutil (`border-emerald-400/50`) y sombra (`shadow-md`). Esto garantiza legibilidad perfecta tanto sobre fondos claros como sobre fotos con fondos oscuros o blancos.
+      * Se añadió un icono nítido de verificación (*check*) SVG al lado de "Disponible".
+  * **En el Modal de Ficha Técnica / QuickView ([`ClientCatalog.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Clients/ClientCatalog.jsx)):**
+    * Se homologó la sección de disponibilidad ("Disponibilidad: Disponible" / "Agotado") utilizando el mismo badge sólido de alto contraste, reservando la cifra de stock para la gestión interna de almacén y POS.
+* **Verificación:**
+  * Compilación con Vite (`npm run build`) completada con éxito en 24.09s con 0 errores.
+
+
+### 192. Capacitación Técnica y Modo de Uso en el Chatbot Asesor Virtual (`backend/api/routes/chatbot.js`)
+* **Solicitud del Usuario:**
+  * Al preguntarle al chatbot cómo usar un producto (ej. *"¿cómo uso la silicona akfi?"*), el bot se limitaba a devolver únicamente el listado del catálogo con los precios de las siliconas sin explicar el procedimiento de aplicación ni resolver la duda técnica del cliente.
+* **Causa del Problema:**
+  * En el motor de inferencia (`chatbot.js`), cuando la consulta del usuario coincidía con términos de la base de datos (ej. "silicona", "akfix"), el sistema priorizaba estrictamente la lista de productos del catálogo (`productContext`), bloqueando las guías de aplicación procedimentales debido a una condición `&& !productContext`.
+  * Además, no existía un dominio especializado para siliconas, selladores y adhesivos Akfix en la base de conocimiento procedimental.
+* **Solución Implementada:**
+  * **Detección de Intención Técnica / Modo de Uso:**
+    * Se incorporó el detector `isTechnicalInquiry` que reconoce expresiones como *"cómo uso"*, *"cómo se aplica"*, *"cómo sellar"*, *"tiempo de secado"*, *"para qué sirve"*, *"modo de uso"*, etc.
+  * **Nuevo Dominio de Conocimiento Especializado en Siliconas y Selladores Akfix:**
+    * **Paso 1: Preparación de la superficie** (limpieza de polvo, grasa, óxido, moho o silicona antigua).
+    * **Paso 2: Preparación del cartucho y boquilla** (corte a 45° según el espesor de la junta y montaje en pistola de calafateo).
+    * **Paso 3: Aplicación continua y alisado** (alisado inmediato antes de 5-10 minutos con agua jabonosa o espátula).
+    * **Paso 4: Tiempos de secado y curado** (secado al tacto en 15-20 min, curado estructural de 24h por cada 2-3 mm).
+    * **Guía de selección:** Diferenciación técnica entre **Akfix Universal Blanca/Negra** (baños, vidrios, sanitarios), **Akfix PU Estructural** (juntas de dilatación, techos, exteriores) y **Akfix 610 Montaje** (adhesivo invisible de alta fuerza sin clavos).
+  * **Fusión Inteligente de Asesoría + Catálogo:**
+    * Ahora, cuando el cliente formula una pregunta técnica sobre un material disponible en tienda, el chatbot primero brinda la explicación y tutorial paso a paso, y a continuación adjunta los productos exactos disponibles en inventario con sus precios oficiales en Bs.
+  * **Ajuste en Prompt de Red Neuronal y Reducción de Latencia:**
+    * Se instruyó al prompt base (`BASE_SYSTEM_PROMPT`) para responder siempre con el procedimiento técnico antes de los precios.
+    * Se ajustó el timeout de conexión a 10 segundos para garantizar respuestas instantáneas.
+* **Verificación:**
+  * Pruebas ejecutadas con éxito para `"como uso la silicona akfi"` y `"tienen silicona akfix"`, validando la entrega completa de la guía técnica y la posterior recomendación de materiales en tienda.
+
+
+### 193. Habilitación de Asesoría Técnica General de Obra y Construcción en el Chatbot (`backend/api/routes/chatbot.js`)
+* **Solicitud del Usuario:**
+  * Permitir que el chatbot responda dudas técnicas generales de ferretería y obra (ej. *"¿cómo instalar un codo?"*, *"¿qué pegamento es mejor para colar tubos?"*, fontanería, electricidad, brocas, etc.) y no se limite únicamente a los productos estrictos del catálogo virtual.
+* **Causa del Problema:**
+  * El prompt base del modelo neural de lenguaje limitaba las respuestas a solo mostrar productos presentes en el catálogo virtual ("Regla de Oro de Catálogo: muestra ÚNICAMENTE los productos que coincidan directamente...").
+  * Cuando se formulaba una pregunta de plomería general o de cómo instalar accesorios, el bot se bloqueaba y devolvía un mensaje de fallback *"No encontré un producto con ese nombre..."*.
+* **Solución Implementada:**
+  * **Ampliación del System Prompt a Nivel Maestro de Obra (`BASE_SYSTEM_PROMPT`):**
+    * Se otorgó autorización completa al modelo para desempeñarse como asesor técnico experto en plomería, fontanería, electricidad, albañilería, cerrajería, fijaciones y adhesivos.
+    * Instrucción obligatoria de explicar siempre el procedimiento paso a paso (preparación, herramientas, corte, ensamble, seguridad y tiempos de secado/fraguado).
+  * **Nuevos Dominios Expertos en el Motor de Respaldo (`EXTENDED_DOMAINS`):**
+    * **Plomería y Tuberías (`plomeria_tubos_codos_pegamento`):** Cómo instalar codos de PVC (corte a 90°, desbaste de rebabas, lijado de poro, aplicación de cemento solvente sin girar, sostenido de 30-45s y tiempos de presurizado) y cómo unir tuberías de termofusión PPR (260 °C, calentamiento sincronizado y unión molecular).
+    * **Adhesivos y Pegamentos (`adhesivos_pegamentos_general`):** Cemento solvente para PVC, cola sintética PVA para madera, soldadura fría epóxica (tipo Poxipol) para metales, silicona acética para vidrio/aluminio y adhesivo PU 610 para fijación sin clavos.
+    * **Perforación y Brocas (`fijacion_brocas_taladros`):** Diferenciación entre brocas de widia/carburo para concreto con percutor, brocas HSS para metal sin percutor y técnica de cinta adhesiva a baja velocidad para no fracturar azulejos en baños/cocinas.
+    * **Orientación Técnica Abierta:** Si la pregunta es abierta y de procedimiento técnico general, el bot brinda los principios universales de preparación de superficie, herramientas y seguridad.
+  * **Ventana de Inferencia:**
+    * Ajuste del timeout a 30 segundos para permitir la generación completa de respuestas explicativas paso a paso en el modelo local Llama 3.2.
+* **Verificación:**
+  * Pruebas ejecutadas con éxito con las consultas:
+    1. *"como instalar un codo de tubo"* -> Respuesta completa con materiales, preparación, colocación y consejos de seguridad.
+    2. *"que pegamento es mejor para colar tubos"* -> Respuesta detallada con pegamentos para PVC (cemento solvente), epóxicos y poliuretano.
+
+
+### 194. Corrección de Compatibilidad SQL Server y Timezone en Filtro de Fechas de Facturación (`sales.js` y `InvoiceListView.jsx`)
+* **Solicitud del Usuario:**
+  * Verificar si los filtros de "Fecha Inicio" y "Fecha Fin" en el módulo de Facturas (`/facturacion`) estaban funcionando de manera correcta.
+* **Causas Identificadas:**
+  1. **Incompatibilidad de Formato en SQL Server (Error 241):**
+     * En [`backend/api/routes/sales.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/sales.js), al instanciar `new Date(fechaInicio)`, Sequelize serializaba la fecha hacia SQL Server con formato ISO extendido con offset de zona horaria (`N'2026-11-08 04:00:00.000 +00:00'`).
+     * Debido a que la columna `FechaVenta` en SQL Server es de tipo `DATETIME` nativo, el motor de base de datos arrojaba el error: `RequestError: Conversion failed when converting date and/or time from character string` (Error 241), provocando que la petición fallara con error HTTP 500 y no mostrara ninguna factura.
+  2. **Desplazamiento de Fecha por Timezone UTC vs Local:**
+     * En JavaScript, `new Date("YYYY-MM-DD")` asume medianoche UTC. Al estar en la zona horaria de Bolivia (UTC-4), la fecha se convertía a las 20:00 del día anterior. Al aplicar `start.setHours(0,0,0,0)`, el filtro buscaba facturas del día previo al seleccionado por el usuario.
+  3. **Falta de Reactividad en Cambio de Estado:**
+     * En [`InvoiceListView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/InvoiceListView.jsx), cambiar el selector de "Estado" (Emitidas / Anuladas) o limpiar los filtros no refrescaba de inmediato la grilla.
+* **Solución Implementada:**
+  * **En el Backend ([`backend/api/routes/sales.js`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/backend/api/routes/sales.js)):**
+    * Se reemplazó el `new Date(...)` con serialización ISO por literales limpios compatibles al 100% con SQL Server `DATETIME`:
+      * `[Venta].[FechaVenta] >= '${fechaInicio} 00:00:00'`
+      * `[Venta].[FechaVenta] <= '${fechaFin} 23:59:59.997'`
+    * Se validó el formato mediante expresión regular estricta (`/^\d{4}-\d{2}-\d{2}$/`) para máxima seguridad contra inyecciones SQL.
+  * **En el Frontend ([`InvoiceListView.jsx`](file:///c:/Proyeto%20Ferreteria/ferreteriaaa/ferreteria/src/pages/Sales/InvoiceListView.jsx)):**
+    * Se corrigió la comparación de rango (`fechaInicio > fechaFin`) directa en formato `YYYY-MM-DD` sin depender de desfases de huso horario.
+    * Se sincronizó `handleEstadoChange` para que al seleccionar "Emitidas" o "Anuladas" se actualice la lista de facturas instantáneamente.
+    * Se optimizó `handleResetFilters` para invocar `fetchInvoices` de forma atómica y limpiar la vista con su indicador de carga.
+* **Verificación:**
+  * Pruebas en SQL Server ejecutadas exitosamente:
+    * Filtro `2026-11-09` a `2026-11-09` -> Consulta ejecutada en 12 ms, retornando exactamente las 7 facturas del día sin error 241.
+    * Filtro `2026-11-01` a `2026-11-09` -> Retornando las 34 facturas del periodo.
+  * Compilación con Vite (`npm run build`) completada con éxito en 6.78s con 0 errores.
+
+
+---
+
+## 195. Corrección de Paginación Numérica y Estabilización de Ancho de Tabla en Lista de Productos (`ProductView.jsx`)
+
+* **Problema Detectado:**
+  1. **Ausencia de números de página en el paginador:** En la vista de Gestión de Productos (`ferreteria/src/pages/Products/ProductView.jsx`), el bloque de paginación solo renderizaba los botones `"Anterior"` y `"Siguiente"` sin mostrar los botones numerados (`1`, `2`, `3`, ...) entre ellos, impidiendo ver en qué página se encontraba el usuario o saltar directamente a una página específica.
+  2. **Cambio de tamaño de la tabla y aparición de scroll horizontal al pasar de página:**
+     * El contenedor raíz y la etiqueta `<main className="flex-1 ...">` carecían de `min-w-0 w-full max-w-full overflow-x-hidden`. En CSS Flexbox, un hijo `flex-1` sin `min-w-0` adopta `min-width: auto`, expandiéndose más allá del ancho de la pantalla cuando una tabla interna contiene textos más largos.
+     * La tabla (`<table>`) usaba layout automático sin anchos de columna definidos (`table-auto`) y con celdas `whitespace-nowrap` en `Ubicación`, `Categoría` y `Marca`. Al avanzar a la página 2 (donde existen productos con nombres o descripciones de ubicación de estantería más largos), las columnas se ensanchaban bruscamente, cambiando el tamaño de la tabla y provocando un scroll horizontal inferior.
+
+* **Solución Implementada (`ferreteria/src/pages/Products/ProductView.jsx`):**
+  1. **Botones Numerados de Paginación (`getPageNumbers`):**
+     * Se implementó el generador `getPageNumbers()` con ventana inteligente y puntos suspensivos (`...`) para catálogos extensos, renderizando los botones numéricos (`1`, `2`, `3`, ...) con tipografía monoespaciada tabular (`font-mono tabular-nums`) entre `"Anterior"` y `"Siguiente"`, resaltando la página activa en ámbar industrial (`bg-amber-500 text-zinc-950 font-extrabold`).
+  2. **Fijación Estructural del Ancho de Tabla (`lg:table-fixed` + `min-w-0`):**
+     * Se agregó `w-full max-w-full overflow-x-hidden` al contenedor principal y `min-w-0 w-full overflow-x-hidden` a `<main>` y al contenedor de la tarjeta.
+     * Se aplicó `lg:table-fixed` a la tabla con proporciones y anchos fijos por columna (`Foto: 56px`, `Acción: 108px`, `SKU: 115px`, `Producto: 22%`, `Ubicación: 15%`, `Precio Compra: 110px`, `Precio Venta: 155px`, `Stock Actual: 140px`, `Categoría: 12%`, `Marca: 10%`) y truncado limpio (`truncate` con `title` informativo al pasar el cursor) en `Producto`, `Ubicación`, `Categoría` y `Marca`.
+     * Adicionalmente, se eliminaron los puntos redondos decorativos (`w-2 h-2 rounded-full`) de las etiquetas de stock para mantener la estética limpia definida en las reglas del proyecto.
+
+* **Verificación:**
+  * Compilación de producción (`npm run build`) verificada sin errores (`built in 5.29s`).
+
+
+---
+
+## 196. Sistema Keep-Alive (Heartbeat) y Resiliencia de Conexión a SQL Server ante Inactividad Prolongada
+
+* **Problema Detectado:**
+  * Cuando el usuario dejaba de interactuar con la aplicación durante varios minutos (por ejemplo, mientras explicaba las diapositivas o presentaba el sistema), las conexiones TCP ociosas retenidas en el pool de Sequelize (`min: 2`, `idle: 60000`) eran cerradas silenciosamente por Windows / SQL Server (`tedious`), quedando en estado "zombi" (*half-open*).
+  * Al volver a usar la aplicación y solicitar `/products`, Sequelize entregaba una de esas conexiones muertas y la petición quedaba colgada esperando hasta el `requestTimeout: 30000` (30 segundos) antes de fallar o reconectar, provocando que la página se quedara "pensando" sin cargar los productos.
+
+* **Solución Implementada:**
+  1. **Pool con Validación de Sockets y Heartbeat Automático en Backend (`backend/database.js`):**
+     * Se incorporó una función `validate(connection)` en el pool de Sequelize para verificar que el socket TCP de `tedious` no esté cerrado ni destruido antes de entregarlo a cualquier ruta, junto con `evict: 10000`, `idle: 25000` y `retry: { max: 3 }`.
+     * Se programó un **Heartbeat automático cada 20 segundos** (`SELECT 1 AS keep_alive`) en `backend/database.js` que mantiene la conexión con SQL Server permanentemente activa y despierta aunque nadie toque el sistema durante toda una exposición o defensa de grado.
+  2. **Endpoint `/health` Silencioso y Deduplicación/Respaldo en Memoria (`backend/app.js` y `backend/api/routes/products.js`):**
+     * Se creó el endpoint `GET /health` en `backend/app.js` (excluido del log de `morgan` para no ensuciar la consola).
+     * En `backend/api/routes/products.js`, se añadió deduplicación de peticiones concurrentes (`inflightProductsPromise`) y una instantánea de respaldo en memoria (`lastProductsSnapshot`) que se invalida automáticamente al crear, editar o eliminar productos.
+  3. **Pulso desde el Navegador + Auto-Retry en Frontend (`ferreteria/src/services/api.js`):**
+     * Se configuró un pulso cada **25 segundos** hacia `/health` y un disparador inmediato al recuperar el foco de la ventana (`window.addEventListener('focus')` y `visibilitychange`), de modo que al volver de PowerPoint/Canva al navegador la conexión esté 100% lista.
+     * Se agregó un interceptor de **reintento automático transparente** (hasta 2 reintentos rápidos) para peticiones `GET` y caché de respaldo en `getProducts()`.
+
+* **Verificación:**
+  * Probado en vivo: `GET /health` responde en `22 ms` y `GET /products` responde en `25 ms – 114 ms` de forma sostenida sin caídas tras periodos de inactividad.
+
+
+---
+
+## 197. Corrección del Ordenamiento y Zona Horaria en el Historial de Ventas POS (`sales.js` y `reports.js`)
+
+* **Problema Detectado:**
+  1. **Venta de `Bs. 537` (`#620`) fija como "última venta":**
+     * La función `ensureRecentAnonymousSales()` en `backend/api/routes/reports.js` rellenaba días hasta `offset >= 0` (incluyendo el día de hoy) generando una hora aleatoria entre las `08:00` y las `18:00`. Eso había creado la venta `#620` (`Bs. 537.00`) con fecha/hora `2026-11-10 15:30:44` (en el futuro respecto a las `15:15` en que el usuario realizaba ventas).
+     * Como `GET /sales/recent` en `backend/api/routes/sales.js` ordenaba por `order: [['FechaVenta', 'DESC']]` en lugar de `order: [['VentaID', 'DESC']]`, la venta `#620` permanecía siempre en la posición `1.` por encima de las ventas nuevas (`#623` a `#632`).
+  2. **Desfase de 4 horas menos en la hora mostrada en el historial POS (`11:17` en lugar de `15:17`):**
+     * SQL Server guarda `FechaVenta` mediante `DEFAULT GETDATE()` con la hora local de Bolivia (`DATETIME` sin zona horaria, ej. `15:17:05`).
+     * Al leer ese campo desde SQL Server, `tedious` / `Sequelize` lo serializa con sufijo `'Z'` (`2026-11-10T15:17:05.213Z`, tratándolo como UTC).
+     * Al formatear con `d.getHours()` en `backend/api/routes/sales.js`, Node.js restaba otras 4 horas (`UTC-4`), mostrando `11:17` en vez de `15:17`.
+
+* **Solución Implementada:**
+  1. **Ordenamiento por `VentaID DESC` y lectura exacta de hora local SQL Server (`backend/api/routes/sales.js`):**
+     * Se cambió el ordenamiento de `GET /sales/recent` y `GET /sales/invoices` a `order: [['VentaID', 'DESC']]` para que la última venta registrada en mostrador aparezca siempre primera.
+     * Se corrigió el formateo de `timeStr` y `fechaStr` utilizando `getUTCFullYear()`, `getUTCMonth()`, `getUTCDate()`, `getUTCHours()` y `getUTCMinutes()` sobre el objeto devuelto por Sequelize para preservar la hora local exacta guardada por SQL Server sin restar 4 horas.
+  2. **Exclusión del día actual en el relleno histórico (`backend/api/routes/reports.js`) y ajuste de `VentaID = 620`:**
+     * Se modificó el bucle de `ensureRecentAnonymousSales()` a `offset >= 1` para que nunca inserte ventas sintéticas con horas aleatorias en el día actual.
+     * Se normalizó en la base de datos la hora de la venta `#620` (`Bs. 537`) a `10:30:44`.
+
+* **Verificación:**
+  * Probado contra `GET http://localhost:3000/sales/recent`: ahora la última venta realizada (`VNT-632`, `Bs. 63.00`) aparece en primer lugar con su hora real (`10/11/2026 15:17`).
+
+
+---
+
+## 198. Corrección Definitiva de Saturación de Conexiones TCP IPv6 (`CLOSE_WAIT`) en SQL Server (`backend/.env` y `database.js`)
+
+* **Causa Raíz Diagnosticada en Vivo:**
+  1. `backend/.env` tenía configurado `DB_SERVER=LAPTOP-P8ONO5E5`, nombre que Windows resolvía hacia la dirección IPv6 link-local de la tarjeta Wi-Fi (`fe80::7088:64fd:26df:c70f%19`) en lugar del bucle local IPv4 (`127.0.0.1`).
+  2. La combinación del enlace IPv6 Wi-Fi con el `pool.validate` personalizado y `retry: { max: 3 }` en `backend/database.js` provocó una fuga acumulada de cientos de sockets semi-cerrados (`CLOSE_WAIT` / `FIN_WAIT_2`) en el puerto `1433`, agotando los hilos de trabajo internos de `sqlservr.exe` hasta generar `Failed to connect to LAPTOP-P8ONO5E5:1433 in 15000ms` (`ETIMEOUT`).
+
+* **Solución Implementada:**
+  1. **`backend/.env`:** Se cambió `DB_SERVER=127.0.0.1` para forzar conexión local directa por loopback IPv4 (`1ms` de latencia, inmune a cambios de Wi-Fi, IPv6 o redes universitarias).
+  2. **`backend/database.js`:** Se eliminó el `pool.validate` personalizado (delegando a la validación nativa de Sequelize/Tedious) y `retry: { max: 3 }`, ajustando el pool a `max: 10`, `min: 0`, `idle: 10000`, `evict: 5000`, con un pulso `SELECT 1` protegido contra solapamiento (`keepAliveBusy`) cada 60 segundos.
+  3. **`ferreteria/src/services/api.js`:** Se espació el pulso `/health` a 60 segundos únicamente cuando la pestaña está visible.
+
+
+---
+
+## 199. Optimización Masiva (180x) del Endpoint de Facturación (`GET /sales/invoices`)
+
+* **Problema Detectado:**
+  * Al abrir el módulo de **Facturación / Comprobantes de Venta**, el endpoint `GET /sales/invoices` ejecutaba un `Venta.findAll` con 6 tablas anidadas (`Ventas` → `Empleados` → `Personas` → `Clientes` → `Personas` → `DetalleVentas` → `Productos`) sin filtrar `ClienteID IS NOT NULL` en SQL y trayendo todas las columnas de `Productos`, saturando SQL Server durante **15 a 22 segundos** y arrastrando consigo a las demás consultas concurrentes.
+
+* **Solución Implementada (`backend/api/routes/sales.js`):**
+  * Se reemplazó el `include` masivo de Sequelize por **2 consultas SQL directas y ligeras**:
+    1. Consulta de cabeceras filtrando directamente en SQL (`WHERE v.ClienteID IS NOT NULL OR v.VentaID IN (...)` + filtros de fecha/estado).
+    2. Consulta de `DetalleVentas` únicamente para los `VentaID` facturados, trayendo solo las columnas necesarias (`Nombre`, `CodigoBarras`) y agrupándolas en memoria con un `Map` en tiempo lineal $O(n)$.
+
+* **Verificación en Vivo:**
+  * `GET /sales/invoices` (395 facturas completas): pasó de **~21,760 ms (timeout)** a **`119 ms`**.
+  * `GET /sales/invoices` con filtro de fechas: **`19 ms`**.

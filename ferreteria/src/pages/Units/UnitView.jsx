@@ -4,6 +4,7 @@ import { getUnits, createUnit, updateUnit, deleteUnit } from "../../services/api
 import Sidebar from "../../components/sidebar/sidebar";
 import Topbar from "../../components/topbar/topbar";
 import { useSidebar } from "../../context/SidebarContext";
+import { sanitizeLettersOnly, validateTextField } from "../../utils/validators";
 
 function UnitView() {
   const { isCollapsed } = useSidebar();
@@ -128,14 +129,32 @@ function UnitView() {
 
   const handleUpsertSubmit = (e) => {
     e.preventDefault();
-    if (!nombre.trim()) {
-      setFormError("El nombre de la unidad es obligatorio.");
+    const nombreError = validateTextField(nombre, {
+      label: "El nombre de la unidad",
+      required: true,
+      minLength: 3,
+      lettersOnly: true,
+      minLetters: 3
+    });
+    if (nombreError) {
+      setFormError(nombreError);
+      return;
+    }
+
+    const descError = validateTextField(descripcion, {
+      label: "La descripción",
+      required: false,
+      minLength: 3,
+      minLetters: 2
+    });
+    if (descError) {
+      setFormError(descError);
       return;
     }
 
     const unitData = {
-      Nombre: nombre,
-      Descripcion: descripcion
+      Nombre: nombre.trim(),
+      Descripcion: descripcion.trim()
     };
 
     if (upsertMode === "create") {
@@ -463,9 +482,10 @@ function UnitView() {
                 </label>
                 <input
                   type="text"
+                  minLength={3}
                   placeholder="Ej. Kilo, Caja, Bolsa, Unidad, Docena..."
                   value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
+                  onChange={(e) => setNombre(sanitizeLettersOnly(e.target.value))}
                   className="w-full px-3.5 py-2.5 bg-[#0c0e12] border border-zinc-800 rounded-lg focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/20 text-sm text-zinc-100 placeholder-zinc-500 transition-colors duration-150 outline-none"
                   required
                 />

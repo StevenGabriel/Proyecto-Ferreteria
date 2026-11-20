@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../../services/api";
+import {
+  sanitizeLettersOnly,
+  sanitizeDigitsOnly,
+  validateTextField,
+  validateBoliviaPhone
+} from "../../utils/validators";
 
 function RegisterClie() {
   const navigate = useNavigate();
@@ -8,6 +14,8 @@ function RegisterClie() {
   const [primerApellido, setPrimerApellido] = useState("");
   const [segundoApellido, setSegundoApellido] = useState("");
   const [ciNit, setCiNit] = useState("");
+  const [tieneComplemento, setTieneComplemento] = useState(false);
+  const [ciComplemento, setCiComplemento] = useState("");
   const [telefono, setTelefono] = useState("");
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
@@ -55,6 +63,8 @@ function RegisterClie() {
 
   const passwordsMatch = contrasena && confirmContrasena && contrasena === confirmContrasena;
 
+  const sanitizeComplemento = (val) => val.toUpperCase().replace(/[^0-9A-Z]/g, "").slice(0, 2);
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setErrorMessage("");
@@ -64,26 +74,78 @@ function RegisterClie() {
       return;
     }
 
+    const nombreErr = validateTextField(nombre, {
+      label: "El Nombre",
+      required: true,
+      minLength: 3,
+      lettersOnly: true,
+      minLetters: 3
+    });
+    if (nombreErr) {
+      setErrorMessage(nombreErr);
+      return;
+    }
+
+    const primerApErr = validateTextField(primerApellido, {
+      label: "El Primer Apellido",
+      required: true,
+      minLength: 3,
+      lettersOnly: true,
+      minLetters: 3
+    });
+    if (primerApErr) {
+      setErrorMessage(primerApErr);
+      return;
+    }
+
+    const segundoApErr = validateTextField(segundoApellido, {
+      label: "El Segundo Apellido",
+      required: false,
+      minLength: 3,
+      lettersOnly: true,
+      minLetters: 3
+    });
+    if (segundoApErr) {
+      setErrorMessage(segundoApErr);
+      return;
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(correo.trim())) {
       setErrorMessage("Formato de correo electrónico no válido (ej. usuario@dominio.com).");
       return;
     }
 
-    const ciNitRegex = /^[0-9]{5,10}(-[0-9A-Z]{1,2})?$/;
-    if (ciNit.trim() && !ciNitRegex.test(ciNit.trim().toUpperCase())) {
-      setErrorMessage("Formato de CI / NIT no válido (debe tener entre 5 y 10 dígitos, ej. 7894561014).");
+    const ciRegex = /^[1-9][0-9]{4,9}$/;
+    if (ciNit.trim()) {
+      if (!ciRegex.test(ciNit.trim())) {
+        setErrorMessage("Formato de CI no válido (debe contener solo números entre 5 y 10 dígitos, ej. 8472910).");
+        return;
+      }
+      if (tieneComplemento && !/^[0-9A-Z]{2}$/.test(ciComplemento.trim().toUpperCase())) {
+        setErrorMessage("El complemento del CI debe tener exactamente 2 caracteres (ej. 2B).");
+        return;
+      }
+    } else if (tieneComplemento) {
+      setErrorMessage("Ingresa primero el número de CI antes de agregar un complemento.");
       return;
     }
 
-    const celularBoliviaRegex = /^[67][0-9]{7}$/;
-    if (telefono.trim() && !celularBoliviaRegex.test(telefono.trim().replace(/\s+/g, ""))) {
-      setErrorMessage("El teléfono celular debe cumplir el formato boliviano de 8 dígitos iniciando con 6 o 7.");
+    const formattedCi = ciNit.trim()
+      ? `${ciNit.trim()}${tieneComplemento && ciComplemento.trim() ? `-${ciComplemento.trim().toUpperCase()}` : ""}`
+      : null;
+
+    const phoneErr = validateBoliviaPhone(telefono, {
+      label: "El teléfono / celular",
+      required: false
+    });
+    if (phoneErr) {
+      setErrorMessage(phoneErr);
       return;
     }
 
-    if (contrasena.length < 6) {
-      setErrorMessage("La contraseña debe tener un mínimo de 6 caracteres.");
+    if (!contrasena.trim() || contrasena.length < 6) {
+      setErrorMessage("La contraseña debe tener un mínimo de 6 caracteres válidos (sin ser solo espacios).");
       return;
     }
 
@@ -98,7 +160,7 @@ function RegisterClie() {
         nombre: nombre.trim(),
         primerApellido: primerApellido.trim(),
         segundoApellido: segundoApellido.trim() || null,
-        ciNit: ciNit.trim() || null,
+        ciNit: formattedCi,
         telefono: telefono.trim() || null,
         correo: correo.trim().toLowerCase(),
         contrasena
@@ -112,7 +174,7 @@ function RegisterClie() {
       setRegisteredClientInfo({
         nombreCompleto: `${nombre.trim()} ${primerApellido.trim()} ${segundoApellido.trim()}`.trim(),
         correo: correo.trim().toLowerCase(),
-        ciNit: ciNit.trim() || "No especificado"
+        ciNit: formattedCi || "No especificado"
       });
       setShowSuccessModal(true);
     } catch (err) {
@@ -187,14 +249,16 @@ function RegisterClie() {
         <form onSubmit={handleRegister} className="space-y-4">
           
           {/* Nombres y Apellidos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-zinc-300">Nombre *</label>
               <input
                 type="text"
                 required
+                minLength={3}
+                maxLength={50}
                 value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                onChange={(e) => setNombre(sanitizeLettersOnly(e.target.value))}
                 placeholder="Ej. Juan Carlos"
                 className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500/80 transition-colors duration-160 ease-out-expo"
               />
@@ -205,43 +269,82 @@ function RegisterClie() {
               <input
                 type="text"
                 required
+                minLength={3}
+                maxLength={50}
                 value={primerApellido}
-                onChange={(e) => setPrimerApellido(e.target.value)}
+                onChange={(e) => setPrimerApellido(sanitizeLettersOnly(e.target.value))}
                 placeholder="Ej. Pérez"
+                className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500/80 transition-colors duration-160 ease-out-expo"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-zinc-300">Segundo apellido</label>
+              <input
+                type="text"
+                minLength={3}
+                maxLength={50}
+                value={segundoApellido}
+                onChange={(e) => setSegundoApellido(sanitizeLettersOnly(e.target.value))}
+                placeholder="Ej. Mamani"
                 className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500/80 transition-colors duration-160 ease-out-expo"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-zinc-300">Segundo apellido</label>
+          {/* CI, Complemento (Checkbox + 2 caracteres) y Teléfono */}
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
+            <div className="sm:col-span-4 space-y-1.5">
+              <label className="text-xs font-semibold text-zinc-300">CI (Números)</label>
               <input
                 type="text"
-                value={segundoApellido}
-                onChange={(e) => setSegundoApellido(e.target.value)}
-                placeholder="Ej. Mamani"
-                className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500/80 transition-colors duration-160 ease-out-expo"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-zinc-300">CI / NIT</label>
-              <input
-                type="text"
+                inputMode="numeric"
+                minLength={5}
+                maxLength={10}
                 value={ciNit}
-                onChange={(e) => setCiNit(e.target.value)}
-                placeholder="Ej. 8472910"
+                onChange={(e) => setCiNit(sanitizeDigitsOnly(e.target.value, 10))}
+                placeholder="Ej. 14147585"
                 className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs font-mono tabular-nums text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500/80 transition-colors duration-160 ease-out-expo"
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="sm:col-span-4 space-y-1.5">
+              <label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={tieneComplemento}
+                  onChange={(e) => {
+                    setTieneComplemento(e.target.checked);
+                    if (!e.target.checked) setCiComplemento("");
+                  }}
+                  className="rounded border-zinc-700 bg-[#0c0e12] accent-amber-500 w-3.5 h-3.5 cursor-pointer"
+                />
+                <span>Complemento</span>
+              </label>
+              <input
+                type="text"
+                disabled={!tieneComplemento}
+                maxLength={2}
+                value={ciComplemento}
+                onChange={(e) => setCiComplemento(sanitizeComplemento(e.target.value))}
+                placeholder={tieneComplemento ? "Ej. 2B" : "—"}
+                className={`w-full border rounded-xl px-3 py-2.5 text-xs font-mono uppercase tabular-nums text-center outline-none transition-colors duration-160 ${
+                  tieneComplemento
+                    ? "bg-[#0c0e12] border-amber-500/50 text-amber-300 focus:border-amber-400"
+                    : "bg-zinc-900/50 border-zinc-800/60 text-zinc-600 cursor-not-allowed"
+                }`}
+              />
+            </div>
+
+            <div className="sm:col-span-4 space-y-1.5">
               <label className="text-xs font-semibold text-zinc-300">Teléfono / Celular</label>
               <input
                 type="tel"
+                inputMode="numeric"
+                minLength={7}
+                maxLength={8}
                 value={telefono}
-                onChange={(e) => setTelefono(e.target.value)}
+                onChange={(e) => setTelefono(sanitizeDigitsOnly(e.target.value, 8))}
                 placeholder="Ej. 70712345"
                 className="w-full bg-[#0c0e12] border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs font-mono tabular-nums text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500/80 transition-colors duration-160 ease-out-expo"
               />
@@ -473,7 +576,7 @@ function RegisterClie() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-zinc-400">CI / NIT:</span>
+                  <span className="text-zinc-400">CI:</span>
                   <span className="font-mono tabular-nums text-zinc-300">
                     {registeredClientInfo.ciNit}
                   </span>

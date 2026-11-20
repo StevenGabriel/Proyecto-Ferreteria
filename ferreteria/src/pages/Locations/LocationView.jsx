@@ -3,6 +3,7 @@ import { getLocations, createLocation, updateLocation, deleteLocation, getWareho
 import Sidebar from "../../components/sidebar/sidebar";
 import Topbar from "../../components/topbar/topbar";
 import { useSidebar } from "../../context/SidebarContext";
+import { validateTextField } from "../../utils/validators";
 
 function LocationView() {
   const { isCollapsed } = useSidebar();
@@ -100,12 +101,18 @@ function LocationView() {
       setFormError("Debes seleccionar un almacén.");
       return;
     }
-    if (!descripcion.trim()) {
-      setFormError("La descripción del estante/pasillo es obligatoria.");
+    const descError = validateTextField(descripcion, {
+      label: "La descripción del estante/pasillo",
+      required: true,
+      minLength: 3,
+      minLetters: 2
+    });
+    if (descError) {
+      setFormError(descError);
       return;
     }
 
-    const data = { AlmacenID: parseInt(almacenId), Descripcion: descripcion };
+    const data = { AlmacenID: parseInt(almacenId), Descripcion: descripcion.trim() };
 
     if (upsertMode === "create") {
       createLocation(data)
@@ -373,6 +380,7 @@ function LocationView() {
                 </label>
                 <input
                   type="text"
+                  minLength={3}
                   placeholder="Ej. Pasillo 3, Estante B - Nivel 2..."
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}

@@ -1,21 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { getProducts, getCategories, getBrands, createOnlineOrder } from '../../services/api';
 import { generateInvoiceTicketPdf } from '../../utils/invoicePdfGenerator';
 import QRCode from 'qrcode';
 import { LOYALTY_TIERS } from '../../constants/loyalty';
 import ChatbotWidget from '../../components/chatbot/ChatbotWidget';
+import {
+  sanitizeDigitsOnly,
+  validateTextField,
+  validateBoliviaPhone
+} from '../../utils/validators';
 
 function ClientCatalog() {
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filtros, Búsqueda y Paginación
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  // Filtros, Búsqueda y Paginación (inicializados con parámetros de la portada si existen)
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') || '');
+  const [selectedCategory, setSelectedCategory] = useState(() => searchParams.get('categoria') || 'ALL');
   const [selectedBrand, setSelectedBrand] = useState('ALL');
   const [sortOrder, setSortOrder] = useState('default');
   const [currentPage, setCurrentPage] = useState(1);
@@ -331,15 +337,33 @@ function ClientCatalog() {
       return;
     }
 
-    if (!checkoutName.trim()) {
-      setToastMessage("Por favor ingresa tu Nombre o Razón Social.");
+    const nameErr = validateTextField(checkoutName, {
+      label: "El Nombre o Razón Social",
+      required: true,
+      minLength: 3,
+      minLetters: 2
+    });
+    if (nameErr) {
+      setToastMessage(nameErr);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3500);
       return;
     }
 
-    if (!checkoutPhone.trim() || !/^[0-9+ -]{7,15}$/.test(checkoutPhone.trim())) {
-      setToastMessage("Por favor ingresa un número de teléfono o celular válido (mínimo 7 dígitos).");
+    const trimmedNit = checkoutNit.trim().toUpperCase();
+    if (trimmedNit && !/^(0|[1-9][0-9]{4,12}(-[0-9A-Z]{2})?)$/.test(trimmedNit)) {
+      setToastMessage("Ingresa un NIT o CI válido (solo números entre 5 y 13 dígitos, o 0).");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3500);
+      return;
+    }
+
+    const phoneErr = validateBoliviaPhone(checkoutPhone, {
+      label: "El teléfono / celular",
+      required: true
+    });
+    if (phoneErr) {
+      setToastMessage(phoneErr);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3500);
       return;
@@ -534,21 +558,33 @@ function ClientCatalog() {
       {/* 1. BARRA SUPERIOR / HEADER PRINCIPAL */}
       <header className="bg-[#0c0e12]/95 backdrop-blur-md border-b border-zinc-800/80 sticky top-0 z-40">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Logo & Marca */}
-          <div className="flex items-center justify-between w-full md:w-auto">
-            <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-zinc-950 font-extrabold text-lg tracking-tighter shadow-sm transition-transform duration-160 ease-out-expo group-hover:scale-[1.03] group-active:scale-[0.97]">
-                C&C
-              </div>
-              <div>
-                <span className="text-base font-extrabold tracking-tight text-zinc-100 group-hover:text-amber-400 transition-colors duration-160 ease-out-expo block leading-tight">
-                  C&C Ferretería
-                </span>
-                <span className="text-[11px] text-zinc-400 font-medium block leading-tight">
-                  Casa y Construcción
-                </span>
-              </div>
-            </Link>
+          {/* Logo & Marca + Enlace a Presentación de la Ferretería */}
+          <div className="flex items-center justify-between w-full md:w-auto gap-4">
+            <div className="flex items-center gap-4">
+              <Link to="/" className="flex items-center gap-3 group">
+                <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-zinc-950 font-extrabold text-lg tracking-tighter shadow-sm transition-transform duration-160 ease-out-expo group-hover:scale-[1.03] group-active:scale-[0.97]">
+                  C&C
+                </div>
+                <div>
+                  <span className="text-base font-extrabold tracking-tight text-zinc-100 group-hover:text-amber-400 transition-colors duration-160 ease-out-expo block leading-tight">
+                    C&C Ferretería
+                  </span>
+                  <span className="text-[11px] text-zinc-400 font-medium block leading-tight">
+                    Casa y Construcción
+                  </span>
+                </div>
+              </Link>
+
+              <Link
+                to="/"
+                className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#12151c] hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 rounded-xl text-xs font-semibold text-zinc-300 hover:text-amber-400 btn-press"
+              >
+                <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <span>Sobre la Ferretería</span>
+              </Link>
+            </div>
 
             {/* Botón Carrito en Mobile */}
             <button
@@ -739,26 +775,34 @@ function ClientCatalog() {
 
       {/* 2. BANNER PRINCIPAL ARQUITECTÓNICO / INDUSTRIAL (Impeccable + Taste Skill) */}
       <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-        <div
-          className="relative rounded-2xl overflow-hidden bg-[#12151c] border border-zinc-800/90 p-6 sm:p-8 lg:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center"
-          style={{
-            backgroundImage: 'radial-gradient(rgba(245, 158, 11, 0.07) 1px, transparent 1px)',
-            backgroundSize: '20px 20px'
-          }}
-        >
+        <div className="relative rounded-2xl overflow-hidden bg-[#12151c] border border-zinc-800/90 p-6 sm:p-8 lg:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Imagen sutil de herramientas ferreteras detrás del banner */}
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-70 pointer-events-none"
+            style={{
+              backgroundImage: "url('https://images.unsplash.com/photo-1581783898377-1c85bf937427?auto=format&fit=crop&w=1920&q=80')"
+            }}
+          />
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'linear-gradient(90deg, rgba(18,21,28,0.84) 0%, rgba(18,21,28,0.55) 55%, rgba(18,21,28,0.78) 100%)'
+            }}
+          />
+
           {/* Columna Izquierda: Propuesta de valor directa sin adornos IA */}
-          <div className="lg:col-span-7 space-y-3 text-left">
+          <div className="relative z-10 lg:col-span-7 space-y-3 text-left">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-zinc-100 tracking-tight leading-[1.15]">
               Suministros técnicos, herramientas y materiales de construcción con stock en tiempo real
             </h1>
-            <p className="text-zinc-400 text-sm sm:text-base leading-relaxed max-w-[62ch]">
+            <p className="text-zinc-300 text-sm sm:text-base leading-relaxed max-w-[62ch]">
               Consulta existencias reales en almacén, accede a precios con descuento para contratistas y reserva tu pedido en línea con QR Simple para retiro directo en mostrador.
             </p>
           </div>
 
           {/* Columna Derecha: Ficha Técnica Operativa de la Ferretería (Datos Tabulares Reales) */}
-          <div className="lg:col-span-5 grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div className="bg-[#0c0e12] border border-zinc-800/90 rounded-xl p-4 flex flex-col justify-between">
+          <div className="relative z-10 lg:col-span-5 grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="bg-[#0c0e12]/95 border border-zinc-800/90 rounded-xl p-4 flex flex-col justify-between">
               <span className="text-[11px] text-zinc-400 font-medium">Ítems en catálogo</span>
               <span className="text-2xl font-mono font-bold text-zinc-100 tabular-nums mt-2">
                 {products.length}
@@ -769,7 +813,7 @@ function ClientCatalog() {
               </span>
             </div>
 
-            <div className="bg-[#0c0e12] border border-zinc-800/90 rounded-xl p-4 flex flex-col justify-between">
+            <div className="bg-[#0c0e12]/95 border border-zinc-800/90 rounded-xl p-4 flex flex-col justify-between">
               <span className="text-[11px] text-zinc-400 font-medium">Categorías</span>
               <span className="text-2xl font-mono font-bold text-amber-400 tabular-nums mt-2">
                 {categories.length}
@@ -779,13 +823,13 @@ function ClientCatalog() {
               </span>
             </div>
 
-            <div className="col-span-2 sm:col-span-1 bg-[#0c0e12] border border-zinc-800/90 rounded-xl p-4 flex flex-col justify-between">
+            <div className="col-span-2 sm:col-span-1 bg-[#0c0e12]/95 border border-zinc-800/90 rounded-xl p-4 flex flex-col justify-between">
               <span className="text-[11px] text-zinc-400 font-medium">Despacho central</span>
               <span className="text-sm font-bold text-zinc-100 mt-2 leading-snug">
                 Av. Beijing y Tadeo Haenke
               </span>
               <span className="text-[10px] text-zinc-500 font-mono mt-1">
-                Cochabamba · SIAT
+                Cochabamba · Zona Sarco
               </span>
             </div>
           </div>
@@ -974,15 +1018,20 @@ function ClientCatalog() {
                       </span>
                     )}
 
-                    {/* Badge de Stock con números tabulares reales */}
+                    {/* Badge de Disponibilidad de alta visibilidad */}
                     <span
-                      className={`absolute top-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold tabular-nums ${
+                      className={`absolute top-3 right-3 px-2.5 py-0.5 rounded-md text-[11px] font-bold flex items-center gap-1 shadow-md ${
                         isAvailable
-                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                          ? 'bg-emerald-500 text-zinc-950 font-extrabold border border-emerald-400/50'
+                          : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 backdrop-blur-sm'
                       }`}
                     >
-                      {isAvailable ? `Stock: ${stock}` : 'Agotado'}
+                      {isAvailable && (
+                        <svg className="w-3 h-3 text-zinc-950 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      )}
+                      <span>{isAvailable ? 'Disponible' : 'Agotado'}</span>
                     </span>
 
                     {/* Botón Flotante de Vista Rápida (con desplazamiento sutil ease-out-expo) */}
@@ -1442,15 +1491,20 @@ function ClientCatalog() {
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-zinc-400">
-                  <span>Existencias en almacén:</span>
+                  <span>Disponibilidad:</span>
                   <span
-                    className={`font-mono font-bold tabular-nums px-2.5 py-0.5 rounded-md text-[11px] ${
+                    className={`font-bold px-2.5 py-0.5 rounded-md text-[11px] flex items-center gap-1 shadow-sm ${
                       (quickViewProduct.Stock || 0) > 0
-                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                        ? 'bg-emerald-500 text-zinc-950 font-extrabold border border-emerald-400/50'
+                        : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
                     }`}
                   >
-                    {(quickViewProduct.Stock || 0) > 0 ? `${quickViewProduct.Stock} disponibles` : 'Agotado'}
+                    {(quickViewProduct.Stock || 0) > 0 && (
+                      <svg className="w-3 h-3 text-zinc-950 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    )}
+                    <span>{(quickViewProduct.Stock || 0) > 0 ? 'Disponible' : 'Agotado'}</span>
                   </span>
                 </div>
 
@@ -1658,6 +1712,7 @@ function ClientCatalog() {
                       <input
                         type="text"
                         required
+                        minLength={3}
                         value={checkoutName}
                         onChange={(e) => setCheckoutName(e.target.value)}
                         placeholder="Ej. Constructora San Miguel S.R.L."
@@ -1672,8 +1727,9 @@ function ClientCatalog() {
                         </label>
                         <input
                           type="text"
+                          maxLength={16}
                           value={checkoutNit}
-                          onChange={(e) => setCheckoutNit(e.target.value)}
+                          onChange={(e) => setCheckoutNit(e.target.value.toUpperCase().replace(/[^0-9A-Z-]/g, ''))}
                           placeholder="NIT o CI para factura"
                           className="w-full bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-500/70 transition-colors duration-160 font-mono tabular-nums"
                         />
@@ -1684,8 +1740,11 @@ function ClientCatalog() {
                         </label>
                         <input
                           type="tel"
+                          required
+                          minLength={7}
+                          maxLength={8}
                           value={checkoutPhone}
-                          onChange={(e) => setCheckoutPhone(e.target.value)}
+                          onChange={(e) => setCheckoutPhone(sanitizeDigitsOnly(e.target.value, 8))}
                           placeholder="Ej. 76543210"
                           className="w-full bg-[#12151c] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-500/70 transition-colors duration-160 font-mono tabular-nums"
                         />

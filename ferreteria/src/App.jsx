@@ -6,6 +6,7 @@ import ForgotPassword from './pages/Auth/ForgotPassword';
 import ResetPassword from './pages/Auth/ResetPassword';
 import RegisterClients from './pages/Clients/RegisterClie';
 import ClientCatalog from './pages/Clients/ClientCatalog';
+import LandingPage from './pages/Clients/LandingPage';
 
 import ProductView from './pages/Products/ProductView';
 import ProductRegister from './pages/Products/ProductRegisterForm';
@@ -22,7 +23,12 @@ import InvoiceListView from './pages/Sales/InvoiceListView';
 import OnlineOrdersView from './pages/Sales/OnlineOrdersView';
 import ClientView from './pages/Contacts/ClientView';
 import NotFound from './pages/NotFound/NotFound';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import { SidebarProvider } from './context/SidebarContext';
+
+// Roles autorizados para el sistema
+const STAFF_ROLES = ['administrador', 'admin', 'vendedor', 'cajero', 'operador', 'empleado'];
+const ADMIN_ROLES = ['administrador', 'admin'];
 
 function App() {
   return (
@@ -30,44 +36,15 @@ function App() {
       <SidebarProvider>
         <div className="App">
           <Routes>
-            {/* Ruta Principal: Catálogo y Tienda de Clientes */}
-            <Route path="/" element={<ClientCatalog />} />
+            {/* 1. Rutas Públicas de Libre Acceso (Presentación Institucional y Catálogo) */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/inicio" element={<LandingPage />} />
+            <Route path="/nosotros" element={<LandingPage />} />
             <Route path="/catalogo" element={<ClientCatalog />} />
             <Route path="/tienda" element={<ClientCatalog />} />
             <Route path="/portalClientes" element={<ClientCatalog />} />
 
-            {/* Rutas de Administración y Dashboard de Operaciones */}
-            <Route path="/dashboard" element={<Home />} />
-            <Route path="/admin" element={<Home />} />
-            <Route path="/home" element={<Home />} />
-
-            {/* Gestión de Usuarios y Permisos RBAC (Objetivo 4) */}
-            <Route path="/usuarios" element={<UserManagement />} />
-            <Route path="/empleados" element={<UserManagement />} />
-            <Route path="/personal" element={<UserManagement />} />
-
-            {/* Gestión de Clientes para Ventas y Facturación */}
-            <Route path="/clientes" element={<ClientView />} />
-            <Route path="/contactos/clientes" element={<ClientView />} />
-
-            {/* Facturación Electrónica y Listado de Facturas */}
-            <Route path="/facturas" element={<InvoiceListView />} />
-            <Route path="/facturacion" element={<InvoiceListView />} />
-
-            {/* Control de Inventario, Semáforo de Caducidad y Kardex (Objetivo 2) */}
-            <Route path="/inventario" element={<InventoryControl />} />
-            <Route path="/kardex" element={<InventoryControl />} />
-            <Route path="/stock-critico" element={<InventoryControl />} />
-
-            {/* Módulo Punto de Venta POS / Vender (Dedicado Standalone) */}
-            <Route path="/vender" element={<POSView />} />
-            <Route path="/pos" element={<POSView />} />
-
-            {/* Módulo de Pedidos Online / Cola de Recojo en Tienda */}
-            <Route path="/pedidos-online" element={<OnlineOrdersView />} />
-            <Route path="/pedidos" element={<OnlineOrdersView />} />
-
-            {/* Login Universal y Flujo de Recuperación con Token de 10 min */}
+            {/* 2. Login y Autenticación Pública */}
             <Route path="/login" element={<Login />} />
             <Route path="/loginAdm" element={<Login />} />
             <Route path="/loginClie" element={<Login />} />
@@ -77,17 +54,231 @@ function App() {
             <Route path="/registerClie" element={<RegisterClients />} />
             <Route path="/registro" element={<RegisterClients />} />
 
-            {/* Vistas de Configuración de Productos y Almacén */}
-            <Route path="/productsView" element={<ProductView />} />
-            <Route path="/productReg" element={<ProductRegister />} />
-            <Route path="/productEdit/:ProductoID" element={<ProductEdit />} />
-            <Route path="/marcas" element={<BrandView />} />
-            <Route path="/categorias" element={<CategoryView />} />
-            <Route path="/unidades" element={<UnitView />} />
-            <Route path="/locations" element={<LocationView />} />
-            <Route path="/almacenes" element={<WarehouseView />} />
+            {/* 3. Rutas Operativas Protegidas (Personal: Administrador + Empleados) */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
 
-            {/* Ruta comodín 404 para cualquier URL inexistente */}
+            {/* 4. Rutas Críticas Protegidas (Exclusivo Administrador - RBAC Objetivo 4) */}
+            <Route
+              path="/usuarios"
+              element={
+                <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                  <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/empleados"
+              element={
+                <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                  <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/personal"
+              element={
+                <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                  <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 5. Gestión de Clientes */}
+            <Route
+              path="/clientes"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <ClientView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/contactos/clientes"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <ClientView />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 6. Comprobantes de Venta */}
+            <Route
+              path="/comprobantes"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <InvoiceListView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/facturas"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <InvoiceListView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/facturacion"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <InvoiceListView />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 7. Control de Inventario, Semáforo de Caducidad y Kardex */}
+            <Route
+              path="/inventario"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <InventoryControl />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/kardex"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <InventoryControl />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/stock-critico"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <InventoryControl />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 8. Módulo Punto de Venta POS / Vender */}
+            <Route
+              path="/vender"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <POSView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pos"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <POSView />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 9. Módulo de Pedidos Online / Cola de Recojo en Tienda */}
+            <Route
+              path="/pedidos-online"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <OnlineOrdersView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pedidos"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <OnlineOrdersView />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 10. Vistas de Catálogo, Configuración de Productos y Almacén */}
+            <Route
+              path="/productsView"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <ProductView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/productReg"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <ProductRegister />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/productEdit/:ProductoID"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <ProductEdit />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/marcas"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <BrandView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/categorias"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <CategoryView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/unidades"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <UnitView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/locations"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <LocationView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/almacenes"
+              element={
+                <ProtectedRoute allowedRoles={STAFF_ROLES}>
+                  <WarehouseView />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 11. Ruta comodín 404 para cualquier URL inexistente */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

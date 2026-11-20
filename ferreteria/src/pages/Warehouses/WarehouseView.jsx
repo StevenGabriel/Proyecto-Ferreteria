@@ -3,6 +3,7 @@ import { getWarehouses, createWarehouse, updateWarehouse, deleteWarehouse } from
 import Sidebar from "../../components/sidebar/sidebar";
 import Topbar from "../../components/topbar/topbar";
 import { useSidebar } from "../../context/SidebarContext";
+import { sanitizeDigitsOnly, validateTextField, validateBoliviaPhone } from "../../utils/validators";
 
 function WarehouseView() {
   const { isCollapsed } = useSidebar();
@@ -91,12 +92,35 @@ function WarehouseView() {
 
   const handleUpsertSubmit = (e) => {
     e.preventDefault();
-    if (!nombre.trim()) {
-      setFormError("El nombre del almacén es obligatorio.");
+    const nombreError = validateTextField(nombre, {
+      label: "El nombre del almacén",
+      required: true,
+      minLength: 3,
+      minLetters: 2
+    });
+    if (nombreError) {
+      setFormError(nombreError);
       return;
     }
 
-    const data = { Nombre: nombre, Direccion: direccion, Telefono: telefono };
+    const dirError = validateTextField(direccion, {
+      label: "La dirección",
+      required: false,
+      minLength: 3,
+      minLetters: 2
+    });
+    if (dirError) {
+      setFormError(dirError);
+      return;
+    }
+
+    const phoneError = validateBoliviaPhone(telefono, { label: "El teléfono", required: false });
+    if (phoneError) {
+      setFormError(phoneError);
+      return;
+    }
+
+    const data = { Nombre: nombre.trim(), Direccion: direccion.trim(), Telefono: telefono.trim() };
 
     if (upsertMode === "create") {
       createWarehouse(data)
@@ -346,6 +370,7 @@ function WarehouseView() {
                 </label>
                 <input
                   type="text"
+                  minLength={3}
                   placeholder="Ej. Almacén Central, Depósito 2..."
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
@@ -358,6 +383,7 @@ function WarehouseView() {
                 <label className="text-xs font-semibold text-zinc-300 block">Dirección</label>
                 <input
                   type="text"
+                  minLength={3}
                   placeholder="Ej. Av. Blanco Galindo Km 3..."
                   value={direccion}
                   onChange={(e) => setDireccion(e.target.value)}
@@ -368,10 +394,12 @@ function WarehouseView() {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-zinc-300 block">Teléfono</label>
                 <input
-                  type="text"
-                  placeholder="Ej. 44556677"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={8}
+                  placeholder="Ej. 44556677 o 70012345"
                   value={telefono}
-                  onChange={(e) => setTelefono(e.target.value)}
+                  onChange={(e) => setTelefono(sanitizeDigitsOnly(e.target.value, 8))}
                   className="w-full px-3.5 py-2.5 bg-[#0c0e12] border border-zinc-800 rounded-lg text-sm text-zinc-100 font-mono tabular-nums placeholder-zinc-500 outline-none focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/20 transition-colors duration-150"
                 />
               </div>

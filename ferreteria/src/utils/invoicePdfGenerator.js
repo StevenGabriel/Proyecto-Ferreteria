@@ -78,8 +78,8 @@ function generarCodigoAutorizacion(id, fecha) {
 }
 
 /**
- * Genera el documento PDF con el diseño oficial de Factura / Recibo
- * @param {Object} receiptData - Datos de la venta/factura
+ * Genera el documento PDF de Comprobante de Venta / Nota de Venta (Control Comercial Interno)
+ * @param {Object} receiptData - Datos de la venta
  * @param {Object} options - Opciones adicionales ({ openInTab: true, download: true })
  */
 export async function generateInvoicePdf(receiptData, options = { openInTab: true, download: true }) {
@@ -97,7 +97,6 @@ export async function generateInvoicePdf(receiptData, options = { openInTab: tru
   const contentWidth = pageWidth - margin * 2;
 
   const invoiceNum = (receiptData.numeroFactura || receiptData.id || '1').toString().replace(/^[A-Z-]+/i, '') || '1';
-  const cuf = receiptData.cuf || generarCodigoAutorizacion(invoiceNum, receiptData.time || receiptData.fechaEmision || '');
   const fechaStr = receiptData.time || receiptData.fechaEmision || new Date().toLocaleString('es-BO');
   const nitCliente = receiptData.nit && receiptData.nit !== '0' ? receiptData.nit : (receiptData.documento || receiptData.nitCliente || '0');
   const razonSocial = (receiptData.cliente || receiptData.client || receiptData.razonSocial || receiptData.nombreCliente || 'CLIENTE GENERAL').toUpperCase();
@@ -111,18 +110,18 @@ export async function generateInvoicePdf(receiptData, options = { openInTab: tru
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(0, 0, 0);
-  doc.text('OSCAR EDGAR CLAROS DAVALOS', margin, 18);
+  doc.text('FERRETERÍA CASA Y CONSTRUCCIÓN', margin, 18);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(40, 40, 40);
-  doc.text('CASA MATRIZ', margin, 22);
+  doc.text('CASA MATRIZ — OSCAR EDGAR CLAROS DAVALOS', margin, 22);
   doc.text('Nro. Punto de Venta 0', margin, 25.5);
   doc.text('ZONA: SARCO, AVENIDA: BEIJING, NRO.: 1234, TELEFONO: 72271495', margin, 29);
   doc.text('Telf: 72271495', margin, 32.5);
-  doc.text('COCHABAMBA', margin, 36);
+  doc.text('COCHABAMBA - BOLIVIA', margin, 36);
 
-  // Columna Derecha: Datos Tributarios de Facturación
+  // Columna Derecha: Datos del Comprobante
   const rightColX = pageWidth - margin;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
@@ -131,29 +130,25 @@ export async function generateInvoicePdf(receiptData, options = { openInTab: tru
   doc.text('989530017', rightColX, 18, { align: 'right' });
 
   doc.setFont('helvetica', 'bold');
-  doc.text(isInvoice ? 'FACTURA NRO.:' : 'RECIBO NRO.:', rightColX - 58, 22.5);
+  doc.text(isInvoice ? 'COMPROBANTE NRO.:' : 'NOTA DE VENTA NRO.:', rightColX - 58, 22.5);
   doc.setFont('helvetica', 'normal');
   doc.text(invoiceNum, rightColX, 22.5, { align: 'right' });
 
-  if (isInvoice) {
-    doc.setFont('helvetica', 'bold');
-    doc.text('COD. AUTORIZACIÓN:', rightColX - 58, 27);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.5);
-    const splitCuf = doc.splitTextToSize(cuf, 58);
-    doc.text(splitCuf, rightColX, 30.5, { align: 'right' });
-  }
+  doc.setFont('helvetica', 'bold');
+  doc.text('TIPO:', rightColX - 58, 27);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Control Comercial Interno', rightColX, 27, { align: 'right' });
 
   // 2. TÍTULO CENTRAL
   const titleY = 46;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
   doc.setTextColor(0, 0, 0);
-  doc.text(isInvoice ? 'FACTURA' : 'RECIBO DE VENTA', pageWidth / 2, titleY, { align: 'center' });
+  doc.text(isInvoice ? 'COMPROBANTE DE VENTA' : 'NOTA DE VENTA', pageWidth / 2, titleY, { align: 'center' });
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  doc.text(isInvoice ? '(Con Derecho a Crédito Fiscal)' : '(Documento No Válido para Crédito Fiscal)', pageWidth / 2, titleY + 4, { align: 'center' });
+  doc.text('(Documento de Control Comercial Interno - No Válido para Crédito Fiscal)', pageWidth / 2, titleY + 4, { align: 'center' });
 
   // 3. DATOS DEL CLIENTE Y FECHA
   const metaY = 56;
@@ -239,12 +234,10 @@ export async function generateInvoicePdf(receiptData, options = { openInTab: tru
   // Tabla de Totales a la derecha
   const totalsTableX = pageWidth - margin - 65;
   const totals = [
-    ['SUBTOTAL', subtotal.toFixed(2)],
-    ['DESCUENTO', discount.toFixed(2)],
-    ['TOTAL', total.toFixed(2)],
-    ['MONTO GIFT CARD', '0.00'],
-    ['MONTO A PAGAR', total.toFixed(2)],
-    ['IMPORTE BASE CREDITO FISCAL', total.toFixed(2)]
+    ['SUBTOTAL (Bs.)', subtotal.toFixed(2)],
+    ['DESCUENTO (Bs.)', discount.toFixed(2)],
+    ['TOTAL NETO (Bs.)', total.toFixed(2)],
+    ['MONTO A PAGAR (Bs.)', total.toFixed(2)]
   ];
 
   autoTable(doc, {
@@ -267,36 +260,36 @@ export async function generateInvoicePdf(receiptData, options = { openInTab: tru
 
   const totalsFinalY = doc.lastAutoTable.finalY + 8;
 
-  // 6. CÓDIGO QR Y PIE DE PÁGINA LEGAL
-  const qrString = `https://pilotosiat.impuestos.gob.bo/consulta/QR?nit=989530017&cuf=${cuf}&numero=${invoiceNum}&t=${total.toFixed(2)}`;
+  // 6. CÓDIGO QR DE VERIFICACIÓN INTERNA Y PIE DE PÁGINA
+  const qrString = `FERRETERIA CASA Y CONSTRUCCION | COMPROBANTE NRO: ${invoiceNum} | FECHA: ${fechaStr} | TOTAL: Bs. ${total.toFixed(2)}`;
   let qrDataUrl = null;
   try {
     qrDataUrl = await QRCode.toDataURL(qrString, { width: 140, margin: 1 });
   } catch (err) {
-    console.warn('No se pudo generar QR para factura:', err);
+    console.warn('No se pudo generar QR para comprobante:', err);
   }
 
   const footerY = Math.max(totalsFinalY, 215);
 
-  // Textos legales (Izquierda)
+  // Textos informativos (Izquierda)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6.5);
   doc.setTextColor(0, 0, 0);
-  const legal1 = 'ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAÍS, EL USO ILÍCITO SERÁ SANCIONADO PENALMENTE DE ACUERDO A LEY';
+  const legal1 = 'FERRETERÍA CASA Y CONSTRUCCIÓN — COMPROBANTE DE CONTROL COMERCIAL INTERNO';
   doc.text(legal1, (pageWidth - 36) / 2, footerY, { align: 'center' });
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6);
   doc.setTextColor(60, 60, 60);
-  doc.text('Ley Nº 453: Puedes acceder a la reclamación cuando tus derechos han sido vulnerados.', (pageWidth - 36) / 2, footerY + 4, { align: 'center' });
-  doc.text('" Este documento es la Representación Gráfica de un Documento Fiscal Digital emitido en una modalidad de facturación en línea "', (pageWidth - 36) / 2, footerY + 8, { align: 'center' });
+  doc.text('Conserve este comprobante como respaldo de su compra y garantía de entrega.', (pageWidth - 36) / 2, footerY + 4, { align: 'center' });
+  doc.text('Documento de control administrativo interno sin validez fiscal tributaria. ¡Gracias por su preferencia!', (pageWidth - 36) / 2, footerY + 8, { align: 'center' });
 
   // Renderizar QR (Derecha)
   if (qrDataUrl) {
     doc.addImage(qrDataUrl, 'PNG', pageWidth - margin - 26, footerY - 2, 26, 26);
   }
 
-  const fileName = `${isInvoice ? 'Factura' : 'Recibo'}_Nro_${invoiceNum}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  const fileName = `${isInvoice ? 'Comprobante_Venta' : 'Nota_Venta'}_Nro_${invoiceNum}_${new Date().toISOString().slice(0, 10)}.pdf`;
 
   if (options.download) {
     doc.save(fileName);
@@ -410,20 +403,8 @@ export async function generateInvoiceTicketPdf(receiptData, options = { openInTa
     doc.setTextColor(0, 0, 0);
     y += 3.5;
   } else {
-    doc.text(isInvoice ? `FACTURA NRO: ${invoiceNum}` : `RECIBO NRO: ${invoiceNum}`, margin, y);
+    doc.text(isInvoice ? `COMPROBANTE NRO: ${invoiceNum}` : `NOTA DE VENTA NRO: ${invoiceNum}`, margin, y);
     y += 3.5;
-
-    if (isInvoice) {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.5);
-      doc.text('CÓD. AUTORIZACIÓN (CUF):', margin, y);
-      y += 2.8;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(5.5);
-      const splitCuf = doc.splitTextToSize(cuf, contentWidth);
-      doc.text(splitCuf, margin, y);
-      y += splitCuf.length * 2.4 + 1;
-    }
   }
 
   doc.line(margin, y, pageWidth - margin, y);
@@ -514,14 +495,6 @@ export async function generateInvoiceTicketPdf(receiptData, options = { openInTa
   doc.text(total.toFixed(2), pageWidth - margin, y, { align: 'right' });
   y += 3.5;
 
-  if (isInvoice) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.5);
-    doc.text('BASE CRÉDITO: Bs.', margin + 24, y);
-    doc.text(total.toFixed(2), pageWidth - margin, y, { align: 'right' });
-    y += 3.5;
-  }
-
   doc.line(margin, y, pageWidth - margin, y);
   y += 3.2;
 
@@ -543,7 +516,7 @@ export async function generateInvoiceTicketPdf(receiptData, options = { openInTa
 
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(50, 50, 50);
-    const legPreDesc = 'Presente este comprobante y su captura de pago Yape en nuestro mostrador central (Av. Beijing y Av. Tadeo Haenke) para verificar el pago y recibir su Factura Oficial o Recibo.';
+    const legPreDesc = 'Presente este comprobante y su respaldo de pago en nuestro mostrador central (Av. Beijing y Av. Tadeo Haenke) para validar el pedido y recibir su Comprobante de Venta.';
     const splitPre = doc.splitTextToSize(legPreDesc, contentWidth);
     doc.text(splitPre, pageWidth / 2, y, { align: 'center' });
     y += splitPre.length * 2.2 + 2;
@@ -552,7 +525,7 @@ export async function generateInvoiceTicketPdf(receiptData, options = { openInTa
     doc.setFont('helvetica', 'bold');
     doc.text('¡Gracias por su preferencia!', pageWidth / 2, y, { align: 'center' });
   } else {
-    const qrString = `https://pilotosiat.impuestos.gob.bo/consulta/QR?nit=989530017&cuf=${cuf}&numero=${invoiceNum}&t=${total.toFixed(2)}`;
+    const qrString = `FERRETERIA CASA Y CONSTRUCCION | COMPROBANTE NRO: ${invoiceNum} | TOTAL: Bs. ${total.toFixed(2)}`;
     try {
       const qrDataUrl = await QRCode.toDataURL(qrString, { width: 90, margin: 0 });
       doc.addImage(qrDataUrl, 'PNG', (pageWidth - 22) / 2, y, 22, 22);
@@ -561,22 +534,22 @@ export async function generateInvoiceTicketPdf(receiptData, options = { openInTa
       console.warn('QR error:', err);
     }
 
-    // Leyenda oficial
+    // Leyenda comercial interna
     doc.setFontSize(5);
     doc.setTextColor(50, 50, 50);
-    const leg1 = '"ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAÍS, EL USO ILÍCITO SERÁ SANCIONADO PENALMENTE DE ACUERDO A LEY"';
+    const leg1 = 'COMPROBANTE DE CONTROL COMERCIAL INTERNO — NO VÁLIDO PARA CRÉDITO FISCAL';
     const splitLeg = doc.splitTextToSize(leg1, contentWidth);
     doc.text(splitLeg, pageWidth / 2, y, { align: 'center' });
     y += splitLeg.length * 2.2 + 1;
 
-    doc.text('Ley Nº 453: Exige tus derechos como consumidor.', pageWidth / 2, y, { align: 'center' });
+    doc.text('Conserve este comprobante como respaldo de su compra.', pageWidth / 2, y, { align: 'center' });
     y += 3;
     doc.text('¡Gracias por su compra!', pageWidth / 2, y, { align: 'center' });
   }
 
   const fileName = isPreOrder
     ? `Reserva_Pedido_${receiptData.id || invoiceNum}.pdf`
-    : `Ticket_${isInvoice ? 'Factura' : 'Recibo'}_Nro_${invoiceNum}.pdf`;
+    : `${isInvoice ? 'Comprobante_Venta' : 'Nota_Venta'}_80mm_Nro_${invoiceNum}.pdf`;
 
   if (options.download) {
     doc.save(fileName);

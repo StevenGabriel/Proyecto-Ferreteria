@@ -4,6 +4,11 @@ import { getProducts, deleteProduct, getLots, createLots } from "../../services/
 import Sidebar from "../../components/sidebar/sidebar";
 import Topbar from "../../components/topbar/topbar";
 import { useSidebar } from "../../context/SidebarContext";
+import {
+  blockNegativeNumberKeyDown,
+  sanitizePositiveNumberInput,
+  validateTextField
+} from "../../utils/validators";
 
 function ProductView() {
   const { isCollapsed } = useSidebar();
@@ -37,6 +42,7 @@ function ProductView() {
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [stockProduct, setStockProduct] = useState(null);
   const [stockRows, setStockRows] = useState([]);
+  const [stockError, setStockError] = useState("");
 
   // Toast & Sonido
   const [toastMessage, setToastMessage] = useState("");
@@ -185,6 +191,7 @@ function ProductView() {
   const openStockModal = (product) => {
     const hoy = new Date().toISOString().slice(0, 16);
     setStockProduct(product);
+    setStockError("");
     setOpenMenuId(null);
 
     getLots(product.ProductoID)
@@ -253,21 +260,39 @@ function ProductView() {
 
   // Actualizar campo de fila
   const handleStockRowChange = (id, field, value) => {
+    const nextValue = (field === "cantidad" || field === "costo")
+      ? sanitizePositiveNumberInput(value)
+      : value;
+    setStockError("");
     setStockRows((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
+      prev.map((r) => (r.id === id ? { ...r, [field]: nextValue } : r))
     );
   };
 
   // Guardar nuevos Lotes mediante API POST /lots
   const handleSaveStock = (e) => {
     e.preventDefault();
+    setStockError("");
+
+    const invalidQtyRow = stockRows.find(
+      (r) => !r.isRegistered && r.cantidad !== "" && (isNaN(parseFloat(r.cantidad)) || parseFloat(r.cantidad) <= 0)
+    );
+    if (invalidQtyRow) {
+      const msg = "La cantidad ingresada debe ser un número mayor a 0.";
+      setStockError(msg);
+      setToastMessage(msg);
+      setShowToast(true);
+      return;
+    }
 
     const newRowsToSave = stockRows.filter(
       (r) => !r.isRegistered && parseFloat(r.cantidad) > 0
     );
 
     if (newRowsToSave.length === 0) {
-      setToastMessage("Por favor ingresa al menos una nueva cantidad válida (> 0) para agregar.");
+      const msg = "Por favor ingresa al menos una nueva cantidad válida (> 0) para agregar.";
+      setStockError(msg);
+      setToastMessage(msg);
       setShowToast(true);
       return;
     }
@@ -276,23 +301,43 @@ function ProductView() {
 
     for (const r of newRowsToSave) {
       if (!r.fecha) {
-        setToastMessage("La Fecha de Ingreso es obligatoria para registrar el stock.");
+        const msg = "La Fecha de Ingreso es obligatoria para registrar el stock.";
+        setStockError(msg);
+        setToastMessage(msg);
         setShowToast(true);
         return;
       }
       if (r.costo && (isNaN(parseFloat(r.costo)) || parseFloat(r.costo) < 0)) {
-        setToastMessage("El costo unitario del lote no puede ser un valor negativo.");
+        const msg = "El costo unitario del lote no puede ser un valor negativo.";
+        setStockError(msg);
+        setToastMessage(msg);
+        setShowToast(true);
+        return;
+      }
+      const notaErr = validateTextField(r.nota, {
+        label: "La nota / lote",
+        required: false,
+        minLength: 3,
+        minLetters: 2
+      });
+      if (notaErr) {
+        setStockError(notaErr);
+        setToastMessage(notaErr);
         setShowToast(true);
         return;
       }
       if (stockProduct.ManejaCaducidad) {
         if (!r.fechaVencimiento) {
-          setToastMessage(`El producto "${stockProduct.Nombre}" maneja caducidad. Es obligatorio ingresar la Fecha de Vencimiento para cada lote.`);
+          const msg = `El producto "${stockProduct.Nombre}" maneja caducidad. Es obligatorio ingresar la Fecha de Vencimiento para cada lote.`;
+          setStockError(msg);
+          setToastMessage(msg);
           setShowToast(true);
           return;
         }
         if (r.fechaVencimiento < todayStr) {
-          setToastMessage(`La Fecha de Caducidad (${r.fechaVencimiento}) no puede ser anterior a la fecha actual (${todayStr}).`);
+          const msg = `La Fecha de Caducidad (${r.fechaVencimiento}) no puede ser anterior a la fecha actual (${todayStr}).`;
+          setStockError(msg);
+          setToastMessage(msg);
           setShowToast(true);
           return;
         }
@@ -306,7 +351,7 @@ function ProductView() {
         costo: parseFloat(r.costo || 0),
         fecha: r.fecha,
         FechaVencimiento: r.fechaVencimiento || null,
-        nota: r.nota || "Stock de apertura"
+        nota: (r.nota || "").trim() || "Stock de apertura"
       }))
     };
 
@@ -321,7 +366,9 @@ function ProductView() {
       })
       .catch((err) => {
         console.error("Error al guardar lotes:", err);
-        setToastMessage(err.response?.data?.message || "Error al registrar los lotes de stock en la base de datos.");
+        const msg = err.response?.data?.message || "Error al registrar los lotes de stock en la base de datos.";
+        setStockError(msg);
+        setToastMessage(msg);
         setShowToast(true);
       });
   };
@@ -341,14 +388,31 @@ function ProductView() {
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
   const currentPageProducts = filteredProducts.slice(startIndex, endIndex);
 
+  // Generar números de página con ventana inteligente si hay muchas páginas
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push("...");
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
   return (
-    <div className="bg-[#0c0e12] text-zinc-100 min-h-screen font-sans flex" onClick={() => setOpenMenuId(null)}>
+    <div className="bg-[#0c0e12] text-zinc-100 min-h-screen font-sans flex w-full max-w-full overflow-x-hidden" onClick={() => setOpenMenuId(null)}>
       <Sidebar activeItem={activeMenu} />
 
-      <main className={`flex-1 transition-[margin-left] duration-220 ease-out-expo ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-[#0c0e12] flex flex-col`}>
+      <main className={`flex-1 min-w-0 w-full overflow-x-hidden transition-[margin-left] duration-220 ease-out-expo ${isCollapsed ? 'ml-20' : 'ml-64'} min-h-screen bg-[#0c0e12] flex flex-col`}>
         <Topbar />
 
-        <div className="p-6 md:p-8 max-w-[1920px] w-full mx-auto space-y-6 flex-1">
+        <div className="p-6 md:p-8 max-w-[1920px] w-full min-w-0 mx-auto space-y-6 flex-1">
           {/* Encabezado */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -414,21 +478,21 @@ function ProductView() {
           </div>
 
           {/* Tabla de Productos */}
-          <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl overflow-hidden shadow-xl">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left text-zinc-300">
+          <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl overflow-hidden shadow-xl w-full min-w-0">
+            <div className="w-full overflow-x-auto">
+              <table className="w-full lg:table-fixed text-xs text-left text-zinc-300">
                 <thead className="uppercase bg-[#0c0e12] text-zinc-400 border-b border-zinc-800/80 text-[11px] tracking-wider">
                   <tr>
-                    <th className="px-4 py-3.5 font-bold text-center">Foto</th>
-                    <th className="px-4 py-3.5 font-bold">Acción</th>
-                    <th className="px-4 py-3.5 font-bold">SKU / Código</th>
-                    <th className="px-4 py-3.5 font-bold">Producto</th>
-                    <th className="px-4 py-3.5 font-bold">Ubicación</th>
-                    <th className="px-4 py-3.5 font-bold">Precio Compra</th>
-                    <th className="px-4 py-3.5 font-bold">Precio Venta</th>
-                    <th className="px-4 py-3.5 font-bold">Stock Actual</th>
-                    <th className="px-4 py-3.5 font-bold">Categoría</th>
-                    <th className="px-4 py-3.5 font-bold">Marca</th>
+                    <th className="px-3 py-3.5 font-bold text-center w-[56px]">Foto</th>
+                    <th className="px-3 py-3.5 font-bold w-[108px]">Acción</th>
+                    <th className="px-3 py-3.5 font-bold w-[115px]">SKU / Código</th>
+                    <th className="px-3 py-3.5 font-bold w-[22%]">Producto</th>
+                    <th className="px-3 py-3.5 font-bold w-[15%]">Ubicación</th>
+                    <th className="px-3 py-3.5 font-bold w-[110px]">Precio Compra</th>
+                    <th className="px-3 py-3.5 font-bold w-[155px]">Precio Venta</th>
+                    <th className="px-3 py-3.5 font-bold w-[140px]">Stock Actual</th>
+                    <th className="px-3 py-3.5 font-bold w-[12%]">Categoría</th>
+                    <th className="px-3 py-3.5 font-bold w-[10%]">Marca</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/60">
@@ -438,11 +502,20 @@ function ProductView() {
                       const minLote = p.LoteMinimo || 5;
                       const isLow = stockVal > 0 && stockVal <= minLote;
                       const isOut = stockVal <= 0;
+                      const ubicacionTexto = p.Ubicacion
+                        ? `${p.Ubicacion.Almacen ? `[${p.Ubicacion.Almacen.Nombre}] ` : ""}${p.Ubicacion.Descripcion || ""}`
+                        : "Sin asignar";
+                      const categoriaTexto = p.Categoria
+                        ? p.Categoria.Nombre
+                        : p.Categorium
+                        ? p.Categorium.Nombre
+                        : "S/C";
+                      const marcaTexto = p.Marca ? p.Marca.Nombre : "S/M";
 
                       return (
                         <tr key={p.ProductoID} className="hover:bg-zinc-800/30 transition-colors duration-100">
                           {/* Miniatura de Imagen */}
-                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <td className="px-3 py-3 text-center whitespace-nowrap">
                             {p.Imagen ? (
                               <img src={p.Imagen} alt={p.Nombre} className="w-9 h-9 object-cover rounded-lg mx-auto border border-zinc-800" />
                             ) : (
@@ -455,13 +528,13 @@ function ProductView() {
                           </td>
 
                           {/* Botón de Acción Desplegable */}
-                          <td className="px-4 py-3 relative whitespace-nowrap">
+                          <td className="px-3 py-3 relative whitespace-nowrap">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setOpenMenuId(openMenuId === p.ProductoID ? null : p.ProductoID);
                               }}
-                              className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/25 font-bold rounded-lg text-xs flex items-center gap-1.5 transition-colors duration-150 btn-press active:scale-[0.97]"
+                              className="px-2.5 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/25 font-bold rounded-lg text-xs flex items-center gap-1.5 transition-colors duration-150 btn-press active:scale-[0.97]"
                             >
                               <span>Acciones</span>
                               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -472,7 +545,7 @@ function ProductView() {
                             {openMenuId === p.ProductoID && (
                               <div
                                 onClick={(e) => e.stopPropagation()}
-                                className="absolute left-4 top-12 z-50 bg-[#12151c] border border-zinc-800/80 rounded-xl shadow-2xl py-2 w-64 animate-dropdown-in origin-top-left text-xs"
+                                className="absolute left-3 top-12 z-50 bg-[#12151c] border border-zinc-800/80 rounded-xl shadow-2xl py-2 w-64 animate-dropdown-in origin-top-left text-xs"
                               >
                                 <button
                                   onClick={() => openDetailModal(p)}
@@ -531,7 +604,7 @@ function ProductView() {
                           </td>
 
                           {/* SKU */}
-                          <td className="px-4 py-3 font-mono tabular-nums whitespace-nowrap">
+                          <td className="px-3 py-3 font-mono tabular-nums truncate" title={p.CodigoBarras || "S/N"}>
                             {p.CodigoBarras ? (
                               <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/25 text-amber-400 font-semibold">
                                 {p.CodigoBarras}
@@ -542,12 +615,12 @@ function ProductView() {
                           </td>
 
                           {/* Nombre Producto */}
-                          <td className="px-4 py-3 font-bold text-zinc-100 max-w-xs truncate" title={p.Nombre}>
+                          <td className="px-3 py-3 font-bold text-zinc-100 truncate" title={p.Nombre}>
                             {p.Nombre}
                           </td>
 
                           {/* Ubicación */}
-                          <td className="px-4 py-3 text-zinc-300 whitespace-nowrap">
+                          <td className="px-3 py-3 text-zinc-300 truncate" title={ubicacionTexto}>
                             {p.Ubicacion ? (
                               <span className="text-zinc-200 font-semibold">
                                 {p.Ubicacion.Almacen ? `[${p.Ubicacion.Almacen.Nombre}] ` : ""}
@@ -559,49 +632,41 @@ function ProductView() {
                           </td>
 
                           {/* Precio Compra */}
-                          <td className="px-4 py-3 text-zinc-300 font-mono tabular-nums font-semibold whitespace-nowrap">
+                          <td className="px-3 py-3 text-zinc-300 font-mono tabular-nums font-semibold whitespace-nowrap">
                             Bs. {p.PrecioCompra ? parseFloat(p.PrecioCompra).toFixed(2) : "0.00"}
                           </td>
 
-                          {/* Precios Venta */}
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div className="text-zinc-300 font-semibold">
-                              Con Factura: <span className="text-amber-400 font-bold font-mono tabular-nums">Bs. {p.PrecioVenta ? parseFloat(p.PrecioVenta).toFixed(2) : (p.Precio ? parseFloat(p.Precio).toFixed(2) : "0.00")}</span>
-                            </div>
-                            {p.PrecioSinFactura && (
-                              <div className="text-zinc-400 text-[10px] mt-0.5">
-                                Sin Factura: <span className="text-zinc-200 font-bold font-mono tabular-nums">Bs. {parseFloat(p.PrecioSinFactura).toFixed(2)}</span>
-                              </div>
-                            )}
+                          {/* Precio Venta */}
+                          <td className="px-3 py-3 whitespace-nowrap">
+                            <span className="text-amber-400 font-bold font-mono tabular-nums">
+                              Bs. {p.PrecioVenta ? parseFloat(p.PrecioVenta).toFixed(2) : (p.Precio ? parseFloat(p.Precio).toFixed(2) : "0.00")}
+                            </span>
                           </td>
 
                           {/* Stock Actual */}
-                          <td className="px-4 py-3 whitespace-nowrap font-mono tabular-nums font-bold">
+                          <td className="px-3 py-3 whitespace-nowrap font-mono tabular-nums font-bold">
                             {isOut ? (
-                              <span className="inline-flex items-center gap-1.5 text-red-400 bg-red-500/10 px-2.5 py-1 rounded-lg border border-red-500/25">
-                                <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                              <span className="inline-flex items-center text-red-400 bg-red-500/10 px-2.5 py-1 rounded-lg border border-red-500/25">
                                 Agotado (0 {p.Unidad ? p.Unidad.Nombre : ""})
                               </span>
                             ) : isLow ? (
-                              <span className="inline-flex items-center gap-1.5 text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/25">
-                                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                              <span className="inline-flex items-center text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/25">
                                 {stockVal} {p.Unidad ? p.Unidad.Nombre : ""} (Bajo)
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/25">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                              <span className="inline-flex items-center text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/25">
                                 {stockVal} {p.Unidad ? p.Unidad.Nombre : ""}
                               </span>
                             )}
                           </td>
 
                           {/* Categoría */}
-                          <td className="px-4 py-3 text-zinc-300 whitespace-nowrap font-semibold">
+                          <td className="px-3 py-3 text-zinc-300 truncate font-semibold" title={categoriaTexto}>
                             {p.Categoria ? p.Categoria.Nombre : (p.Categorium ? p.Categorium.Nombre : <span className="text-zinc-600 italic">S/C</span>)}
                           </td>
 
                           {/* Marca */}
-                          <td className="px-4 py-3 text-zinc-300 whitespace-nowrap font-semibold">
+                          <td className="px-3 py-3 text-zinc-300 truncate font-semibold" title={marcaTexto}>
                             {p.Marca ? p.Marca.Nombre : <span className="text-zinc-600 italic">S/M</span>}
                           </td>
                         </tr>
@@ -619,28 +684,50 @@ function ProductView() {
             </div>
 
             {/* Paginador */}
-            <div className="px-6 py-4 bg-[#0c0e12] border-t border-zinc-800/80 flex items-center justify-between">
+            <div className="px-6 py-4 bg-[#0c0e12] border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="text-xs font-bold text-zinc-400">
                 Mostrando <span className="text-amber-400 font-mono tabular-nums">{totalItems > 0 ? startIndex + 1 : 0}</span> a <span className="text-amber-400 font-mono tabular-nums">{endIndex}</span> de <span className="font-mono tabular-nums text-zinc-200">{totalItems}</span> entradas
               </div>
-              {totalPages > 1 && (
-                <div className="flex gap-1.5">
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1.5 bg-[#12151c] hover:bg-zinc-800 border border-zinc-800 text-zinc-300 rounded-xl text-xs font-semibold transition-colors duration-150 btn-press active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none"
-                  >
-                    Anterior
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1.5 bg-[#12151c] hover:bg-zinc-800 border border-zinc-800 text-zinc-300 rounded-xl text-xs font-semibold transition-colors duration-150 btn-press active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none"
-                  >
-                    Siguiente
-                  </button>
-                </div>
-              )}
+              <div className="flex items-center gap-1.5 flex-wrap justify-center">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 bg-[#12151c] hover:bg-zinc-800 border border-zinc-800 text-zinc-300 rounded-xl text-xs font-semibold transition-colors duration-150 btn-press active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  Anterior
+                </button>
+
+                {getPageNumbers().map((pageNum, idx) =>
+                  pageNum === "..." ? (
+                    <span
+                      key={`ellipsis-${idx}`}
+                      className="px-2 py-1.5 text-zinc-500 font-mono text-xs select-none"
+                    >
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`min-w-[32px] h-8 px-2.5 rounded-xl text-xs font-mono tabular-nums transition-colors duration-150 btn-press active:scale-[0.97] ${
+                        currentPage === pageNum
+                          ? "bg-amber-500 text-zinc-950 font-extrabold shadow-sm"
+                          : "bg-[#12151c] hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-semibold"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                )}
+
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                  disabled={currentPage === totalPages || totalItems === 0}
+                  className="px-3 py-1.5 bg-[#12151c] hover:bg-zinc-800 border border-zinc-800 text-zinc-300 rounded-xl text-xs font-semibold transition-colors duration-150 btn-press active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  Siguiente
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -690,11 +777,10 @@ function ProductView() {
               <div><span className="text-zinc-400 font-bold block">Ubicación:</span> <span className="text-amber-400 font-semibold">{detailProduct.Ubicacion ? `${detailProduct.Ubicacion.Almacen?.Nombre || ""} - ${detailProduct.Ubicacion.Descripcion}` : "N/A"}</span></div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs bg-[#0c0e12] p-4 rounded-xl border border-zinc-800/80">
+            <div className="grid grid-cols-3 gap-3 text-xs bg-[#0c0e12] p-4 rounded-xl border border-zinc-800/80">
               <div><span className="text-zinc-400 font-bold block">Precio Compra (Costo):</span> <span className="text-zinc-200 font-bold font-mono tabular-nums">Bs. {detailProduct.PrecioCompra ? parseFloat(detailProduct.PrecioCompra).toFixed(2) : "0.00"}</span></div>
               <div><span className="text-zinc-400 font-bold block">Margen de Ganancia:</span> <span className="text-emerald-400 font-bold font-mono tabular-nums">{detailProduct.Margen ? `${detailProduct.Margen}%` : "N/A"}</span></div>
-              <div><span className="text-zinc-400 font-bold block">Precio Con Factura:</span> <span className="text-amber-400 font-extrabold text-sm font-mono tabular-nums">Bs. {detailProduct.PrecioVenta ? parseFloat(detailProduct.PrecioVenta).toFixed(2) : (detailProduct.Precio ? parseFloat(detailProduct.Precio).toFixed(2) : "0.00")}</span></div>
-              <div><span className="text-zinc-400 font-bold block">Precio Sin Factura:</span> <span className="text-zinc-200 font-extrabold text-sm font-mono tabular-nums">Bs. {detailProduct.PrecioSinFactura ? parseFloat(detailProduct.PrecioSinFactura).toFixed(2) : "N/A"}</span></div>
+              <div><span className="text-zinc-400 font-bold block">Precio de Venta:</span> <span className="text-amber-400 font-extrabold text-sm font-mono tabular-nums">Bs. {detailProduct.PrecioVenta ? parseFloat(detailProduct.PrecioVenta).toFixed(2) : (detailProduct.Precio ? parseFloat(detailProduct.Precio).toFixed(2) : "0.00")}</span></div>
             </div>
 
             <div className="flex justify-between items-center text-xs pt-2">
@@ -771,11 +857,11 @@ function ProductView() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-zinc-400">Compra total:</span>
+                    <span className="text-zinc-400">Entradas nuevos lotes:</span>
                     <span className="font-semibold font-mono tabular-nums text-zinc-400">0.00 {historyProduct.Unidad?.Nombre || "pza(s)"}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-zinc-400">Total devolución venta:</span>
+                    <span className="text-zinc-400">Ajustes de inventario:</span>
                     <span className="font-semibold font-mono tabular-nums text-zinc-400">0.00 {historyProduct.Unidad?.Nombre || "pza(s)"}</span>
                   </div>
                 </div>
@@ -797,7 +883,7 @@ function ProductView() {
                     <span className="font-semibold font-mono tabular-nums text-zinc-400">0.00 {historyProduct.Unidad?.Nombre || "pza(s)"}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-zinc-400">Total devolución compra:</span>
+                    <span className="text-zinc-400">Baja por vencimiento / merma:</span>
                     <span className="font-semibold font-mono tabular-nums text-zinc-400">0.00 {historyProduct.Unidad?.Nombre || "pza(s)"}</span>
                   </div>
                 </div>
@@ -828,7 +914,6 @@ function ProductView() {
                     <th className="px-4 py-3">Nueva cantidad</th>
                     <th className="px-4 py-3">Fecha</th>
                     <th className="px-4 py-3">Número de referencia / Nota</th>
-                    <th className="px-4 py-3">Cliente / Proveedor</th>
                     <th className="px-4 py-3">Usuario</th>
                   </tr>
                 </thead>
@@ -879,11 +964,6 @@ function ProductView() {
                               </div>
                             </td>
 
-                            {/* Cliente / Proveedor */}
-                            <td className="px-4 py-3 text-zinc-500 italic">
-                              -
-                            </td>
-
                             {/* Usuario Operador */}
                             <td className="px-4 py-3 text-zinc-300 font-semibold whitespace-nowrap">
                               OSCAR EDGAR CLAROS DAVALOS
@@ -894,7 +974,7 @@ function ProductView() {
                     })()
                   ) : (
                     <tr>
-                      <td colSpan="7" className="text-center py-6 text-zinc-500 italic">
+                      <td colSpan="6" className="text-center py-6 text-zinc-500 italic">
                         No hay movimientos de existencias registrados para este producto aún.
                       </td>
                     </tr>
@@ -942,6 +1022,11 @@ function ProductView() {
             </div>
 
             <form onSubmit={handleSaveStock} className="space-y-4">
+              {stockError && (
+                <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl text-xs font-semibold">
+                  {stockError}
+                </div>
+              )}
               {/* Tabla ERP con Filas Dinámicas */}
               <div className="border border-zinc-800/80 rounded-xl overflow-x-auto bg-[#0c0e12]">
                 <table className="w-full text-xs text-left min-w-[900px]">
@@ -949,8 +1034,8 @@ function ProductView() {
                     <tr>
                       <th className="px-4 py-3 min-w-[150px]">Nombre del producto</th>
                       <th className="px-4 py-3 min-w-[140px]">Cantidad restante</th>
-                      <th className="px-4 py-3 min-w-[130px]">Costo unitario (antes de impuestos)</th>
-                      <th className="px-4 py-3 min-w-[120px]">Subtotal (antes de impuestos)</th>
+                      <th className="px-4 py-3 min-w-[130px]">Costo unitario</th>
+                      <th className="px-4 py-3 min-w-[120px]">Subtotal</th>
                       <th className="px-4 py-3 min-w-[160px]">Fecha Ingreso</th>
                       {Boolean(stockProduct.ManejaCaducidad) && (
                         <th className="px-4 py-3 min-w-[160px]">Fecha Caducidad</th>
@@ -987,6 +1072,7 @@ function ProductView() {
                                 placeholder="0.00"
                                 value={row.cantidad}
                                 disabled={row.isRegistered}
+                                onKeyDown={blockNegativeNumberKeyDown}
                                 onChange={(e) => handleStockRowChange(row.id, "cantidad", e.target.value)}
                                 className={`w-20 border rounded-lg px-2.5 py-1.5 text-xs font-mono tabular-nums font-extrabold outline-none transition-colors duration-150 ${
                                   row.isRegistered
@@ -1005,10 +1091,12 @@ function ProductView() {
                           <td className="px-4 py-3">
                             <input
                               type="number"
+                              min="0"
                               step="0.01"
                               placeholder="0.00"
                               value={row.costo}
                               disabled={row.isRegistered}
+                              onKeyDown={blockNegativeNumberKeyDown}
                               onChange={(e) => handleStockRowChange(row.id, "costo", e.target.value)}
                               className={`w-24 border rounded-lg px-2.5 py-1.5 text-xs font-mono tabular-nums font-bold outline-none transition-colors duration-150 ${
                                 row.isRegistered

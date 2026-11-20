@@ -117,10 +117,86 @@ const DEFAULT_CLIENTS = [
 
 const SIAT_DOC_TYPES = [
   'NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA',
-  'CI - CÉDULA DE IDENTIDAD',
-  'PASAPORTE',
-  'OTRO DOCUMENTO DE IDENTIDAD'
+  'CI - CÉDULA DE IDENTIDAD'
 ];
+
+const sanitizeLettersOnly = (val) =>
+  String(val || '').replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '').replace(/\s{2,}/g, ' ');
+
+const sanitizePrefijo = (val) =>
+  String(val || '').replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ.\s]/g, '').replace(/\s{2,}/g, ' ');
+
+const sanitizeDigitsOnly = (val) => String(val || '').replace(/\D/g, '');
+
+const sanitizeComplemento = (val) =>
+  String(val || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 2);
+
+const sanitizeNitFactura = (val) =>
+  String(val || '').replace(/[^0-9a-zA-Z-]/g, '').toUpperCase();
+
+const isCiDocumentType = (tipoDoc) => String(tipoDoc || '').startsWith('CI');
+const isNitDocumentType = (tipoDoc) => String(tipoDoc || '').startsWith('NIT');
+
+const getDocumentFieldLabel = (tipoDoc) => {
+  if (isCiDocumentType(tipoDoc)) return 'Número de CI:';
+  return 'Número de Factura / NIT:';
+};
+
+const getDocumentPlaceholder = (tipoDoc) => {
+  if (isCiDocumentType(tipoDoc)) return 'Ej. 7894561 o 0 si no tiene';
+  return 'Ej. 4502616-1S, 280376027 o 0 si no tiene';
+};
+
+const buildClientCi = (numero, tieneComplemento, complemento) => {
+  const base = String(numero || '').trim();
+  if (!base || base === '0') return '0';
+  const comp = tieneComplemento && complemento.trim() ? `-${complemento.trim().toUpperCase()}` : '';
+  return `${base}${comp}`.trim();
+};
+
+const parseClientCi = (rawValue) => {
+  const value = String(rawValue || '').trim();
+  if (!value || value === '0') {
+    return { numero: value, tieneComplemento: false, complemento: '' };
+  }
+  const docPart = value.split(/\s+/)[0] || '';
+  const [rawNum, rawComp] = docPart.split('-');
+  const numero = sanitizeDigitsOnly(rawNum || '');
+  const complemento = rawComp ? sanitizeComplemento(rawComp) : '';
+  return {
+    numero,
+    tieneComplemento: complemento.length > 0,
+    complemento
+  };
+};
+
+const isWalkInGeneralClient = (c) => {
+  const nit = String(c?.NIT ?? c?.nit ?? '0').trim();
+  const nombre = String(c?.Nombre ?? c?.name ?? c?.RazonSocial ?? '').toLowerCase();
+  return (nit === '' || nit === '0') && nombre.includes('cliente general');
+};
+
+const getClientMergeKey = (c) => {
+  if (isWalkInGeneralClient(c)) return 'WALKIN_CLIENTE_GENERAL';
+  const nitStr = String(c?.NIT ?? c?.nit ?? '0').trim();
+  if (nitStr && nitStr !== '0') return `NIT_${nitStr}`;
+  return `NAME_${String(c?.Nombre ?? c?.name ?? c?.RazonSocial ?? '').trim().toUpperCase()}`;
+};
+
+const sortClientsConsistently = (list) =>
+  [...list].sort((a, b) => {
+    const aWalkIn = isWalkInGeneralClient(a);
+    const bWalkIn = isWalkInGeneralClient(b);
+    if (aWalkIn !== bWalkIn) return aWalkIn ? 1 : -1;
+
+    const aLocalNew = (a.ClienteID || 0) > 1000000000000;
+    const bLocalNew = (b.ClienteID || 0) > 1000000000000;
+    if (aLocalNew !== bLocalNew) return aLocalNew ? -1 : 1;
+
+    const spendDiff = (parseFloat(b.TotalComprasAcumulado) || 0) - (parseFloat(a.TotalComprasAcumulado) || 0);
+    if (spendDiff !== 0) return spendDiff;
+    return (b.ClienteID || 0) - (a.ClienteID || 0);
+  });
 
 function ClientView() {
   const { isCollapsed } = useSidebar();
@@ -132,7 +208,7 @@ function ClientView() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((c, i) => {
+          const normalized = parsed.map((c, i) => {
             const nivel = c.NivelLealtad || c.loyaltyTier || (c.DescuentoPorcentaje >= 15 ? 'Mayorista' : c.DescuentoPorcentaje >= 10 ? 'Constructor' : c.DescuentoPorcentaje >= 5 ? 'Frecuente' : 'Estandar');
             const tierObj = LOYALTY_TIERS[nivel] || LOYALTY_TIERS.Estandar;
             const descPct = c.DescuentoPorcentaje !== undefined ? parseFloat(c.DescuentoPorcentaje) : tierObj.discount;
@@ -164,12 +240,13 @@ function ClientView() {
               createdAt: c.createdAt || new Date().toISOString()
             };
           });
+          return sortClientsConsistently(normalized);
         }
       }
     } catch (e) {
       console.warn('Error leyendo clientes de localStorage:', e);
     }
-    return DEFAULT_CLIENTS;
+    return sortClientsConsistently(DEFAULT_CLIENTS);
   });
 
   // Sincronizar clientes registrados online y en SQL Server al abrir la vista
@@ -202,8 +279,7 @@ function ClientView() {
                 if (!phoneStr || phoneStr === '-' || phoneStr === '0') phoneStr = '68920192';
               }
 
-              const key = (nitStr && nitStr !== '0') ? `NIT_${nitStr}` : `NAME_${(dbc.name || '').toUpperCase()}`;
-              mergedMap.set(key, {
+              const normalizedClient = {
                 ClienteID: dbc.ClienteID || dbc.id || idx + 1,
                 TipoContacto: 'Individual',
                 CodigoContacto: `CO${String(460 + (dbc.ClienteID || idx + 1)).padStart(4, '0')}`,
@@ -228,7 +304,9 @@ function ClientView() {
                 DescuentoPorcentaje: descPct,
                 TotalComprasAcumulado: parseFloat(dbc.TotalComprasAcumulado || 0),
                 createdAt: new Date().toISOString()
-              });
+              };
+              const key = getClientMergeKey(normalizedClient);
+              mergedMap.set(key, normalizedClient);
             });
 
             // Asegurar que Roberto Guzmán Torrico (Oro 6%) esté siempre presente en la tabla
@@ -262,13 +340,13 @@ function ClientView() {
             }
 
             prev.forEach((loc) => {
-              const key = (loc.NIT && loc.NIT !== '0') ? `NIT_${loc.NIT}` : `NAME_${(loc.Nombre || '').toUpperCase()}`;
+              const key = getClientMergeKey(loc);
               if (!mergedMap.has(key)) {
                 mergedMap.set(key, loc);
               }
             });
 
-            return Array.from(mergedMap.values());
+            return sortClientsConsistently(Array.from(mergedMap.values()));
           });
         }
       })
@@ -368,6 +446,8 @@ function ClientView() {
     RazonSocial: '',
     TipoDocumentoSIAT: 'NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA',
     NIT: '',
+    TieneComplemento: false,
+    CIComplemento: '',
     Direccion: '',
     Ciudad: 'Cochabamba',
     NivelLealtad: 'Estandar',
@@ -415,7 +495,7 @@ function ClientView() {
   }, []);
 
   const filteredClients = useMemo(() => {
-    return clients.filter((c) => {
+    const matched = clients.filter((c) => {
       const term = searchTerm.toLowerCase();
       const matchSearch =
         (c.CodigoContacto || '').toLowerCase().includes(term) ||
@@ -435,6 +515,7 @@ function ClientView() {
 
       return true;
     });
+    return sortClientsConsistently(matched);
   }, [clients, searchTerm, filterDocType, filterTipoContacto, filterLoyaltyTier]);
 
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage) || 1;
@@ -461,6 +542,11 @@ function ClientView() {
     setSelectedClient(clie);
     const tier = clie.NivelLealtad || 'Estandar';
     const tierObj = LOYALTY_TIERS[tier] || LOYALTY_TIERS.Estandar;
+    const docType = clie.TipoDocumentoSIAT || 'NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA';
+    const parsedCi = isCiDocumentType(docType)
+      ? parseClientCi(clie.NIT)
+      : { numero: clie.NIT || '', tieneComplemento: false, complemento: '' };
+
     setFormData({
       TipoContacto: clie.TipoContacto || (clie.NombreEmpresa ? 'Empresa' : 'Individual'),
       CodigoContacto: clie.CodigoContacto || '',
@@ -476,8 +562,10 @@ function ClientView() {
       FechaNacimiento: clie.FechaNacimiento || '',
       AsignadoA: clie.AsignadoA || '',
       RazonSocial: clie.RazonSocial || '',
-      TipoDocumentoSIAT: clie.TipoDocumentoSIAT || 'NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA',
-      NIT: clie.NIT || '',
+      TipoDocumentoSIAT: docType,
+      NIT: parsedCi.numero,
+      TieneComplemento: parsedCi.tieneComplemento,
+      CIComplemento: parsedCi.complemento,
       Direccion: clie.Direccion || '',
       Ciudad: clie.Ciudad || 'Cochabamba',
       NivelLealtad: tier,
@@ -503,36 +591,14 @@ function ClientView() {
     setOpenActionMenuId(null);
   };
 
-  // Auto-completar Razón Social al escribir Nombre o Empresa si el usuario no ha puesto una personalizada
+  // Manejadores de campos de nombres individuales y de empresa
   const handleIndividualNameChange = (field, val) => {
-    const updated = { ...formData, [field]: val };
-    const fullNameParts = [
-      updated.Prefijo,
-      updated.Nombres,
-      updated.SegundoNombre,
-      updated.Apellidos
-    ].filter(Boolean).join(' ').trim();
-
-    // Si la razón social estaba vacía o era igual al nombre anterior, sugerir el nuevo nombre
-    const prevFullName = [
-      formData.Prefijo,
-      formData.Nombres,
-      formData.SegundoNombre,
-      formData.Apellidos
-    ].filter(Boolean).join(' ').trim();
-
-    if (!formData.RazonSocial || formData.RazonSocial === prevFullName || formData.RazonSocial === formData.Nombres) {
-      updated.RazonSocial = fullNameParts.toUpperCase();
-    }
-    setFormData(updated);
+    const cleanVal = field === 'Prefijo' ? sanitizePrefijo(val) : sanitizeLettersOnly(val);
+    setFormData((prev) => ({ ...prev, [field]: cleanVal }));
   };
 
   const handleCompanyNameChange = (val) => {
-    const updated = { ...formData, NombreEmpresa: val };
-    if (!formData.RazonSocial || formData.RazonSocial === formData.NombreEmpresa) {
-      updated.RazonSocial = val.toUpperCase();
-    }
-    setFormData(updated);
+    setFormData((prev) => ({ ...prev, NombreEmpresa: val }));
   };
 
   // Construir nombre principal legible
@@ -547,95 +613,168 @@ function ClientView() {
     return 'CLIENTE SIN NOMBRE';
   };
 
-  const handleCreateClient = (e) => {
-    e.preventDefault();
+  const validateAndBuildClientPayload = (data) => {
+    const lettersOnlyRegex = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
+    const prefijoRegex = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ.\s]+$/;
+    const boliviaPhoneRegex = /^[23467][0-9]{6,7}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    // Validación flexible: Solo requerir al menos un nombre o razón social o empresa
-    const hasIndividualName = formData.Nombres.trim() || formData.Apellidos.trim();
-    const hasCompanyName = formData.NombreEmpresa.trim();
-    const hasRazonSocial = formData.RazonSocial.trim();
+    const prefijo = data.Prefijo.trim();
+    const nombres = data.Nombres.trim();
+    const segundoNombre = data.SegundoNombre.trim();
+    const apellidos = data.Apellidos.trim();
+    const nombreEmpresa = data.NombreEmpresa.trim();
+    const razonSocial = data.RazonSocial.trim();
 
-    if (!hasIndividualName && !hasCompanyName && !hasRazonSocial) {
-      setFormError('Por favor ingrese al menos el Nombre del cliente o Razón Social para facturación.');
-      return;
+    if (data.TipoContacto === 'Empresa') {
+      if (nombreEmpresa.length < 3) {
+        return { error: 'El Nombre de la empresa es obligatorio y debe tener al menos 3 caracteres.' };
+      }
+    } else {
+      if (!nombres || nombres.length < 3 || !lettersOnlyRegex.test(nombres)) {
+        return { error: 'El campo "Nombres" es obligatorio, solo acepta letras y debe tener al menos 3 caracteres.' };
+      }
     }
 
-    const rawDiscount = parseFloat(formData.DescuentoPorcentaje);
+    if (prefijo && (!prefijoRegex.test(prefijo) || prefijo.replace(/\./g, '').trim().length < 2)) {
+      return { error: 'El prefijo solo debe contener letras (mínimo 2 caracteres, ej. Sr., Sra.).' };
+    }
+    if (segundoNombre && (!lettersOnlyRegex.test(segundoNombre) || segundoNombre.length < 3)) {
+      return { error: 'El segundo nombre solo acepta letras y debe tener al menos 3 caracteres.' };
+    }
+    if (apellidos && (!lettersOnlyRegex.test(apellidos) || apellidos.length < 3)) {
+      return { error: 'Los apellidos solo aceptan letras y deben tener al menos 3 caracteres.' };
+    }
+    if (razonSocial && razonSocial.length < 3) {
+      return { error: 'La razón social para facturación debe tener al menos 3 caracteres.' };
+    }
+
+    const movil = data.Movil.trim();
+    if (!movil) {
+      return { error: 'El campo "Móvil cliente" es obligatorio (ingrese 0 si no proporciona número).' };
+    }
+    if (movil !== '0' && !boliviaPhoneRegex.test(movil)) {
+      return { error: 'El móvil del cliente debe contener 7 u 8 dígitos válidos de Bolivia (ej. 70012345) o 0.' };
+    }
+
+    const altPhone = data.TelefonoAlternativo.trim();
+    if (altPhone && altPhone !== '0' && !boliviaPhoneRegex.test(altPhone)) {
+      return { error: 'El contacto alternativo debe contener 7 u 8 dígitos válidos sin letras.' };
+    }
+
+    const lineaFija = data.LineaFija.trim();
+    if (lineaFija && lineaFija !== '0' && !boliviaPhoneRegex.test(lineaFija)) {
+      return { error: 'La línea fija debe contener 7 u 8 dígitos válidos sin letras.' };
+    }
+
+    const email = data.Email.trim();
+    if (email && !emailRegex.test(email)) {
+      return { error: 'Por favor ingrese un correo electrónico válido (ej. cliente@correo.com).' };
+    }
+
+    const rawDoc = data.NIT.trim();
+    let resolvedNIT = '0';
+
+    if (isCiDocumentType(data.TipoDocumentoSIAT)) {
+      if (data.TieneComplemento && (!rawDoc || rawDoc === '0')) {
+        return { error: 'Debe ingresar el número de CI antes de agregar un complemento.' };
+      }
+      if (rawDoc && rawDoc !== '0') {
+        if (!/^[1-9][0-9]{4,9}$/.test(rawDoc)) {
+          return { error: 'El número de CI debe contener solo números (entre 5 y 10 dígitos).' };
+        }
+        if (data.TieneComplemento && !/^[0-9A-Z]{2}$/.test(data.CIComplemento.trim())) {
+          return { error: 'El complemento del CI debe tener exactamente 2 caracteres alfanuméricos (ej. 1A, 2B).' };
+        }
+        resolvedNIT = buildClientCi(rawDoc, data.TieneComplemento, data.CIComplemento);
+      }
+    } else if (isNitDocumentType(data.TipoDocumentoSIAT)) {
+      if (rawDoc && rawDoc !== '0' && !/^[0-9]{5,12}(-[0-9A-Z]{1,2})?$/.test(rawDoc.toUpperCase())) {
+        return { error: 'El Número de Factura / NIT debe tener entre 5 y 12 dígitos (ej. 280376027 o 4502616-1S).' };
+      }
+      resolvedNIT = rawDoc ? rawDoc.toUpperCase() : '0';
+    } else if (rawDoc && rawDoc !== '0') {
+      if (!/^[a-zA-Z0-9-]{5,20}$/.test(rawDoc)) {
+        return { error: 'El número de documento debe tener al menos 5 caracteres alfanuméricos válidos.' };
+      }
+      resolvedNIT = rawDoc.toUpperCase();
+    }
+
+    const rawDiscount = parseFloat(data.DescuentoPorcentaje);
     if (!isNaN(rawDiscount) && (rawDiscount < 0 || rawDiscount > 100)) {
-      setFormError('El porcentaje de descuento debe estar entre 0% y 100%.');
-      return;
+      return { error: 'El porcentaje de descuento debe estar entre 0% y 100%.' };
     }
     const validDiscount = Math.min(100, Math.max(0, isNaN(rawDiscount) ? 0 : rawDiscount));
 
-    if (formData.Movil && formData.Movil.trim() !== '0' && !/^[0-9+ -]{7,15}$/.test(formData.Movil.trim())) {
-      setFormError('El número de teléfono o celular debe tener al menos 7 dígitos válidos.');
+    const cleanData = {
+      ...data,
+      Prefijo: prefijo,
+      Nombres: nombres,
+      SegundoNombre: segundoNombre,
+      Apellidos: apellidos,
+      NombreEmpresa: nombreEmpresa,
+      Movil: movil,
+      TelefonoAlternativo: altPhone,
+      LineaFija: lineaFija,
+      Email: email
+    };
+    const displayName = buildDisplayName(cleanData);
+    const resolvedRazonSocial = razonSocial ? razonSocial.toUpperCase() : displayName.toUpperCase();
+
+    return {
+      payload: {
+        ...cleanData,
+        Nombre: displayName,
+        RazonSocial: resolvedRazonSocial,
+        NIT: resolvedNIT,
+        NivelLealtad: data.NivelLealtad || 'Estandar',
+        DescuentoPorcentaje: validDiscount,
+        TotalComprasAcumulado: parseFloat(data.TotalComprasAcumulado) || 0
+      }
+    };
+  };
+
+  const handleCreateClient = (e) => {
+    e.preventDefault();
+    const result = validateAndBuildClientPayload(formData);
+    if (result.error) {
+      setFormError(result.error);
       return;
     }
 
-    const displayName = buildDisplayName(formData);
-    const resolvedRazonSocial = formData.RazonSocial.trim() || displayName.toUpperCase();
-    const resolvedNIT = formData.NIT.trim() || '0';
-    const resolvedMovil = formData.Movil.trim() || '0';
     const resolvedCode = formData.CodigoContacto.trim() || generateNextContactCode();
-
     const newClient = {
       ClienteID: Date.now(),
-      ...formData,
+      ...result.payload,
       CodigoContacto: resolvedCode,
-      Nombre: displayName,
-      RazonSocial: resolvedRazonSocial,
-      NIT: resolvedNIT,
-      Movil: resolvedMovil,
-      NivelLealtad: formData.NivelLealtad || 'Estandar',
-      DescuentoPorcentaje: validDiscount,
-      TotalComprasAcumulado: parseFloat(formData.TotalComprasAcumulado) || 0,
       createdAt: new Date().toISOString()
     };
 
     persistClients([newClient, ...clients]);
-    triggerToast(`¡Cliente "${displayName}" registrado exitosamente!`);
+    triggerToast(`¡Cliente "${result.payload.Nombre}" registrado exitosamente!`);
     setIsAddModalOpen(false);
   };
 
   const handleUpdateClient = (e) => {
     e.preventDefault();
-
-    const rawDiscount = parseFloat(formData.DescuentoPorcentaje);
-    if (!isNaN(rawDiscount) && (rawDiscount < 0 || rawDiscount > 100)) {
-      setFormError('El porcentaje de descuento debe estar entre 0% y 100%.');
+    const result = validateAndBuildClientPayload(formData);
+    if (result.error) {
+      setFormError(result.error);
       return;
     }
-    const validDiscount = Math.min(100, Math.max(0, isNaN(rawDiscount) ? 0 : rawDiscount));
-
-    if (formData.Movil && formData.Movil.trim() !== '0' && !/^[0-9+ -]{7,15}$/.test(formData.Movil.trim())) {
-      setFormError('El número de teléfono o celular debe tener al menos 7 dígitos válidos.');
-      return;
-    }
-
-    const displayName = buildDisplayName(formData);
-    const resolvedRazonSocial = formData.RazonSocial.trim() || displayName.toUpperCase();
-    const resolvedNIT = formData.NIT.trim() || '0';
-    const resolvedMovil = formData.Movil.trim() || '0';
 
     const updatedClients = clients.map((c) => {
       if (c.ClienteID === selectedClient.ClienteID) {
         return {
           ...c,
-          ...formData,
-          Nombre: displayName,
-          RazonSocial: resolvedRazonSocial,
-          NIT: resolvedNIT,
-          Movil: resolvedMovil,
-          NivelLealtad: formData.NivelLealtad || 'Estandar',
-          DescuentoPorcentaje: validDiscount,
-          TotalComprasAcumulado: parseFloat(formData.TotalComprasAcumulado) || 0
+          ...result.payload
         };
       }
       return c;
     });
 
     persistClients(updatedClients);
-    triggerToast(`¡Cliente "${displayName}" actualizado exitosamente!`);
+    triggerToast(`¡Cliente "${result.payload.Nombre}" actualizado exitosamente!`);
     setIsEditModalOpen(false);
   };
 
@@ -974,8 +1113,10 @@ function ClientView() {
           </label>
           <input
             type="text"
+            inputMode="numeric"
+            maxLength={8}
             value={formData.Movil}
-            onChange={(e) => setFormData({ ...formData, Movil: e.target.value })}
+            onChange={(e) => setFormData({ ...formData, Movil: sanitizeDigitsOnly(e.target.value).slice(0, 8) })}
             placeholder="0"
             className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 font-bold outline-none focus:border-amber-500/60 font-mono tabular-nums transition-colors"
           />
@@ -985,9 +1126,11 @@ function ClientView() {
           <label className="block text-zinc-400 font-bold mb-1">Contacto alternativo:</label>
           <input
             type="text"
+            inputMode="numeric"
+            maxLength={8}
             value={formData.TelefonoAlternativo}
-            onChange={(e) => setFormData({ ...formData, TelefonoAlternativo: e.target.value })}
-            placeholder="Número de contacto alternativo"
+            onChange={(e) => setFormData({ ...formData, TelefonoAlternativo: sanitizeDigitsOnly(e.target.value).slice(0, 8) })}
+            placeholder="Número de 7 u 8 dígitos"
             className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
           />
         </div>
@@ -996,9 +1139,11 @@ function ClientView() {
           <label className="block text-zinc-400 font-bold mb-1">Línea fija:</label>
           <input
             type="text"
+            inputMode="numeric"
+            maxLength={8}
             value={formData.LineaFija}
-            onChange={(e) => setFormData({ ...formData, LineaFija: e.target.value })}
-            placeholder="Línea fija"
+            onChange={(e) => setFormData({ ...formData, LineaFija: sanitizeDigitsOnly(e.target.value).slice(0, 8) })}
+            placeholder="Ej. 4421234"
             className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 font-mono tabular-nums outline-none focus:border-amber-500/60 transition-colors"
           />
         </div>
@@ -1008,8 +1153,8 @@ function ClientView() {
           <input
             type="email"
             value={formData.Email}
-            onChange={(e) => setFormData({ ...formData, Email: e.target.value })}
-            placeholder="Email para facturación electrónica"
+            onChange={(e) => setFormData({ ...formData, Email: e.target.value.replace(/\s/g, '') })}
+            placeholder="correo@ejemplo.com"
             className="w-full bg-[#0c0e12] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 font-mono outline-none focus:border-amber-500/60 transition-colors"
           />
         </div>
@@ -1040,7 +1185,16 @@ function ClientView() {
             <label className="block text-zinc-300 font-bold mb-1">Tipo de Documento de Identidad:</label>
             <select
               value={formData.TipoDocumentoSIAT}
-              onChange={(e) => setFormData({ ...formData, TipoDocumentoSIAT: e.target.value })}
+              onChange={(e) => {
+                const nextType = e.target.value;
+                setFormData((prev) => ({
+                  ...prev,
+                  TipoDocumentoSIAT: nextType,
+                  NIT: isCiDocumentType(nextType) ? sanitizeDigitsOnly(prev.NIT).slice(0, 10) : prev.NIT,
+                  TieneComplemento: isCiDocumentType(nextType) ? prev.TieneComplemento : false,
+                  CIComplemento: isCiDocumentType(nextType) ? prev.CIComplemento : ''
+                }));
+              }}
               className="w-full bg-[#12151c] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-amber-500/60 font-semibold transition-colors"
             >
               {SIAT_DOC_TYPES.map((t) => (
@@ -1050,16 +1204,59 @@ function ClientView() {
           </div>
 
           <div>
-            <label className="block text-zinc-300 font-bold mb-1">Número de impuesto / Documento:</label>
+            <label className="block text-zinc-300 font-bold mb-1">
+              {getDocumentFieldLabel(formData.TipoDocumentoSIAT)}
+            </label>
             <input
               type="text"
+              inputMode={isCiDocumentType(formData.TipoDocumentoSIAT) ? 'numeric' : 'text'}
+              maxLength={isCiDocumentType(formData.TipoDocumentoSIAT) ? 10 : 20}
               value={formData.NIT}
-              onChange={(e) => setFormData({ ...formData, NIT: e.target.value })}
-              placeholder="Ej. 4502616-1S, 280376027 o 0 si no tiene"
+              onChange={(e) => {
+                const raw = e.target.value;
+                const clean = isCiDocumentType(formData.TipoDocumentoSIAT)
+                  ? sanitizeDigitsOnly(raw).slice(0, 10)
+                  : isNitDocumentType(formData.TipoDocumentoSIAT)
+                  ? sanitizeNitFactura(raw)
+                  : raw.replace(/[^a-zA-Z0-9-]/g, '').toUpperCase();
+                setFormData({ ...formData, NIT: clean });
+              }}
+              placeholder={getDocumentPlaceholder(formData.TipoDocumentoSIAT)}
               className="w-full bg-[#12151c] border border-zinc-800 rounded-lg px-3 py-2 text-amber-400 font-mono tabular-nums font-bold outline-none focus:border-amber-500/60 transition-colors"
             />
           </div>
         </div>
+
+        {isCiDocumentType(formData.TipoDocumentoSIAT) && (
+          <div className="pt-1">
+            <label className="flex items-center gap-2 text-zinc-300 font-bold mb-1 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={formData.TieneComplemento}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    TieneComplemento: e.target.checked,
+                    CIComplemento: e.target.checked ? prev.CIComplemento : ''
+                  }))
+                }
+                className="w-3.5 h-3.5 accent-amber-500 cursor-pointer"
+              />
+              <span>Complemento (opcional):</span>
+            </label>
+            <input
+              type="text"
+              maxLength={2}
+              disabled={!formData.TieneComplemento}
+              value={formData.CIComplemento}
+              onChange={(e) =>
+                setFormData({ ...formData, CIComplemento: sanitizeComplemento(e.target.value) })
+              }
+              placeholder={formData.TieneComplemento ? 'Ej. 2B' : 'Marque para habilitar (2 caracteres)'}
+              className="w-full sm:w-56 bg-[#12151c] border border-zinc-800 rounded-lg px-3 py-2 text-amber-400 font-mono tabular-nums font-bold uppercase outline-none focus:border-amber-500/60 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            />
+          </div>
+        )}
       </div>
 
       {/* SECCIÓN PROGRAMA DE LEALTAD Y DESCUENTOS */}
@@ -1084,11 +1281,12 @@ function ClientView() {
               onChange={(e) => {
                 const tierKey = e.target.value;
                 const tier = LOYALTY_TIERS[tierKey] || LOYALTY_TIERS.Estandar;
-                setFormData({
-                  ...formData,
+                setFormData((prev) => ({
+                  ...prev,
                   NivelLealtad: tierKey,
-                  DescuentoPorcentaje: tier.discount
-                });
+                  DescuentoPorcentaje: tier.discount,
+                  TotalComprasAcumulado: tier.minSpend || 0
+                }));
               }}
               className="w-full bg-[#12151c] border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-amber-500/60 font-semibold transition-colors"
             >
@@ -1521,7 +1719,9 @@ function ClientView() {
           <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl p-6 space-y-4 my-8 animate-modal-in">
             <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
               <h3 className="font-extrabold text-lg text-zinc-100 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <svg className="w-5 h-5 text-amber-500 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
                 Agregar un nuevo contacto
               </h3>
               <button
@@ -1561,7 +1761,9 @@ function ClientView() {
           <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl p-6 space-y-4 my-8 animate-modal-in">
             <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
               <h3 className="font-extrabold text-lg text-zinc-100 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <svg className="w-5 h-5 text-amber-500 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
                 Editar contacto: <span className="text-amber-400">{selectedClient?.Nombre}</span>
               </h3>
               <button
@@ -1601,7 +1803,10 @@ function ClientView() {
           <div className="bg-[#12151c] border border-zinc-800/80 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl p-6 space-y-4 animate-modal-in">
             <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
               <h3 className="font-extrabold text-lg text-zinc-100 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <svg className="w-5 h-5 text-amber-500 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
                 Ficha de Contacto: {selectedClient.Nombre}
               </h3>
               <button
@@ -1637,7 +1842,9 @@ function ClientView() {
                   <span className="font-semibold text-zinc-300">{selectedClient.TipoDocumentoSIAT || 'NIT'}</span>
                 </div>
                 <div>
-                  <span className="text-zinc-500 block font-semibold">NIT / CI:</span>
+                  <span className="text-zinc-500 block font-semibold">
+                    {getDocumentFieldLabel(selectedClient.TipoDocumentoSIAT)}
+                  </span>
                   <span className="font-mono tabular-nums font-bold text-amber-400">{selectedClient.NIT || '0'}</span>
                 </div>
                 <div>
@@ -1727,7 +1934,9 @@ function ClientView() {
       {/* Toast Notification */}
       {showToast && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#12151c] border border-emerald-500/30 text-zinc-100 px-4 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 animate-toast-in">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></div>
+          <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
           <span className="text-xs font-bold">{toastMessage}</span>
         </div>
       )}

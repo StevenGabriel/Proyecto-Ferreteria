@@ -433,9 +433,8 @@ function OnlineOrdersView() {
                     Despacho de Pedidos Online
                   </h1>
                   {stats.pendientes > 0 && (
-                    <span className="text-xs font-mono tabular-nums font-bold px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                      <span>{stats.pendientes} en cola</span>
+                    <span className="text-xs font-mono tabular-nums font-bold px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                      {stats.pendientes} en cola
                     </span>
                   )}
                 </div>
@@ -448,16 +447,20 @@ function OnlineOrdersView() {
             <div className="flex items-center gap-2.5 flex-wrap">
               {isCashRegisterOpen ? (
                 <span className="px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                   <span>Caja Registradora Abierta</span>
                 </span>
               ) : (
                 <Link
                   to="/pos"
-                  className="btn-press px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold flex items-center gap-2 transition-colors"
+                  className="btn-press px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-bold flex items-center gap-2 transition-colors"
                   title="Debe abrir turno de caja registradora en el POS para finalizar entregas"
                 >
-                  <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
+                  <svg className="w-3.5 h-3.5 text-rose-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
                   <span>Caja Cerrada — Ir a Abrir Turno en POS</span>
                 </Link>
               )}
@@ -1494,7 +1497,19 @@ function OnlineOrdersView() {
               ? 'bg-[#12151c] border-red-500/40 text-red-400'
               : 'bg-[#12151c] border-amber-500/40 text-amber-300'
           }`}>
-            <span className={`w-2 h-2 rounded-full ${toast.type === 'success' ? 'bg-emerald-400' : toast.type === 'error' ? 'bg-red-400' : 'bg-amber-400'}`}></span>
+            {toast.type === 'success' ? (
+              <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            ) : toast.type === 'error' ? (
+              <svg className="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
             <span>{toast.message}</span>
           </div>
         </div>

@@ -158,12 +158,21 @@ function Topbar() {
 
   return (
     <header className="h-16 border-b border-zinc-800/90 px-6 sm:px-8 flex justify-between items-center bg-[#0c0e12]/90 backdrop-blur-md sticky top-0 z-30">
-      {/* Lado Izquierdo: Info de Sucursal y Estado */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span className="text-xs font-semibold text-zinc-300 tracking-tight">
-            Sucursal Central — C&C Casa y Construcción
+      {/* Lado Izquierdo: Info de Sucursal */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-[#12151c] border border-zinc-800/90 text-xs">
+          <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-zinc-100 tracking-tight">Sucursal Central</span>
+            <span className="text-zinc-600 font-medium">/</span>
+            <span className="text-zinc-400 font-medium hidden sm:inline text-[11.5px]">C&C Casa y Construcción</span>
+          </div>
+          <span className="hidden md:inline-flex text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/60 ml-0.5">
+            Cochabamba
           </span>
         </div>
       </div>
@@ -196,7 +205,7 @@ function Topbar() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
 
-            {activeAlertsCount > 0 ? (
+            {activeAlertsCount > 0 && (
               <span className={`absolute -top-1.5 -right-1.5 font-mono tabular-nums font-bold text-[10px] px-1.5 py-0.2 rounded-md ring-2 ring-[#0c0e12] ${
                 activeExpiringLots.some((l) => l.status === 'EXPIRED') || activeCriticalProducts.some((p) => p.Stock === 0)
                   ? 'bg-rose-500 text-white'
@@ -204,8 +213,6 @@ function Topbar() {
               }`}>
                 {activeAlertsCount}
               </span>
-            ) : (
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-[#0c0e12]"></span>
             )}
           </button>
 
